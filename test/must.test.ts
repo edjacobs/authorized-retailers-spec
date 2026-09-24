@@ -68,11 +68,14 @@ describe("§5 readers MUST treat an expired file as containing no valid authoriz
   });
 });
 
-describe("§5 indexes MUST accept hand-written files that validate against the schema", () => {
-  it("accepts an unsigned full file", () => {
-    expect(validateFile(fx("file/valid/full-unsigned-handwritten.json")).valid).toBe(true);
+describe("§5 readers MUST treat an unsigned file as no file, and a file vouches only for its own domain", () => {
+  // An unsigned file is still well-formed JSON for the schema; checkPublishedFile is what refuses it.
+  // Tested with real keys in test/jws.test.ts.
+  it("a hand-written file validates against the schema but carries no signature", () => {
+    const f = fx("file/valid/full-unsigned-handwritten.json");
+    expect(validateFile(f).valid).toBe(true);
+    expect(f.signature).toBeUndefined();
   });
-  // Marking them self_published is an indexer behavior, tested in milestone 7.
 });
 
 describe("§6 every authorization MUST name at least one channel identifier", () => {
@@ -108,14 +111,18 @@ describe("§6 agents MUST match on the channel identifier, never the retailer na
   });
 });
 
-describe("§7 every verification answer MUST state its evidence tier", () => {
-  it("rejects an answer with no tier", () => {
-    expect(validateVerifyResponse(fx("verify-response/invalid/missing-tier.json")).valid).toBe(false);
+describe("§7 every answer MUST carry observed, null unless authorized", () => {
+  it("rejects an answer with no observed field", () => {
+    expect(validateVerifyResponse(fx("verify-response/invalid/missing-observed.json")).valid).toBe(false);
   });
-  it("brand_unverified states null, every other status states a tier", () => {
-    expect(validateVerifyResponse(fx("verify-response/valid/brand-unverified-reason.json")).valid).toBe(true);
-    expect(validateVerifyResponse(fx("verify-response/invalid/authorized-null-tier.json")).valid).toBe(false);
-    expect(validateVerifyResponse(fx("verify-response/invalid/brand-unverified-with-tier.json")).valid).toBe(false);
+  it("allows last_seen on authorized answers only", () => {
+    expect(validateVerifyResponse(fx("verify-response/valid/authorized.json")).valid).toBe(true);
+    expect(validateVerifyResponse(fx("verify-response/valid/authorized-observed.json")).valid).toBe(true);
+    expect(validateVerifyResponse(fx("verify-response/invalid/unlisted-observed.json")).valid).toBe(false);
+    expect(validateVerifyResponse(fx("verify-response/invalid/observed-without-last-seen.json")).valid).toBe(false);
+  });
+  it("has no evidence tier", () => {
+    expect(validateVerifyResponse(fx("verify-response/invalid/with-tier.json")).valid).toBe(false);
   });
 });
 

@@ -305,16 +305,16 @@
     "note": "Bare hostname only"
   },
   {
+    "path": "verify-response/valid/authorized.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9 example"
+  },
+  {
     "path": "verify-response/valid/authorized-observed.json",
     "kind": "verify-response",
     "valid": true,
-    "note": "Section 9 example plus valid_until"
-  },
-  {
-    "path": "verify-response/valid/authorized-self-published.json",
-    "kind": "verify-response",
-    "valid": true,
-    "note": "Hand-written file, unregistered brand"
+    "note": "Section 7: seen selling within 30 days"
   },
   {
     "path": "verify-response/valid/expired.json",
@@ -350,25 +350,32 @@
     "note": "Section 7 signals"
   },
   {
-    "path": "verify-response/invalid/missing-tier.json",
+    "path": "verify-response/invalid/missing-observed.json",
     "kind": "verify-response",
     "valid": false,
     "expect": "schema",
-    "note": "Section 7: every answer MUST state its tier"
+    "note": "Section 7: every answer MUST carry observed"
   },
   {
-    "path": "verify-response/invalid/authorized-null-tier.json",
+    "path": "verify-response/invalid/unlisted-observed.json",
     "kind": "verify-response",
     "valid": false,
     "expect": "schema",
-    "note": "Only brand_unverified has a null tier"
+    "note": "Section 7: observed is null unless authorized"
   },
   {
-    "path": "verify-response/invalid/brand-unverified-with-tier.json",
+    "path": "verify-response/invalid/observed-without-last-seen.json",
     "kind": "verify-response",
     "valid": false,
     "expect": "schema",
-    "note": "brand_unverified has tier null"
+    "note": "Section 7: observed carries last_seen"
+  },
+  {
+    "path": "verify-response/invalid/with-tier.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Evidence tiers were removed (section 7)"
   },
   {
     "path": "verify-response/invalid/unlisted-with-reason.json",

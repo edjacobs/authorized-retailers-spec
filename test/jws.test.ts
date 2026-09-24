@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import {
   base64url,
   base64urlDecode,
+  checkPublishedFile,
   canonicalize,
   signDetached,
   signingPayload,
@@ -124,5 +125,21 @@ describe("reference verifier", () => {
   it("§5 treats an expired list as invalid", async () => {
     const signed = await sign(list(), k1);
     expect(await verifyDocument(signed, jwks, { now: Date.parse(signed.expires) })).toEqual({ valid: false, reason: "list_expired" });
+  });
+});
+
+describe("§5 only registry-signed files count, and only for their own domain", () => {
+  it("counts a signed file fetched from its own domain", async () => {
+    const f = await sign(list(), k1);
+    expect(await checkPublishedFile(f.brand.domain, f, jwks, LIST_LIVE)).toEqual({ counts: true, kid: k1.jwk.kid });
+    expect(await checkPublishedFile(f.brand.domain.toUpperCase(), f, jwks, LIST_LIVE)).toMatchObject({ counts: true });
+  });
+  it("doesn't count an unsigned file, a tampered one, or a copy on another domain", async () => {
+    const f = await sign(list(), k1);
+    const { signature: _, ...unsigned } = f;
+    expect(await checkPublishedFile(f.brand.domain, unsigned as FullFile, jwks, LIST_LIVE)).toEqual({ counts: false, reason: "missing_signature" });
+    const tampered = { ...f, authorizations: f.authorizations.slice(1) };
+    expect(await checkPublishedFile(f.brand.domain, tampered, jwks, LIST_LIVE)).toEqual({ counts: false, reason: "bad_signature" });
+    expect(await checkPublishedFile("lookalike-brand.example", f, jwks, LIST_LIVE)).toEqual({ counts: false, reason: "domain_mismatch" });
   });
 });

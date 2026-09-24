@@ -50,16 +50,16 @@ const request = {
 const sig = { kid: "ar-2026-09", jws: JWS };
 const authorized = {
   status: "authorized",
-  tier: "observed",
   authorization_id: "auth_01J9X2",
   expires: "2026-12-22T00:00:00Z",
   checked: "2026-09-23T14:02:11Z",
   valid_until: "2026-09-24T14:02:11Z",
+  observed: null,
   signals: [],
   signature: sig,
 };
-const unlisted = { status: "unlisted", tier: "brand_attested", checked: authorized.checked, valid_until: authorized.valid_until, signals: [], signature: sig };
-const unverified = { ...unlisted, status: "brand_unverified", tier: null, reason: "domain_unlinked" };
+const unlisted = { status: "unlisted", checked: authorized.checked, valid_until: authorized.valid_until, observed: null, signals: [], signature: sig };
+const unverified = { ...unlisted, status: "brand_unverified", reason: "domain_unlinked" };
 
 const clone = (o) => structuredClone(o);
 const edit = (base, fn) => {
@@ -143,19 +143,20 @@ const cases = [
   ["verify-request", "domain-with-scheme", edit(request, (r) => (r.brand_domain = "https://examplebrand.com")), "schema", "Bare hostname only"],
 
   // ---- verify response: valid
-  ["verify-response", "authorized-observed", authorized, null, "Section 9 example plus valid_until"],
-  ["verify-response", "authorized-self-published", edit(authorized, (r) => (r.tier = "self_published")), null, "Hand-written file, unregistered brand"],
-  ["verify-response", "expired", edit(authorized, (r) => { r.status = "expired"; r.tier = "brand_attested"; r.expires = "2026-09-01T00:00:00Z"; }), null, ""],
-  ["verify-response", "disputed", edit(authorized, (r) => { r.status = "disputed"; r.tier = "brand_attested"; }), null, ""],
+  ["verify-response", "authorized", authorized, null, "Section 9 example"],
+  ["verify-response", "authorized-observed", edit(authorized, (r) => (r.observed = { last_seen: "2026-09-20T00:00:00Z" })), null, "Section 7: seen selling within 30 days"],
+  ["verify-response", "expired", edit(authorized, (r) => { r.status = "expired"; r.expires = "2026-09-01T00:00:00Z"; }), null, ""],
+  ["verify-response", "disputed", edit(authorized, (r) => (r.status = "disputed")), null, ""],
   ["verify-response", "unlisted", unlisted, null, ""],
   ["verify-response", "brand-unverified-reason", unverified, null, "Section 9 reason"],
   ["verify-response", "brand-unverified-no-reason", edit(unverified, (r) => delete r.reason), null, "reason is optional"],
   ["verify-response", "with-signal", edit(authorized, (r) => r.signals.push({ type: "account_name_changed", observed: "2026-09-20T00:00:00Z", detail: "Storefront name changed" })), null, "Section 7 signals"],
 
   // ---- verify response: invalid
-  ["verify-response", "missing-tier", edit(authorized, (r) => delete r.tier), "schema", "Section 7: every answer MUST state its tier"],
-  ["verify-response", "authorized-null-tier", edit(authorized, (r) => (r.tier = null)), "schema", "Only brand_unverified has a null tier"],
-  ["verify-response", "brand-unverified-with-tier", edit(unverified, (r) => (r.tier = "brand_attested")), "schema", "brand_unverified has tier null"],
+  ["verify-response", "missing-observed", edit(authorized, (r) => delete r.observed), "schema", "Section 7: every answer MUST carry observed"],
+  ["verify-response", "unlisted-observed", edit(unlisted, (r) => (r.observed = { last_seen: "2026-09-20T00:00:00Z" })), "schema", "Section 7: observed is null unless authorized"],
+  ["verify-response", "observed-without-last-seen", edit(authorized, (r) => (r.observed = {})), "schema", "Section 7: observed carries last_seen"],
+  ["verify-response", "with-tier", edit(authorized, (r) => (r.tier = "brand_attested")), "schema", "Evidence tiers were removed (section 7)"],
   ["verify-response", "unlisted-with-reason", edit(unlisted, (r) => (r.reason = "domain_unlinked")), "schema", "Section 9: reason only on brand_unverified"],
   ["verify-response", "unlisted-with-authorization-id", edit(unlisted, (r) => (r.authorization_id = "auth_01J9X2")), "schema", "Unlisted answers leak nothing about other authorizations"],
   ["verify-response", "authorized-missing-authorization-id", edit(authorized, (r) => delete r.authorization_id), "schema", ""],

@@ -1,10 +1,10 @@
 {
   "status": "authorized",
-  "tier": "observed",
   "authorization_id": "auth_01J9X2",
   "expires": "2026-12-22T00:00:00Z",
   "checked": "2026-09-23T14:02:11Z",
   "valid_until": "2026-09-24T14:02:11Z",
+  "observed": null,
   "signals": [
     {
       "type": "account_name_changed",

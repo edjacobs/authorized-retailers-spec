@@ -30,9 +30,9 @@ The key words MUST, SHOULD and MAY are used as defined in RFC 2119.
 | Distributor | A party that supplies retailers. A distributor MAY propose retailers but cannot authorize them. |
 | Authorization | A brand's signed statement that a retailer may sell within a stated scope until a stated expiry. |
 | Channel | A place a seller sells, such as a marketplace in one country or a web domain. |
-| Evidence tier | How strongly an authorization is supported: brand-attested, or brand-attested and observed. |
+| Observation | Evidence from outside the brand's list that an authorized seller is actively selling on a channel. |
 | Registry | A service that verifies brands, stores authorizations, signs them and answers verification requests. |
-| Index | The registry's collected copy of every published file, including files it did not create. |
+| Index | The registry's collected copy of every published file. Only registry-signed files count (section 5). |
 | Agent | Any automated system that queries authorization status before recommending or buying. |
 
 ## 3. Authorization model
@@ -115,7 +115,7 @@ Pointer form: `{"spec": "authorized-retailers/0.1", "form": "pointer", "brand": 
 
 Private form: `{"spec": "authorized-retailers/0.1", "form": "private", "brand": {...}, "verify": "https://authorizedretailers.ai/v0/verify"}`.
 
-An individual authorization's `expires` MUST NOT be later than the file's `expires`. Readers MUST treat an expired file as containing no valid authorizations. A brand MAY write a full file by hand. Indexes MUST accept hand-written files that validate against the schema, and mark them `self_published` if unsigned.
+An individual authorization's `expires` MUST NOT be later than the file's `expires`. Readers MUST treat an expired file as containing no valid authorizations. A file counts only if it is signed by a registry (section 8): a brand publishes the file its registry generated for it, or a pointer to it. Readers MUST treat an unsigned file, or one whose signature does not verify against a registry's published keys, as no file at all. Readers MUST also check that the file's `brand.domain` is the domain it was fetched from, since a file vouches only for its own domain.
 
 ## 6. Seller identity and channel identifiers
 
@@ -133,17 +133,13 @@ New channel types are added by registry proposal and published in the spec chang
 
 A registry MAY group a retailer's identifiers under one `entity_id`, so one retailer selling on several channels is one record. Registry-proposed links between identifiers MUST be confirmed by the brand before they count as authorized. Agents MUST match on the channel identifier they see, never on the retailer name.
 
-## 7. Evidence tiers
+## 7. Evidence and observation
 
-Every verification answer MUST state its evidence tier, so an agent can weigh how much to trust it. A `brand_unverified` answer states `null`, meaning no evidence (section 9).
+Every answer about a seller rests on the same evidence: a verified domain independently linked to the brand (section 4), the brand's own approval (section 3), and the registry's signature (section 8). There are no weaker grades of answer. Where that evidence is missing, the answer is `brand_unverified`, whether or not a file exists on the brand's domain.
 
-| Tier | Meaning |
-| --- | --- |
-| `self_published` | A valid file on the brand's domain, unsigned and not verified by a registry |
-| `brand_attested` | Verified brand domain, brand-approved authorization, registry-signed |
-| `observed` | `brand_attested`, and the registry has observed this seller actively selling the brand's products on the stated channel within the last 30 days |
+A registry MAY also observe sellers: evidence from outside the brand's list that an authorized seller is actively selling the brand's products on the stated channel. Every answer MUST carry `observed`. On an `authorized` answer it is `{ "last_seen": <timestamp> }` when the registry has seen this seller selling within the last 30 days, and otherwise `null`. On every other status it MUST be `null`. Observation never changes the status.
 
-In v0.1, the reference registry supports observation on Amazon marketplaces only. Other channels stay at `brand_attested` until observation is added.
+In v0.1, the reference registry observes Amazon marketplaces only.
 
 Observation can also raise flags on an authorized seller: sudden changes in account name, address, catalog or volume that suggest a compromised account. A registry MAY return these as `signals` alongside the answer, without changing the authorization status.
 
@@ -181,11 +177,11 @@ Response:
 ```json
 {
   "status": "authorized",
-  "tier": "observed",
   "authorization_id": "auth_01J9X2",
   "expires": "2026-12-22T00:00:00Z",
   "checked": "2026-09-23T14:02:11Z",
   "valid_until": "2026-09-24T14:02:11Z",
+  "observed": null,
   "signals": [],
   "signature": { "kid": "ar-2026-09", "jws": "<detached JWS>" }
 }
@@ -194,7 +190,7 @@ Response:
 | `status` | Meaning |
 | --- | --- |
 | `authorized` | A valid authorization covers this seller, channel, territory and product line |
-| `unlisted` | The brand is verified, or has a valid self-published file (tier `self_published`), and no valid authorization covers this request |
+| `unlisted` | The brand is verified and no valid authorization covers this request |
 | `expired` | An authorization existed but has lapsed |
 | `brand_unverified` | The brand has not verified its domain, or verification has lapsed |
 | `disputed` | A dispute on this authorization is open (section 11) |
@@ -205,11 +201,11 @@ A `brand_unverified` answer MAY carry a `reason`:
 
 | `reason` | Meaning |
 | --- | --- |
-| `not_registered` | The registry holds no verified domain and no valid published file for this brand |
+| `not_registered` | The registry holds no verified record for this brand. An unsigned file on the brand's domain doesn't count (section 5) |
 | `domain_unlinked` | Domain control is verified, but the independent brand link (section 4) has not been made |
 | `verification_lapsed` | The domain verification record has disappeared (section 4) |
 
-`reason` MUST NOT appear on any other status. A `brand_unverified` answer has `tier` set to `null`, since no evidence supports it.
+`reason` MUST NOT appear on any other status.
 
 Private mode: for brands using the private form, the API answers only the question asked. It MUST NOT return the brand's other retailers, and SHOULD rate-limit queries per caller to prevent the list being reconstructed by enumeration. Any endpoint that returns a list (such as `/v0/brands/<domain>/list`) MUST respond to a private-form brand exactly as it responds to an unknown brand, with the same status code, headers and body, so a caller cannot tell that a private brand exists from that endpoint.
 
@@ -255,13 +251,16 @@ The registry's liability position, dispute timelines and data handling are set o
 - [ ] Observation on channels beyond Amazon: Walmart and retailer web domains first?
 - [ ] Alignment with UCP and ACP: an extension field that points agents to a brand's authorized-retailers file.
 - [ ] Retailer-side verification: should retailers also verify their channel identifiers before a brand can list them?
+- [ ] Brand-declared `unauthorized`: a status for sellers the brand has explicitly said are not authorized, as distinct from `unlisted`, with a dispute path for the seller.
 
 ## 14. Changelog
 
 - **2026-09-23**
   - Verify answers carry `valid_until` (at most 24 hours after `checked`). Key retirement is based on it (sections 8, 9, 10, 12).
-  - `brand_unverified` answers MAY carry a `reason` (`not_registered`, `domain_unlinked`, `verification_lapsed`) and have `tier: null` (sections 7, 9).
+  - `brand_unverified` answers MAY carry a `reason` (`not_registered`, `domain_unlinked`, `verification_lapsed`) (section 9).
   - List endpoints respond to private-form brands exactly as to unknown brands (section 9).
 - **2026-09-24**
   - Key storage in a managed key service is a SHOULD for every registry, replacing the description of one registry's setup (section 8).
-  - `unlisted` and `expired` may also be answered from a brand's valid self-published file, with tier `self_published`, when the registry has no verified record for the brand (sections 7, 9).
+  - Evidence tiers are removed. Every answer about a seller needs a verified, independently linked brand domain, the brand's approval and a registry signature; without them the answer is `brand_unverified` (sections 5, 7, 9).
+  - Only registry-signed files count. An unsigned file, or one whose signature doesn't verify, is treated as no file, and a file vouches only for the domain it's fetched from (section 5).
+  - Observation is a separate `observed` field (`{ "last_seen" }` or `null`) on every answer, instead of a tier (sections 7, 9).

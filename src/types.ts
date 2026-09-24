@@ -98,7 +98,6 @@ export interface VerifyRequest {
 }
 
 export type VerifyStatus = "authorized" | "unlisted" | "expired" | "brand_unverified" | "disputed";
-export type EvidenceTier = "self_published" | "brand_attested" | "observed";
 export type UnverifiedReason = "not_registered" | "domain_unlinked" | "verification_lapsed";
 
 export interface Signal {
@@ -107,29 +106,33 @@ export interface Signal {
   detail?: string;
 }
 
+/** Section 7: the registry saw this seller selling on the channel within the last 30 days. */
+export interface Observation {
+  last_seen: Timestamp;
+}
+
 interface VerifyResponseBase {
   checked: Timestamp;
   /** At most 24 hours after `checked` (section 9). */
   valid_until: Timestamp;
+  /** Non-null only on `authorized` answers (section 7). */
+  observed: Observation | null;
   signals: Signal[];
   signature: Signature;
 }
 
 export interface VerifyResponseWithAuthorization extends VerifyResponseBase {
   status: "authorized" | "expired" | "disputed";
-  tier: EvidenceTier;
   authorization_id: string;
   expires: Timestamp;
 }
 
 export interface VerifyResponseUnlisted extends VerifyResponseBase {
   status: "unlisted";
-  tier: EvidenceTier;
 }
 
 export interface VerifyResponseBrandUnverified extends VerifyResponseBase {
   status: "brand_unverified";
-  tier: null;
   reason?: UnverifiedReason;
 }
 

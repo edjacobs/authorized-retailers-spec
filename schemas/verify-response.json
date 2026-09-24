@@ -3,16 +3,27 @@
   "$id": "https://authorizedretailers.ai/schemas/0.1/verify-response.json",
   "title": "POST /v0/verify response (section 9)",
   "type": "object",
-  "required": ["status", "tier", "checked", "valid_until", "signals", "signature"],
+  "required": ["status", "checked", "valid_until", "observed", "signals", "signature"],
   "additionalProperties": false,
   "properties": {
     "status": { "enum": ["authorized", "unlisted", "expired", "brand_unverified", "disputed"] },
-    "tier": { "enum": ["self_published", "brand_attested", "observed", null] },
     "reason": { "enum": ["not_registered", "domain_unlinked", "verification_lapsed"] },
     "authorization_id": { "$ref": "common.json#/$defs/id" },
     "expires": { "$ref": "common.json#/$defs/timestamp" },
     "checked": { "$ref": "common.json#/$defs/timestamp" },
     "valid_until": { "$ref": "common.json#/$defs/timestamp" },
+    "observed": {
+      "description": "Section 7: when the registry last saw this seller selling on the channel, within 30 days; otherwise null",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["last_seen"],
+          "additionalProperties": false,
+          "properties": { "last_seen": { "$ref": "common.json#/$defs/timestamp" } }
+        }
+      ]
+    },
     "signals": {
       "type": "array",
       "items": {
@@ -31,14 +42,12 @@
   "allOf": [
     {
       "if": { "properties": { "status": { "const": "brand_unverified" } } },
-      "then": {
-        "properties": { "tier": { "const": null } },
-        "not": { "anyOf": [{ "required": ["authorization_id"] }, { "required": ["expires"] }] }
-      },
-      "else": {
-        "properties": { "tier": { "type": "string" } },
-        "not": { "required": ["reason"] }
-      }
+      "then": { "not": { "anyOf": [{ "required": ["authorization_id"] }, { "required": ["expires"] }] } },
+      "else": { "not": { "required": ["reason"] } }
+    },
+    {
+      "if": { "not": { "properties": { "status": { "const": "authorized" } } } },
+      "then": { "properties": { "observed": { "const": null } } }
     },
     {
       "if": { "properties": { "status": { "enum": ["authorized", "expired", "disputed"] } } },

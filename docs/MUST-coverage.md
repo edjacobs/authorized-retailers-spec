@@ -11,11 +11,12 @@ Every MUST in [spec/spec-v0.1.md](../spec/spec-v0.1.md). Rules this package enfo
 | 4 | On lapse, a registry MUST flag `verification_lapsed`, notify the brand, and MUST NOT keep returning `authorized` | Registry obligation |
 | 5 | An authorization's `expires` MUST NOT be later than the file's `expires` | `test/must.test.ts`, fixture `full-authorization-expires-after-file` |
 | 5 | Readers MUST treat an expired file as containing no valid authorizations | `test/must.test.ts` (`validAuthorizations`), `test/jws.test.ts` (`list_expired`) |
-| 5 | Indexes MUST accept hand-written files that validate, and mark unsigned ones `self_published` | Schema side: `test/must.test.ts`. Marking is an index obligation |
+| 5 | Readers MUST treat an unsigned file, or one whose signature doesn't verify, as no file | `test/jws.test.ts` (`checkPublishedFile`) |
+| 5 | Readers MUST check the file's `brand.domain` is the domain it was fetched from | `test/jws.test.ts` (`checkPublishedFile`, `domain_mismatch`) |
 | 6 | Every authorization MUST name at least one channel identifier | `test/must.test.ts` |
 | 6 | Registry-proposed identifier links MUST be confirmed by the brand | Registry obligation |
 | 6 | Agents MUST match on the channel identifier, never the name | `test/must.test.ts` (`channelKey`, `authorizationsForChannel`) |
-| 7 | Every verification answer MUST state its evidence tier | `test/must.test.ts` (verify-response schema) |
+| 7 | Every answer MUST carry `observed`, and it MUST be `null` unless the status is `authorized` | `test/must.test.ts` (verify-response schema) |
 | 8 | Agents MUST reject signatures from keys no longer in the key set | `test/jws.test.ts` (`unknown_kid`) |
 | 9 | Every signed answer MUST carry `valid_until`, at most 24 hours after `checked`; agents MUST NOT rely on it afterwards | `test/must.test.ts` (schema and rule), `test/jws.test.ts` (`answer_expired`) |
 | 9 | `reason` MUST NOT appear on statuses other than `brand_unverified` | `test/must.test.ts` |

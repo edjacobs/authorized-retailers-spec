@@ -132,6 +132,7 @@ function verifyResponseRules(r: VerifyResponse): ValidationError[] {
   const validUntil = ts(errors, "/valid_until", r.valid_until);
   if ("expires" in r) ts(errors, "/expires", r.expires);
   for (const [i, s] of r.signals.entries()) ts(errors, `/signals/${i}/observed`, s.observed);
+  if (r.observed) ts(errors, "/observed/last_seen", r.observed.last_seen);
   if (checked !== null && validUntil !== null) {
     if (validUntil <= checked) {
       errors.push({ code: "valid_until_not_after_checked", path: "/valid_until", message: "valid_until must be after checked" });
