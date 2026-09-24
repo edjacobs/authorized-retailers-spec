@@ -3,7 +3,7 @@
 Draft v0.1 · 23 September 2026  
 Editor: Ed Jacobs
 
-Licensed under [CC BY 4.0](https://github.com/authorizedretailers-ai/spec/blob/main/LICENSE-docs). JSON Schemas and reference code: Apache-2.0.
+Licensed under [CC BY 4.0](https://github.com/authorizedretailers/spec/blob/main/LICENSE-docs). JSON Schemas and reference code: Apache-2.0.
 
 ## 1. Overview and scope
 
