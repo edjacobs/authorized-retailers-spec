@@ -1,8 +1,8 @@
 # Contributor License Agreement
 
-> **Draft. Have a lawyer review this before relying on it.** Replace `[OWNER]` with the legal name of the person or company that owns this project.
+> **Draft. Have a lawyer review this before relying on it.**
 
-This agreement is between you ("you") and [OWNER] ("the Owner"), which maintains the Authorized Retailers specification and related code in this repository (the "Project"). It applies to every Contribution you submit to the Project, now or later. You sign it by adding your GitHub username to [`cla/signatures.md`](cla/signatures.md) in a pull request, as described in [CONTRIBUTING.md](CONTRIBUTING.md).
+This agreement is between you ("you") and Ed Jacobs ("the Owner"), who maintains the Authorized Retailers specification and related code in this repository (the "Project"). It applies to every Contribution you submit to the Project, now or later. You sign it by adding your GitHub username to [`cla/signatures.md`](cla/signatures.md) in a pull request, as described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 1. Definitions
 

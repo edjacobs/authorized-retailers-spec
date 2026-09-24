@@ -1,6 +1,7 @@
 # Authorized Retailers Specification v0.1
 
-Sep 23, 2026 · Ed
+Draft v0.1 · 23 September 2026  
+Editor: Ed Jacobs
 
 Licensed under [CC BY 4.0](https://github.com/authorizedretailers-ai/spec/blob/main/LICENSE-docs). JSON Schemas and reference code: Apache-2.0.
 
@@ -154,9 +155,7 @@ Lists and verification answers are signed with a detached JWS (RFC 7515) over th
 - **Agent behavior:** agents SHOULD cache the key set and refetch it when they see an unknown `kid`. They MUST reject signatures from keys no longer in the set.
 - **Scheduled rotation:** every 90 days. The new key is published at least 7 days before first use. The old key stays published until everything it signed has expired: the latest `expires` of any list it signed, and the latest `valid_until` of any verify answer it signed (section 9).
 - **Emergency rotation:** a compromised key is removed from the set immediately, and every current list is re-signed with a new key. Short list expiry keeps this fast.
-- **Storage:** private keys are held in a managed key service. Signing happens server-side, and keys are never exposed to application code or staff.
-
-> **v0.1 reference registry deviation.** The authorizedretailers.ai reference registry does not yet meet the storage requirement above. Its private key is held as a secret of a dedicated signer Worker that has no public route and is reachable only from the registry's API Worker through a service binding. The signer exposes a single operation (sign these bytes, return a detached JWS) and never returns key material, so no other registry code, and no staff tool, reads the key. The key is still held by application code rather than a managed key service; this deviation will be removed when signing moves to a managed key service behind the same interface.
+- **Storage:** registries SHOULD hold private keys in a managed key service, sign server-side, and never expose keys to application code or staff.
 
 Brands do nothing during rotation. A pointer-form file always resolves to the current signature. A full-form file hosted by the brand SHOULD be kept in sync automatically by the registry's plugin or sync job.
 
@@ -263,6 +262,6 @@ The registry's liability position, dispute timelines and data handling are set o
   - Verify answers carry `valid_until` (at most 24 hours after `checked`). Key retirement is based on it (sections 8, 9, 10, 12).
   - `brand_unverified` answers MAY carry a `reason` (`not_registered`, `domain_unlinked`, `verification_lapsed`) and have `tier: null` (sections 7, 9).
   - List endpoints respond to private-form brands exactly as to unknown brands (section 9).
-  - Added the v0.1 reference registry signing-key deviation note (section 8).
 - **2026-09-24**
+  - Key storage in a managed key service is a SHOULD for every registry, replacing the description of one registry's setup (section 8).
   - `unlisted` and `expired` may also be answered from a brand's valid self-published file, with tier `self_published`, when the registry has no verified record for the brand (sections 7, 9).
