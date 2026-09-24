@@ -16,7 +16,7 @@
       "items": { "$ref": "common.json#/$defs/authorization" }
     },
     "signature": {
-      "description": "Optional: hand-written files may be unsigned and are then self_published (section 5).",
+      "description": "Optional in the schema: an unsigned file is well-formed but does not count (section 5).",
       "$ref": "common.json#/$defs/signature"
     }
   }
