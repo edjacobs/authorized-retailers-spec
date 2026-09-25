@@ -15,6 +15,7 @@ Every MUST in [spec/spec-v0.1.md](../spec/spec-v0.1.md). Rules this package enfo
 | 5 | Readers MUST check the file's `brand.domain` is the domain it was fetched from | `test/jws.test.ts` (`checkPublishedFile`, `domain_mismatch`) |
 | 6 | Every authorization MUST name at least one channel identifier | `test/must.test.ts` |
 | 6 | Registry-proposed identifier links MUST be confirmed by the brand | Registry obligation |
+| 6 | Confirming a marketplace seller ID exists MUST NOT be presented as proof of control | Registry obligation |
 | 6 | Agents MUST match on the channel identifier, never the name | `test/must.test.ts` (`channelKey`, `authorizationsForChannel`) |
 | 7 | Every answer MUST carry `observed`, and it MUST be `null` unless the status is `authorized` | `test/must.test.ts` (verify-response schema) |
 | 8 | Agents MUST reject signatures from keys no longer in the key set | `test/jws.test.ts` (`unknown_kid`) |
@@ -27,5 +28,6 @@ Every MUST in [spec/spec-v0.1.md](../spec/spec-v0.1.md). Rules this package enfo
 | 12 | Brand accounts MUST use multi-factor authentication | Registry obligation |
 | 12 | Agents MUST reject answers past their `valid_until` | `test/jws.test.ts` |
 | 12 | Registries MUST NOT publish personal addresses of sole-trader retailers | Registry obligation |
+| 12 | A mailbox-address warning MUST NOT change verify answers | Registry obligation |
 
 Also tested, though not MUST-keyword rules: RFC 8785 canonicalization against the RFC's own test vectors (`test/jcs.test.ts`), and the 180-day maximum expiry (fixtures `full-expiry-over-180-days`, `full-max-expiry`).

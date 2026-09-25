@@ -4,9 +4,9 @@
 // The compact serialization is "<header>..<signature>": the payload segment is empty because the
 // reader recomputes it from the document it already has.
 
-import { canonicalBytes, canonicalize } from "./jcs";
-import { parseTimestamp } from "./timestamp";
-import type { Signature } from "./types";
+import { canonicalBytes, canonicalize } from "./jcs.js";
+import { parseTimestamp } from "./timestamp.js";
+import type { Signature } from "./types.js";
 
 export const JWS_ALG = "EdDSA";
 const ED25519 = { name: "Ed25519" } as const;

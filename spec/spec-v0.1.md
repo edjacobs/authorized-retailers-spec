@@ -1,9 +1,9 @@
 # Authorized Retailers Specification v0.1
 
-Draft v0.1 · 23 September 2026  
+Draft v0.1 · 23 September 2026, updated 25 September 2026  
 Editor: Ed Jacobs
 
-Licensed under [CC BY 4.0](https://github.com/authorizedretailers/spec/blob/main/LICENSE-docs). JSON Schemas and reference code: Apache-2.0.
+Licensed under [CC BY 4.0](https://github.com/authorizedretailers/spec/blob/main/LICENSE-SPEC). JSON Schemas and reference code: Apache-2.0.
 
 ## 1. Overview and scope
 
@@ -27,7 +27,7 @@ The key words MUST, SHOULD and MAY are used as defined in RFC 2119.
 | --- | --- |
 | Brand | The owner of a trademark whose products are sold, identified by a verified domain. |
 | Retailer | Any seller authorized to sell the brand's products: a store, a marketplace seller or a website. |
-| Distributor | A party that supplies retailers. A distributor MAY propose retailers but cannot authorize them. |
+| Distributor | A party that supplies retailers. A distributor MAY propose retailers to a brand that has designated it, but cannot authorize them. |
 | Authorization | A brand's signed statement that a retailer may sell within a stated scope until a stated expiry. |
 | Channel | A place a seller sells, such as a marketplace in one country or a web domain. |
 | Observation | Evidence from outside the brand's list that an authorized seller is actively selling on a channel. |
@@ -49,6 +49,10 @@ flowchart LR
 ```
 
 Distributors and retailers can request an authorization. Only the brand's approval creates one. Anything the brand has not approved verifies as unlisted.
+
+A registry SHOULD accept proposals from a distributor only if the brand has designated it and it has proven control of its own domain as in section 4. A brand MAY limit what a designated distributor can propose: by territory, by product line and to web stores, marketplace sellers or both.
+
+A request to a brand that is not yet registered or verified MAY be held by the registry and delivered once the brand verifies its domain. A held request has no effect on verify answers.
 
 Each authorization MUST carry a scope:
 
@@ -90,7 +94,7 @@ Full form example:
 {
   "spec": "authorized-retailers/0.1",
   "form": "full",
-  "brand": { "name": "Example Brand", "domain": "examplebrand.com" },
+  "brand": { "name": "Example Brand", "domain": "brand.example" },
   "issued": "2026-09-23T00:00:00Z",
   "expires": "2026-12-22T00:00:00Z",
   "authorizations": [
@@ -100,7 +104,7 @@ Full form example:
       "channels": [
         { "type": "amazon", "marketplace": "US", "seller_id": "A1B2C3D4E5F6G7" },
         { "type": "walmart", "marketplace": "US", "seller_id": "101234567" },
-        { "type": "web", "domain": "exampleretail.com" }
+        { "type": "web", "domain": "retailer.example" }
       ],
       "scope": { "territories": ["US", "CA"], "product_lines": ["all"] },
       "proposed_by": null,
@@ -111,7 +115,7 @@ Full form example:
 }
 ```
 
-Pointer form: `{"spec": "authorized-retailers/0.1", "form": "pointer", "brand": {...}, "list": "https://authorizedretailers.ai/v0/brands/examplebrand.com/list"}`.
+Pointer form: `{"spec": "authorized-retailers/0.1", "form": "pointer", "brand": {...}, "list": "https://authorizedretailers.ai/v0/brands/brand.example/list"}`.
 
 Private form: `{"spec": "authorized-retailers/0.1", "form": "private", "brand": {...}, "verify": "https://authorizedretailers.ai/v0/verify"}`.
 
@@ -131,6 +135,10 @@ Agents see sellers as channel identifiers, not company names, so every authoriza
 
 New channel types are added by registry proposal and published in the spec changelog.
 
+A registry MAY let retailers prove their own channel identifiers before they request a listing: a `web` domain by the same DNS TXT or hosted-file method as a brand domain (section 4), and a marketplace seller ID by confirming with the marketplace that it exists. Confirming that a seller ID exists does not prove that the retailer controls it, and a registry MUST NOT present it as proof of control.
+
+A registry MAY decline to register a marketplace seller that does not publicly list a seller name, business name and address on its marketplace.
+
 A registry MAY group a retailer's identifiers under one `entity_id`, so one retailer selling on several channels is one record. Registry-proposed links between identifiers MUST be confirmed by the brand before they count as authorized. Agents MUST match on the channel identifier they see, never on the retailer name.
 
 ## 7. Evidence and observation
@@ -139,7 +147,7 @@ Every answer about a seller rests on the same evidence: a verified domain indepe
 
 A registry MAY also observe sellers: evidence from outside the brand's list that an authorized seller is actively selling the brand's products on the stated channel. Every answer MUST carry `observed`. On an `authorized` answer it is `{ "last_seen": <timestamp> }` when the registry has seen this seller selling within the last 30 days, and otherwise `null`. On every other status it MUST be `null`. Observation never changes the status.
 
-In v0.1, the reference registry observes Amazon marketplaces only.
+The reference registry does not observe sellers yet. Amazon marketplaces are planned first.
 
 Observation can also raise flags on an authorized seller: sudden changes in account name, address, catalog or volume that suggest a compromised account. A registry MAY return these as `signals` alongside the answer, without changing the authorization status.
 
@@ -165,7 +173,7 @@ Request: `POST /v0/verify`
 
 ```json
 {
-  "brand_domain": "examplebrand.com",
+  "brand_domain": "brand.example",
   "channel": { "type": "amazon", "marketplace": "US", "seller_id": "A1B2C3D4E5F6G7" },
   "territory": "US",
   "product_line": "all"
@@ -238,6 +246,7 @@ The registry's liability position, dispute timelines and data handling are set o
 - **Brand impersonation:** mitigated by domain verification plus independent brand linkage (section 4). This is the highest-impact attack, because a false brand could authorize diverters.
 - **Account takeover at the registry:** brand accounts MUST use multi-factor authentication. Revocations and new authorizations SHOULD trigger an email to every brand admin.
 - **Compromised seller accounts:** an authorized seller's marketplace account can be taken over. Observation signals (section 7) help, but authorization does not guarantee the seller's current conduct.
+- **Mailbox addresses:** a seller whose listed address is a PO box or a commercial mailbox can be hard to trace. A registry MAY warn a brand before it authorizes such a seller. The warning is for the brand only and MUST NOT change verify answers.
 - **List enumeration:** private-mode lists are protected by answering single questions only, with per-caller rate limits and query logging.
 - **Personal data:** channel identifiers and business names are business data. Registries MUST NOT publish personal addresses of sole-trader retailers. `physical` addresses are shown only for storefronts.
 - **Replay:** agents SHOULD check the `checked` timestamp on a signed answer and MUST reject answers past their `valid_until`.
@@ -250,7 +259,6 @@ The registry's liability position, dispute timelines and data handling are set o
 - [ ] Bring-your-own-key signing for large brands, and how countersigning works.
 - [ ] Observation on channels beyond Amazon: Walmart and retailer web domains first?
 - [ ] Alignment with UCP and ACP: an extension field that points agents to a brand's authorized-retailers file.
-- [ ] Retailer-side verification: should retailers also verify their channel identifiers before a brand can list them?
 - [ ] Brand-declared `unauthorized`: a status for sellers the brand has explicitly said are not authorized, as distinct from `unlisted`, with a dispute path for the seller.
 
 ## 14. Changelog
@@ -264,3 +272,11 @@ The registry's liability position, dispute timelines and data handling are set o
   - Evidence tiers are removed. Every answer about a seller needs a verified, independently linked brand domain, the brand's approval and a registry signature; without them the answer is `brand_unverified` (sections 5, 7, 9).
   - Only registry-signed files count. An unsigned file, or one whose signature doesn't verify, is treated as no file, and a file vouches only for the domain it's fetched from (section 5).
   - Observation is a separate `observed` field (`{ "last_seen" }` or `null`) on every answer, instead of a tier (sections 7, 9).
+- **2026-09-25**
+  - Distributors: a registry SHOULD accept proposals only from distributors the brand has designated and that have proven control of their domain. Brands MAY limit what a distributor can propose (sections 2, 3).
+  - A registry MAY hold a request to a brand that isn't registered yet and deliver it once the brand verifies (section 3).
+  - Retailer-side verification of channel identifiers, an open question, is now a MAY. Confirming a marketplace seller ID exists MUST NOT be presented as proof of control (sections 6, 13).
+  - A registry MAY decline marketplace sellers that don't list a seller name, business name and address (section 6).
+  - A registry MAY warn brands about sellers at PO boxes or commercial mailboxes. Verify answers don't change (section 12).
+  - Corrected: the reference registry doesn't observe sellers yet (section 7).
+  - Examples use reserved `.example` domains.

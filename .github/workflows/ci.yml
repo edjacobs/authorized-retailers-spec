@@ -27,3 +27,15 @@ jobs:
       - run: npm test
       - run: npm run test:dist
       - run: npx attw --pack . --profile esm-only --exclude-entrypoints ./spec.md
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@v3.97.9
+        with:
+          extra_args: --results=verified,unknown

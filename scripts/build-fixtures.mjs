@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
 const JWS = "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYtMDkifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy";
-const brand = { name: "Example Brand", domain: "examplebrand.com" };
+const brand = { name: "Example Brand", domain: "brand.example" };
 
 const fullSigned = {
   spec: "authorized-retailers/0.1",
@@ -21,7 +21,7 @@ const fullSigned = {
       channels: [
         { type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" },
         { type: "walmart", marketplace: "US", seller_id: "101234567" },
-        { type: "web", domain: "exampleretail.com" },
+        { type: "web", domain: "retailer.example" },
       ],
       scope: { territories: ["US", "CA"], product_lines: ["all"] },
       proposed_by: null,
@@ -36,12 +36,12 @@ const pointer = {
   spec: "authorized-retailers/0.1",
   form: "pointer",
   brand,
-  list: "https://authorizedretailers.ai/v0/brands/examplebrand.com/list",
+  list: "https://authorizedretailers.ai/v0/brands/brand.example/list",
 };
 const priv = { spec: "authorized-retailers/0.1", form: "private", brand, verify: "https://authorizedretailers.ai/v0/verify" };
 
 const request = {
-  brand_domain: "examplebrand.com",
+  brand_domain: "brand.example",
   channel: { type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" },
   territory: "US",
   product_line: "all",
@@ -110,10 +110,10 @@ const cases = [
   ["file", "full-wildcard-mixed", auth0((a) => (a.scope.territories = ["*", "US"])), "schema", "'*' must stand alone"],
   ["file", "full-lowercase-territory", auth0((a) => (a.scope.territories = ["us"])), "schema", "Country codes are uppercase alpha-2"],
   ["file", "full-all-mixed", auth0((a) => (a.scope.product_lines = ["all", "running"])), "schema", "'all' must stand alone"],
-  ["file", "full-unknown-channel-type", auth0((a) => a.channels.push({ type: "shopify", domain: "x.myshopify.com" })), "schema", "Section 6: unlisted channel type"],
+  ["file", "full-unknown-channel-type", auth0((a) => a.channels.push({ type: "shopify", domain: "shop.example" })), "schema", "Section 6: unlisted channel type"],
   ["file", "full-amazon-missing-seller-id", auth0((a) => delete a.channels[0].seller_id), "schema", "Section 6: amazon needs seller_id"],
   ["file", "full-web-missing-domain", auth0((a) => delete a.channels[2].domain), "schema", "Section 6: web needs domain"],
-  ["file", "full-web-domain-is-url", auth0((a) => (a.channels[2].domain = "https://exampleretail.com/")), "schema", "Domains are bare hostnames"],
+  ["file", "full-web-domain-is-url", auth0((a) => (a.channels[2].domain = "https://retailer.example/")), "schema", "Domains are bare hostnames"],
   ["file", "full-physical-missing-country", auth0((a) => a.channels.push({ type: "physical", address: "1 Main St" })), "schema", "Section 6: physical needs country"],
   ["file", "full-wrong-spec", edit(fullUnsigned, (f) => (f.spec = "authorized-retailers/1.0")), "schema", "Unknown spec version"],
   ["file", "full-missing-file-expires", edit(fullUnsigned, (f) => delete f.expires), "schema", "File needs expires"],
@@ -121,7 +121,7 @@ const cases = [
   ["file", "full-extra-property", edit(fullUnsigned, (f) => (f.price = 10)), "schema", "Section 1: no pricing; unknown properties rejected"],
   ["file", "full-attached-jws", edit(fullSigned, (f) => (f.signature.jws = "aGVhZA.cGF5bG9hZA.c2ln")), "schema", "Section 8: JWS must be detached"],
   ["file", "full-signature-missing-kid", edit(fullSigned, (f) => delete f.signature.kid), "schema", "Section 8: every signature names its kid"],
-  ["file", "pointer-http-url", edit(pointer, (f) => (f.list = "http://authorizedretailers.ai/v0/brands/examplebrand.com/list")), "schema", "Pointer must be HTTPS"],
+  ["file", "pointer-http-url", edit(pointer, (f) => (f.list = "http://authorizedretailers.ai/v0/brands/brand.example/list")), "schema", "Pointer must be HTTPS"],
   ["file", "private-missing-verify", edit(priv, (f) => delete f.verify), "schema", "Private form needs a verify endpoint"],
   ["file", "private-with-authorizations", edit(priv, (f) => (f.authorizations = fullSigned.authorizations)), "schema", "Section 5: private form carries no retailers"],
   ["file", "unknown-form", edit(priv, (f) => (f.form = "partial")), "schema", "Only full, pointer, private"],
@@ -135,12 +135,12 @@ const cases = [
 
   // ---- verify request
   ["verify-request", "amazon", request, null, "Section 9 example"],
-  ["verify-request", "web-no-product-line", { brand_domain: "examplebrand.com", channel: { type: "web", domain: "exampleretail.com" }, territory: "CA" }, null, "product_line defaults to all"],
+  ["verify-request", "web-no-product-line", { brand_domain: "brand.example", channel: { type: "web", domain: "retailer.example" }, territory: "CA" }, null, "product_line defaults to all"],
   ["verify-request", "physical-channel", edit(request, (r) => (r.channel = { type: "physical", address: "1 Main St", country: "US" })), "schema", "Section 6: physical is not verifiable"],
   ["verify-request", "wildcard-territory", edit(request, (r) => (r.territory = "*")), "schema", "A request names one territory"],
   ["verify-request", "missing-channel", edit(request, (r) => delete r.channel), "schema", "Channel is required"],
   ["verify-request", "retailer-name-only", edit(request, (r) => { delete r.channel; r.retailer = "Example Retail LLC"; }), "schema", "Section 6: agents match on identifiers, not names"],
-  ["verify-request", "domain-with-scheme", edit(request, (r) => (r.brand_domain = "https://examplebrand.com")), "schema", "Bare hostname only"],
+  ["verify-request", "domain-with-scheme", edit(request, (r) => (r.brand_domain = "https://brand.example")), "schema", "Bare hostname only"],
 
   // ---- verify response: valid
   ["verify-response", "authorized", authorized, null, "Section 9 example"],

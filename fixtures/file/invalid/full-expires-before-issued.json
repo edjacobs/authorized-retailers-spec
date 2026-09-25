@@ -3,7 +3,7 @@
   "form": "full",
   "brand": {
     "name": "Example Brand",
-    "domain": "examplebrand.com"
+    "domain": "brand.example"
   },
   "issued": "2026-09-23T00:00:00Z",
   "expires": "2026-09-22T00:00:00Z",
@@ -27,7 +27,7 @@
         },
         {
           "type": "web",
-          "domain": "exampleretail.com"
+          "domain": "retailer.example"
         }
       ],
       "scope": {

@@ -1,8 +1,8 @@
 {
-  "brand_domain": "examplebrand.com",
+  "brand_domain": "brand.example",
   "channel": {
     "type": "web",
-    "domain": "exampleretail.com"
+    "domain": "retailer.example"
   },
   "territory": "CA"
 }

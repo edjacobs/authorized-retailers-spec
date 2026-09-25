@@ -1,13 +1,7 @@
 import { Validator, type OutputUnit } from "@cfworker/json-schema";
-import common from "../schemas/common.json";
-import fileFull from "../schemas/file-full.json";
-import filePointer from "../schemas/file-pointer.json";
-import filePrivate from "../schemas/file-private.json";
-import file from "../schemas/file.json";
-import verifyRequest from "../schemas/verify-request.json";
-import verifyResponse from "../schemas/verify-response.json";
-import { MAX_ANSWER_VALIDITY_MS, MAX_EXPIRY_MS } from "./constants";
-import { parseTimestamp } from "./timestamp";
+import { common, file, fileFull, filePointer, filePrivate, verifyRequest, verifyResponse } from "./schemas.js";
+import { MAX_ANSWER_VALIDITY_MS, MAX_EXPIRY_MS } from "./constants.js";
+import { parseTimestamp } from "./timestamp.js";
 import type {
   AuthorizedRetailersFile,
   Channel,
@@ -17,7 +11,7 @@ import type {
   PrivateFile,
   VerifyRequest,
   VerifyResponse,
-} from "./types";
+} from "./types.js";
 
 export type ErrorCode =
   | "schema"

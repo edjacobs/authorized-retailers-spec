@@ -3,7 +3,7 @@
   "form": "pointer",
   "brand": {
     "name": "Example Brand",
-    "domain": "examplebrand.com"
+    "domain": "brand.example"
   },
-  "list": "http://authorizedretailers.ai/v0/brands/examplebrand.com/list"
+  "list": "http://authorizedretailers.ai/v0/brands/brand.example/list"
 }

@@ -1,5 +1,5 @@
 {
-  "brand_domain": "https://examplebrand.com",
+  "brand_domain": "https://brand.example",
   "channel": {
     "type": "amazon",
     "marketplace": "US",

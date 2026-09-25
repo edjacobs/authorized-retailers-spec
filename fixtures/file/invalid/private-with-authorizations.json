@@ -3,7 +3,7 @@
   "form": "private",
   "brand": {
     "name": "Example Brand",
-    "domain": "examplebrand.com"
+    "domain": "brand.example"
   },
   "verify": "https://authorizedretailers.ai/v0/verify",
   "authorizations": [
@@ -26,7 +26,7 @@
         },
         {
           "type": "web",
-          "domain": "exampleretail.com"
+          "domain": "retailer.example"
         }
       ],
       "scope": {

@@ -2,27 +2,62 @@
   "name": "@authorizedretailers/spec",
   "version": "0.1.0",
   "description": "Authorized Retailers v0.1: JSON Schemas, types, validator, identifier matching, RFC 8785 canonicalization and detached-JWS reference verifier",
-  "license": "Apache-2.0",
+  "license": "Apache-2.0 AND CC-BY-4.0",
   "author": "Authorized Retailers",
   "homepage": "https://authorizedretailers.ai/spec",
-  "repository": { "type": "git", "url": "git+https://github.com/authorizedretailers/spec.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/authorizedretailers/spec.git"
+  },
   "bugs": "https://github.com/authorizedretailers/spec/issues",
-  "keywords": ["authorized-retailers", "ai-agents", "agentic-commerce", "brand-protection", "jws", "json-schema"],
+  "keywords": [
+    "authorized-retailers",
+    "authorized-retailers-json",
+    "ai-agents",
+    "agentic-commerce",
+    "brand-protection",
+    "json-schema",
+    "jws",
+    "verification"
+  ],
   "type": "module",
   "sideEffects": false,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-    "./jws": { "types": "./dist/jws.d.ts", "default": "./dist/jws.js" },
-    "./jcs": { "types": "./dist/jcs.d.ts", "default": "./dist/jcs.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./jws": {
+      "types": "./dist/jws.d.ts",
+      "default": "./dist/jws.js"
+    },
+    "./jcs": {
+      "types": "./dist/jcs.d.ts",
+      "default": "./dist/jcs.js"
+    },
     "./schemas/*": "./schemas/*",
     "./fixtures/*": "./fixtures/*",
     "./spec.md": "./spec/spec-v0.1.md",
     "./package.json": "./package.json"
   },
-  "files": ["dist", "schemas", "fixtures", "spec", "LICENSE", "LICENSE-docs"],
+  "files": [
+    "dist",
+    "schemas",
+    "fixtures",
+    "spec",
+    "LICENSE",
+    "LICENSE-SPEC"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "schemas": "node scripts/embed-schemas.mjs",
     "test": "vitest run",
     "test:dist": "npm run build && node test/dist-smoke.mjs",
     "typecheck": "tsc -p .",
@@ -35,7 +70,6 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@types/node": "^22.0.0",
-    "tsup": "^8.5.1",
     "typescript": "^5.9.0",
     "vitest": "^4.1.0"
   }

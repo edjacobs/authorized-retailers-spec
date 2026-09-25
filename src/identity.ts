@@ -1,5 +1,5 @@
-import type { Authorization, Channel, FullFile } from "./types";
-import { parseTimestamp } from "./timestamp";
+import type { Authorization, Channel, FullFile } from "./types.js";
+import { parseTimestamp } from "./timestamp.js";
 
 /** Marketplace codes some platforms use in place of ISO 3166-1 alpha-2. */
 const MARKETPLACE_ALIASES: Record<string, string> = { UK: "GB" };

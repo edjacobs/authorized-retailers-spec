@@ -18,7 +18,7 @@ describe("channelKey", () => {
   it("normalizes case, whitespace, www and the UK alias", () => {
     expect(channelKey({ type: "amazon", marketplace: "UK", seller_id: " a1b2c3 " })).toBe("amazon:GB:A1B2C3");
     expect(channelKey({ type: "ebay", marketplace: "US", seller_id: "CornerShoes" })).toBe("ebay:US:cornershoes");
-    expect(channelKey({ type: "web", domain: "WWW.ExampleRetail.com." })).toBe("web:exampleretail.com");
+    expect(channelKey({ type: "web", domain: "WWW.Retailer.Example." })).toBe("web:retailer.example");
     expect(channelKey({ type: "walmart", marketplace: "us", seller_id: "101234567" })).toBe("walmart:US:101234567");
   });
 });
@@ -26,13 +26,13 @@ describe("channelKey", () => {
 describe("normalizeVerifyRequest", () => {
   it("turns sloppy agent input into a valid canonical request", () => {
     const raw = {
-      brand_domain: " WWW.ExampleBrand.com ",
+      brand_domain: " WWW.Brand.Example ",
       channel: { type: "Amazon", marketplace: "us", seller_id: " A1B2C3D4E5F6G7 " },
       territory: "uk",
     };
     const norm = normalizeVerifyRequest(raw);
     expect(norm).toEqual({
-      brand_domain: "examplebrand.com",
+      brand_domain: "brand.example",
       channel: { type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" },
       territory: "GB",
     });

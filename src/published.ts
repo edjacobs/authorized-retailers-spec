@@ -1,9 +1,9 @@
 // Section 5: which published files count. Only a file signed by a registry, and only for the domain
 // it was fetched from. Indexes and agents reading brands' files directly both apply this.
 
-import { normalizeDomain } from "./identity";
-import { verifyDocument, type Jwks, type VerifyFailure } from "./jws";
-import type { AuthorizedRetailersFile } from "./types";
+import { normalizeDomain } from "./identity.js";
+import { verifyDocument, type Jwks, type VerifyFailure } from "./jws.js";
+import type { AuthorizedRetailersFile } from "./types.js";
 
 export type PublishedFileCheck =
   | { counts: true; kid: string }
