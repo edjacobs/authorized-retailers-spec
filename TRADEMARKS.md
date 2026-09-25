@@ -1,6 +1,6 @@
 # Trademarks
 
-"authorizedretailers.ai", "Authorized Retailers" used as the name of this standard or of a registry, and the Authorized Retailers logos are trademarks of [ENTITY PLACEHOLDER].
+"authorizedretailers.ai", "Authorized Retailers" used as the name of this standard or of a registry, and the Authorized Retailers logos are trademarks of Ed Jacobs.
 
 The licenses in this repository cover the specification text, schemas, code and fixtures. They do not grant any right to use these trademarks.
 
@@ -11,7 +11,7 @@ The licenses in this repository cover the specification text, schemas, code and 
 
 ## What you may not do
 
-- Imply that [ENTITY PLACEHOLDER] endorses, certifies, audits or partners with you or your product.
+- Imply that Ed Jacobs endorses, certifies, audits or partners with you or your product.
 - Offer or advertise a certification, badge or seal under these names.
 - Run a registry, index or verification service under these names, or a confusingly similar one, without written permission.
 - Use the logos without written permission.
@@ -22,4 +22,4 @@ You may fork the specification under its licenses. A fork that changes the speci
 
 ## Questions
 
-Email [CONTACT EMAIL PLACEHOLDER] for permission or questions.
+Email hello@authorizedretailers.ai for permission or questions.
