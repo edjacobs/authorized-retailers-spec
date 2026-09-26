@@ -146,6 +146,13 @@
     "note": "Domains are bare hostnames"
   },
   {
+    "path": "file/invalid/full-physical-only.json",
+    "kind": "file",
+    "valid": false,
+    "expect": "no_online_channel",
+    "note": "Section 6: physical alone does not authorize"
+  },
+  {
     "path": "file/invalid/full-physical-missing-country.json",
     "kind": "file",
     "valid": false,

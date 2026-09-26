@@ -246,11 +246,14 @@ export const common = {
           "$ref": "#/$defs/party"
         },
         "channels": {
-          "description": "Section 6: every authorization MUST name at least one channel identifier.",
+          "description": "Section 6: every authorization MUST name at least one online channel identifier (amazon, walmart, ebay or web). A physical identifier alone does not authorize anything.",
           "type": "array",
           "minItems": 1,
           "items": {
             "$ref": "#/$defs/channel"
+          },
+          "contains": {
+            "$ref": "#/$defs/verifiableChannel"
           }
         },
         "scope": {

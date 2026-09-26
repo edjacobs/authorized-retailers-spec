@@ -78,12 +78,38 @@ describe("§5 readers MUST treat an unsigned file as no file, and a file vouches
   });
 });
 
-describe("§6 every authorization MUST name at least one channel identifier", () => {
+describe("§6 every authorization MUST name at least one online channel identifier", () => {
   it("rejects an empty channel list", () => {
     expect(validateFile(fx("file/invalid/full-no-channels.json")).valid).toBe(false);
   });
   it("rejects a name-only retailer", () => {
     expect(validateFile(fx("file/invalid/full-name-only-retailer.json")).valid).toBe(false);
+  });
+
+  const physical = { type: "physical", address: "1 High St, London", country: "GB" } as const;
+  const web = { type: "web", domain: "retailer.example" } as const;
+  const withChannels = (channels: FullFile["authorizations"][number]["channels"]) => {
+    const f = signed();
+    f.authorizations[0]!.channels = channels;
+    return f;
+  };
+
+  it("rejects physical only, with a clear error", () => {
+    for (const validate of [validateFile, validateFullFile]) {
+      const r = validate(withChannels([physical]));
+      expect(r.valid).toBe(false);
+      expect(r.errors[0]).toMatchObject({ code: "no_online_channel", path: "/authorizations/0/channels" });
+      expect(r.errors[0]!.message).toMatch(/online channel identifier/);
+    }
+    expect(validateFile(fx("file/invalid/full-physical-only.json")).valid).toBe(false);
+  });
+  it("accepts physical + web", () => {
+    expect(validateFile(withChannels([physical, web])).valid).toBe(true);
+    expect(validateFullFile(withChannels([physical, web])).valid).toBe(true);
+  });
+  it("accepts web only", () => {
+    expect(validateFile(withChannels([web])).valid).toBe(true);
+    expect(validateFullFile(withChannels([web])).valid).toBe(true);
   });
 });
 

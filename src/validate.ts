@@ -15,6 +15,7 @@ import type {
 
 export type ErrorCode =
   | "schema"
+  | "no_online_channel"
   | "invalid_timestamp"
   | "expires_not_after_issued"
   | "file_expiry_exceeds_max"
@@ -83,6 +84,33 @@ function ts(errors: ValidationError[], path: string, value: string): number | nu
   return ms;
 }
 
+const ONLINE_CHANNEL_TYPES = new Set(["amazon", "walmart", "ebay", "web"]);
+
+/**
+ * Section 6: every authorization MUST name at least one online channel identifier. The schema
+ * enforces this too (`contains`), but its error is buried in generic output, so name it plainly.
+ * Runs on unvalidated input, so it checks shapes defensively.
+ */
+function onlineChannelErrors(input: unknown): ValidationError[] {
+  const auths = (input as { authorizations?: unknown } | null)?.authorizations;
+  if (!Array.isArray(auths)) return [];
+  const errors: ValidationError[] = [];
+  auths.forEach((a, i) => {
+    const channels = (a as { channels?: unknown } | null)?.channels;
+    if (!Array.isArray(channels) || channels.length === 0) return;
+    const online = channels.some((c) => ONLINE_CHANNEL_TYPES.has((c as { type?: unknown } | null)?.type as string));
+    if (!online) {
+      errors.push({
+        code: "no_online_channel",
+        path: `/authorizations/${i}/channels`,
+        message:
+          "an authorization MUST name at least one online channel identifier (amazon, walmart, ebay or web); a physical identifier alone does not authorize anything (section 6)",
+      });
+    }
+  });
+  return errors;
+}
+
 /** Rules the JSON Schema cannot express (sections 5 and 10). Assumes the file already passed the schema. */
 function fullFileRules(f: FullFile): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -143,7 +171,8 @@ function verifyResponseRules(r: VerifyResponse): ValidationError[] {
 
 /** Validates an authorized-retailers.json file of any form. */
 export function validateFile(input: unknown): ValidationResult<AuthorizedRetailersFile> {
-  const errors = schemaErrors(file, input);
+  const isFull = (input as { form?: unknown } | null)?.form === "full";
+  const errors = [...(isFull ? onlineChannelErrors(input) : []), ...schemaErrors(file, input)];
   if (errors.length === 0 && (input as AuthorizedRetailersFile).form === "full") {
     errors.push(...fullFileRules(input as FullFile));
   }
@@ -151,7 +180,7 @@ export function validateFile(input: unknown): ValidationResult<AuthorizedRetaile
 }
 
 export function validateFullFile(input: unknown): ValidationResult<FullFile> {
-  const errors = schemaErrors(fileFull, input);
+  const errors = [...onlineChannelErrors(input), ...schemaErrors(fileFull, input)];
   if (errors.length === 0) errors.push(...fullFileRules(input as FullFile));
   return done(errors, input);
 }

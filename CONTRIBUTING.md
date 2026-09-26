@@ -14,7 +14,7 @@ Security issues go to the address in [SECURITY.md](SECURITY.md), not the feedbac
 
 ## Pull requests
 
-This repository doesn't accept pull requests. The maintainer makes every change. Proposed changes to the specification are published for public comment before they're released (see [GOVERNANCE.md](GOVERNANCE.md)), and the changelog notes where feedback shaped them.
+This repository doesn't accept pull requests. The maintainer makes every change (see [GOVERNANCE.md](GOVERNANCE.md)). Every change is listed in the changelog, with a note where feedback shaped it.
 
 ## Development
 

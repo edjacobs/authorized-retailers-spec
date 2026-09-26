@@ -114,6 +114,7 @@ const cases = [
   ["file", "full-amazon-missing-seller-id", auth0((a) => delete a.channels[0].seller_id), "schema", "Section 6: amazon needs seller_id"],
   ["file", "full-web-missing-domain", auth0((a) => delete a.channels[2].domain), "schema", "Section 6: web needs domain"],
   ["file", "full-web-domain-is-url", auth0((a) => (a.channels[2].domain = "https://retailer.example/")), "schema", "Domains are bare hostnames"],
+  ["file", "full-physical-only", auth0((a) => (a.channels = [{ type: "physical", address: "1 High St, London", country: "GB" }])), "no_online_channel", "Section 6: physical alone does not authorize"],
   ["file", "full-physical-missing-country", auth0((a) => a.channels.push({ type: "physical", address: "1 Main St" })), "schema", "Section 6: physical needs country"],
   ["file", "full-wrong-spec", edit(fullUnsigned, (f) => (f.spec = "authorized-retailers/1.0")), "schema", "Unknown spec version"],
   ["file", "full-missing-file-expires", edit(fullUnsigned, (f) => delete f.expires), "schema", "File needs expires"],

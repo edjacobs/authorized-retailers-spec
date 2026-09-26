@@ -13,7 +13,7 @@ Every MUST in [spec/spec-v0.1.md](../spec/spec-v0.1.md). Rules this package enfo
 | 5 | Readers MUST treat an expired file as containing no valid authorizations | `test/must.test.ts` (`validAuthorizations`), `test/jws.test.ts` (`list_expired`) |
 | 5 | Readers MUST treat an unsigned file, or one whose signature doesn't verify, as no file | `test/jws.test.ts` (`checkPublishedFile`) |
 | 5 | Readers MUST check the file's `brand.domain` is the domain it was fetched from | `test/jws.test.ts` (`checkPublishedFile`, `domain_mismatch`) |
-| 6 | Every authorization MUST name at least one channel identifier | `test/must.test.ts` |
+| 6 | Every authorization MUST name at least one online channel identifier (`physical` alone fails) | `test/must.test.ts` |
 | 6 | Registry-proposed identifier links MUST be confirmed by the brand | Registry obligation |
 | 6 | Confirming a marketplace seller ID exists MUST NOT be presented as proof of control | Registry obligation |
 | 6 | Agents MUST match on the channel identifier, never the name | `test/must.test.ts` (`channelKey`, `authorizationsForChannel`) |

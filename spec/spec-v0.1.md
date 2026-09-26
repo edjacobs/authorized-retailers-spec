@@ -1,6 +1,6 @@
 # Authorized Retailers Specification v0.1
 
-Draft v0.1 · 23 September 2026, updated 25 September 2026  
+Draft v0.1 · 23 September 2026, updated 26 September 2026  
 Editor: Ed Jacobs
 
 Licensed under [CC BY 4.0](https://github.com/authorizedretailers/spec/blob/main/LICENSE-SPEC). JSON Schemas and reference code: Apache-2.0.
@@ -12,6 +12,8 @@ This spec defines how a brand publishes which retailers it has authorized to sel
 Status: draft v0.1, for discussion with brands, retailers and agent developers. Breaking changes are expected before v1.0. Changes made since the first draft are listed in section 14.
 
 The spec asserts one thing: whether a brand has authorized a given seller, on a given channel, in a given territory, for a given product scope, as of a given date.
+
+Scope: the spec covers consumer-facing online channels: marketplaces and web stores, including omnichannel retailers, which are identified by their web domain. Trade, wholesale and practitioner-only channels are out of scope. Sellers there are not listed, so their resale on consumer channels verifies as unlisted.
 
 It does not assert:
 
@@ -123,7 +125,7 @@ An individual authorization's `expires` MUST NOT be later than the file's `expir
 
 ## 6. Seller identity and channel identifiers
 
-Agents see sellers as channel identifiers, not company names, so every authorization MUST name at least one channel identifier. A name alone is not verifiable.
+Agents see sellers as channel identifiers, not company names, so every authorization MUST name at least one online channel identifier (`amazon`, `walmart`, `ebay` or `web`). A name alone is not verifiable, and a `physical` identifier alone does not authorize anything.
 
 | Channel type | Required fields | Identifier |
 | --- | --- | --- |
@@ -131,7 +133,7 @@ Agents see sellers as channel identifiers, not company names, so every authoriza
 | `walmart` | `marketplace`, `seller_id` | Walmart Marketplace partner ID |
 | `ebay` | `marketplace`, `seller_id` | eBay user ID |
 | `web` | `domain` | The retailer's store domain |
-| `physical` | `address`, `country` | Store location, for completeness; not verifiable by agents |
+| `physical` | `address`, `country` | Optional storefront detail. Not a channel agents can verify, and never sufficient on its own |
 
 New channel types are added by registry proposal and published in the spec changelog.
 
@@ -260,6 +262,8 @@ The registry's liability position, dispute timelines and data handling are set o
 - [ ] Observation on channels beyond Amazon: Walmart and retailer web domains first?
 - [ ] Alignment with UCP and ACP: an extension field that points agents to a brand's authorized-retailers file.
 - [ ] Brand-declared `unauthorized`: a status for sellers the brand has explicitly said are not authorized, as distinct from `unlisted`, with a dispute path for the seller.
+- [ ] Dispensary and multi-seller platforms (e.g. practitioner dispensaries hosted on one platform domain): how to authorize individual sellers when agents only see the platform domain.
+- [ ] Channel audience: whether a channel needs an `audience` field (consumer, trade, practitioner) or whether consumer-only scope is enough.
 
 ## 14. Changelog
 
@@ -280,3 +284,7 @@ The registry's liability position, dispute timelines and data handling are set o
   - A registry MAY warn brands about sellers at PO boxes or commercial mailboxes. Verify answers don't change (section 12).
   - Corrected: the reference registry doesn't observe sellers yet (section 7).
   - Examples use reserved `.example` domains.
+- **2026-09-26**
+  - Scope: the spec covers consumer-facing online channels, including omnichannel retailers identified by their web domain. Trade, wholesale and practitioner-only channels are out of scope (section 1).
+  - Every authorization MUST name at least one online channel identifier (`amazon`, `walmart`, `ebay` or `web`). A `physical` identifier alone no longer authorizes anything (section 6).
+  - Two open questions: dispensary and multi-seller platforms, and a channel `audience` field (section 13).

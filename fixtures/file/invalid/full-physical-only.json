@@ -1,0 +1,37 @@
+{
+  "spec": "authorized-retailers/0.1",
+  "form": "full",
+  "brand": {
+    "name": "Example Brand",
+    "domain": "brand.example"
+  },
+  "issued": "2026-09-23T00:00:00Z",
+  "expires": "2026-12-22T00:00:00Z",
+  "authorizations": [
+    {
+      "id": "auth_01J9X2",
+      "retailer": {
+        "name": "Example Retail LLC",
+        "entity_id": "ent_7Q4M"
+      },
+      "channels": [
+        {
+          "type": "physical",
+          "address": "1 High St, London",
+          "country": "GB"
+        }
+      ],
+      "scope": {
+        "territories": [
+          "US",
+          "CA"
+        ],
+        "product_lines": [
+          "all"
+        ]
+      },
+      "proposed_by": null,
+      "expires": "2026-12-22T00:00:00Z"
+    }
+  ]
+}
