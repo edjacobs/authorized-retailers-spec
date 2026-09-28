@@ -1,0 +1,20 @@
+{
+  "status": "authorized",
+  "authorization_id": "auth_01J9X2",
+  "revocation_id": "rv_Q2l8dX4bT0aN5kPw",
+  "checked": "2026-09-28T14:02:11Z",
+  "valid_until": "2026-09-28T14:17:11Z",
+  "stale_until": "2026-09-29T14:02:11Z",
+  "product": {
+    "in_catalog": true,
+    "id": "EB-TEE-BLK-M",
+    "product_line": "Classic Tee"
+  },
+  "observed": null,
+  "signals": [],
+  "signature": {
+    "kid": "ar-20260928-6e37",
+    "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
+  },
+  "as_of": "2026-09-28T00:00:00Z"
+}

@@ -4,12 +4,15 @@ import { beforeAll, describe, expect, it } from "vitest";
 import {
   base64url,
   base64urlDecode,
-  checkPublishedFile,
+  checkPublishedList,
+  checkRevocationFeed,
   canonicalize,
   signDetached,
   signingPayload,
+  validAuthorizations,
   verifyDocument,
-  type FullFile,
+  type PublicList,
+  type RevocationFeed,
   type Jwks,
   type PublicJwk,
   type VerifyResponse,
@@ -32,10 +35,12 @@ async function sign<T extends object>(doc: T, key: { privateKey: CryptoKey; jwk:
 let k1: Awaited<ReturnType<typeof newKey>>;
 let k2: Awaited<ReturnType<typeof newKey>>;
 let jwks: Jwks;
-const list = (): FullFile => fx("file/valid/full-signed.json");
+const list = (): PublicList => fx("list/valid/list-no-catalog.json");
 const answer = (): VerifyResponse => fx("verify-response/valid/authorized-observed.json");
-const LIST_LIVE = Date.parse("2026-10-01T00:00:00Z");
-const ANSWER_LIVE = Date.parse("2026-09-23T20:00:00Z");
+const feed = (): RevocationFeed => fx("revocation-feed/valid/feed.json");
+const LIST_LIVE = Date.parse("2026-09-28T14:10:00Z");
+const ANSWER_LIVE = Date.parse("2026-09-28T14:10:00Z");
+const STALE = Date.parse("2026-09-28T20:00:00Z"); // past valid_until, before stale_until
 
 beforeAll(async () => {
   k1 = await newKey("ar-20260923-0001");
@@ -77,7 +82,7 @@ describe("detached JWS", () => {
 describe("reference verifier", () => {
   it("rejects any change to the signed content", async () => {
     const signed = await sign(list(), k1);
-    signed.authorizations[0]!.channels[0] = { type: "amazon", marketplace: "US", seller_id: "EVIL" };
+    signed.authorizations[0]!.channels[0] = { type: "amazon", domain: "amazon.com", seller_id: "EVIL" };
     expect(await verifyDocument(signed, jwks, { now: LIST_LIVE })).toEqual({ valid: false, reason: "bad_signature" });
   });
 
@@ -122,24 +127,76 @@ describe("reference verifier", () => {
     expect(await verifyDocument(signed, jwks, { now: Date.parse(signed.valid_until) + 1 })).toEqual({ valid: false, reason: "answer_expired" });
   });
 
-  it("§5 treats an expired list as invalid", async () => {
+  it("§10.1 treats a list past its valid_until as invalid", async () => {
     const signed = await sign(list(), k1);
-    expect(await verifyDocument(signed, jwks, { now: Date.parse(signed.expires) })).toEqual({ valid: false, reason: "list_expired" });
+    expect(await verifyDocument(signed, jwks, { now: Date.parse(signed.valid_until) + 1 })).toEqual({ valid: false, reason: "list_expired" });
   });
 });
 
-describe("§5 only registry-signed files count, and only for their own domain", () => {
-  it("counts a signed file fetched from its own domain", async () => {
-    const f = await sign(list(), k1);
-    expect(await checkPublishedFile(f.brand.domain, f, jwks, LIST_LIVE)).toEqual({ counts: true, kid: k1.jwk.kid });
-    expect(await checkPublishedFile(f.brand.domain.toUpperCase(), f, jwks, LIST_LIVE)).toMatchObject({ counts: true });
+describe("§10.2 stale answers and lists, §10.3 revocation feed", () => {
+  it("never accepts a stale answer without allowStale, or without a feed", async () => {
+    const signed = await sign(answer(), k1);
+    expect(await verifyDocument(signed, jwks, { now: STALE })).toEqual({ valid: false, reason: "answer_expired" });
+    expect(await verifyDocument(signed, jwks, { now: STALE, allowStale: true })).toEqual({ valid: false, reason: "revocation_feed_required" });
   });
-  it("doesn't count an unsigned file, a tampered one, or a copy on another domain", async () => {
-    const f = await sign(list(), k1);
-    const { signature: _, ...unsigned } = f;
-    expect(await checkPublishedFile(f.brand.domain, unsigned as FullFile, jwks, LIST_LIVE)).toEqual({ counts: false, reason: "missing_signature" });
-    const tampered = { ...f, authorizations: f.authorizations.slice(1) };
-    expect(await checkPublishedFile(f.brand.domain, tampered, jwks, LIST_LIVE)).toEqual({ counts: false, reason: "bad_signature" });
-    expect(await checkPublishedFile("lookalike-brand.example", f, jwks, LIST_LIVE)).toEqual({ counts: false, reason: "domain_mismatch" });
+  it("accepts a stale answer that the feed doesn't list, flagged stale", async () => {
+    const signed = await sign(answer(), k1);
+    const f = await sign(feed(), k1);
+    expect(await verifyDocument(signed, jwks, { now: STALE, allowStale: true, revocationFeed: f })).toEqual({ valid: true, kid: k1.jwk.kid, stale: true });
+  });
+  it("MUST drop a stale answer whose revocation_id is in the feed", async () => {
+    const signed = await sign(answer(), k1);
+    const f = await sign({ ...feed(), entries: [{ revocation_id: signed.status === "authorized" ? signed.revocation_id : "", revoked: "2026-09-28T15:00:00Z" }] }, k1);
+    expect(await verifyDocument(signed, jwks, { now: STALE, allowStale: true, revocationFeed: f })).toEqual({ valid: false, reason: "revoked" });
+  });
+  it("rejects an unsigned or tampered feed", async () => {
+    const signed = await sign(answer(), k1);
+    const f = await sign(feed(), k1);
+    const tampered = { ...f, entries: [] };
+    expect(await verifyDocument(signed, jwks, { now: STALE, allowStale: true, revocationFeed: tampered })).toEqual({ valid: false, reason: "revocation_feed_invalid" });
+  });
+  it("is unusable after stale_until, even with a feed", async () => {
+    const signed = await sign(answer(), k1);
+    const f = await sign(feed(), k1);
+    expect(await verifyDocument(signed, jwks, { now: Date.parse(signed.stale_until) + 1, allowStale: true, revocationFeed: f })).toEqual({ valid: false, reason: "answer_expired" });
+  });
+  it("a feed is usable to its own stale_until, flagged stale after valid_until", async () => {
+    const f = await sign(feed(), k1);
+    const live = await checkRevocationFeed(f, jwks, { now: Date.parse(f.issued) });
+    expect(live).toMatchObject({ valid: true, stale: false });
+    const stale = await checkRevocationFeed(f, jwks, { now: STALE });
+    expect(stale).toMatchObject({ valid: true, stale: true });
+    expect(stale.valid && stale.revoked("rv_Z9y8X7w6V5u4T3s2")).toBe(true);
+    expect(stale.valid && stale.revoked("rv_Q2l8dX4bT0aN5kPw")).toBe(false);
+    expect(await checkRevocationFeed(f, jwks, { now: Date.parse(f.stale_until) + 1 })).toEqual({ valid: false, reason: "feed_expired" });
+    expect(await checkRevocationFeed({ entries: [] }, jwks)).toEqual({ valid: false, reason: "not_a_feed" });
+  });
+  it("drops revoked authorizations from a stale list", async () => {
+    const l = await sign(list(), k1);
+    const f = await sign({ ...feed(), entries: [{ revocation_id: l.authorizations[0]!.revocation_id, revoked: "2026-09-28T15:00:00Z" }] }, k1);
+    expect(await verifyDocument(l, jwks, { now: STALE, allowStale: true, revocationFeed: f })).toEqual({ valid: true, kid: k1.jwk.kid, stale: true });
+    expect(validAuthorizations(l, STALE, f)).toEqual([]);
+    expect(validAuthorizations(l, STALE)).toHaveLength(1);
+  });
+});
+
+describe("§5.2 only registry-signed lists count, and only for the domains they name", () => {
+  it("counts a signed list for a domain it names", async () => {
+    const l = await sign({ ...list(), brand: { name: "Example Brand", domains: ["brand.example", "brand.co.uk"] } }, k1);
+    expect(await checkPublishedList("brand.example", l, jwks, { now: LIST_LIVE })).toEqual({ counts: true, kid: k1.jwk.kid });
+    expect(await checkPublishedList("WWW.Brand.co.uk", l, jwks, { now: LIST_LIVE })).toMatchObject({ counts: true });
+  });
+  it("doesn't count an unsigned list, a tampered one, or one naming other domains", async () => {
+    const l = await sign(list(), k1);
+    const { signature: _, ...unsigned } = l;
+    expect(await checkPublishedList("brand.example", unsigned, jwks, { now: LIST_LIVE })).toEqual({ counts: false, reason: "missing_signature" });
+    const tampered = { ...l, authorizations: [] };
+    expect(await checkPublishedList("brand.example", tampered, jwks, { now: LIST_LIVE })).toEqual({ counts: false, reason: "bad_signature" });
+    expect(await checkPublishedList("lookalike-brand.example", l, jwks, { now: LIST_LIVE })).toEqual({ counts: false, reason: "domain_mismatch" });
+    expect(await checkPublishedList("brand.example", { form: "pointer" }, jwks)).toEqual({ counts: false, reason: "not_a_list" });
+  });
+  it("counts a signed not-public response the same way", async () => {
+    const np = await sign(fx("list/valid/list-not-public.json"), k1);
+    expect(await checkPublishedList("brand.example", np, jwks, { now: LIST_LIVE })).toEqual({ counts: true, kid: k1.jwk.kid });
   });
 });

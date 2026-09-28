@@ -5,188 +5,237 @@ import { describe, expect, it } from "vitest";
 import {
   authorizationsForChannel,
   channelKey,
+  matchRequest,
   validAuthorizations,
   validateFile,
-  validateFullFile,
+  validateList,
   validateVerifyRequest,
   validateVerifyResponse,
-  type FullFile,
+  type PublicList,
 } from "../src";
 
 const fx = (p: string) => JSON.parse(readFileSync(join(import.meta.dirname, "..", "fixtures", p), "utf8"));
-const signed = (): FullFile => fx("file/valid/full-signed.json");
+const plain = (): PublicList => fx("list/valid/list-no-catalog.json");
+const withCatalog = (): PublicList => fx("list/valid/list-catalog-line-scope.json");
+const codes = (r: { errors: { code: string }[] }) => r.errors.map((e) => e.code);
 const at = (iso: string) => Date.parse(iso);
 
-describe("§3 each authorization MUST carry a scope (territories, channels, product lines, expiry)", () => {
-  for (const drop of ["scope", "channels", "expires"] as const) {
+describe("§3 each authorization MUST carry channels and a product scope", () => {
+  for (const drop of ["scope", "channels"] as const) {
     it(`rejects an authorization without ${drop}`, () => {
-      const f = signed() as unknown as { authorizations: Record<string, unknown>[] };
-      delete f.authorizations[0]![drop];
-      expect(validateFile(f).valid).toBe(false);
+      const l = plain() as unknown as { authorizations: Record<string, unknown>[] };
+      delete l.authorizations[0]![drop];
+      expect(validateList(l).valid).toBe(false);
     });
   }
-  for (const drop of ["territories", "product_lines"] as const) {
-    it(`rejects a scope without ${drop}`, () => {
-      const f = signed() as unknown as { authorizations: { scope: Record<string, unknown> }[] };
-      delete f.authorizations[0]!.scope[drop];
-      expect(validateFile(f).valid).toBe(false);
-    });
-  }
-});
-
-describe("§5 an authorization's expires MUST NOT be later than the file's expires", () => {
-  it("accepts equal", () => {
-    expect(validateFullFile(signed()).valid).toBe(true);
+  it("rejects a scope with neither product_lines nor products", () => {
+    const l = plain();
+    l.authorizations[0]!.scope = { territories: ["US"] };
+    expect(validateList(l).valid).toBe(false);
   });
-  it("rejects one second later", () => {
-    const f = signed();
-    f.authorizations[0]!.expires = "2026-12-22T00:00:01Z";
-    const r = validateFullFile(f);
-    expect(r.valid).toBe(false);
-    expect(r.errors.map((e) => e.code)).toEqual(["authorization_expires_after_file"]);
-    expect(r.errors[0]!.path).toBe("/authorizations/0/expires");
+  it("accepts an authorization with no end date (section 10)", () => {
+    expect(plain().authorizations[0]!.expires).toBeUndefined();
+    expect(validateList(plain()).valid).toBe(true);
   });
 });
 
-describe("§5 readers MUST treat an expired file as containing no valid authorizations", () => {
-  it("returns the authorizations before expiry", () => {
-    expect(validAuthorizations(signed(), at("2026-10-01T00:00:00Z"))).toHaveLength(1);
+describe("§3.1 catalog rules", () => {
+  it("each product MUST have a gtin or an ASIN", () => {
+    const l = withCatalog();
+    delete l.catalog![2]!.gtin;
+    expect(codes(validateList(l))).toContain("product_without_identifier");
   });
-  it("returns none at and after the file's expiry", () => {
-    expect(validAuthorizations(signed(), at("2026-12-22T00:00:00Z"))).toEqual([]);
-    expect(validAuthorizations(signed(), at("2027-01-01T00:00:00Z"))).toEqual([]);
+  it("a GTIN or ASIN MUST NOT appear on two products", () => {
+    const l = withCatalog();
+    l.catalog![3]!.asins = ["B0EXAMPLE2"];
+    expect(codes(validateList(l))).toContain("duplicate_identifier");
   });
-  it("returns none even if an authorization claims a later expiry (malformed file)", () => {
-    const f = signed();
-    f.expires = "2026-10-01T00:00:00Z";
-    expect(validAuthorizations(f, at("2026-11-01T00:00:00Z"))).toEqual([]);
+  it("every named product line MUST exist in the catalog", () => {
+    const l = withCatalog();
+    l.authorizations[0]!.scope.product_lines = ["Hats"];
+    expect(codes(validateList(l))).toEqual(["unknown_product_line"]);
   });
-  it("drops individually expired authorizations from a live file", () => {
-    const f = signed();
-    f.authorizations[0]!.expires = "2026-10-01T00:00:00Z";
-    expect(validAuthorizations(f, at("2026-11-01T00:00:00Z"))).toEqual([]);
+  it("every named or excluded product MUST exist in the catalog", () => {
+    const l = withCatalog();
+    l.exclusions = { products: ["NOPE"] };
+    expect(codes(validateList(l))).toEqual(["unknown_product"]);
   });
-});
-
-describe("§5 readers MUST treat an unsigned file as no file, and a file vouches only for its own domain", () => {
-  // An unsigned file is still well-formed JSON for the schema; checkPublishedFile is what refuses it.
-  // Tested with real keys in test/jws.test.ts.
-  it("a hand-written file validates against the schema but carries no signature", () => {
-    const f = fx("file/valid/full-unsigned-handwritten.json");
-    expect(validateFile(f).valid).toBe(true);
-    expect(f.signature).toBeUndefined();
-  });
-});
-
-describe("§6 every authorization MUST name at least one online channel identifier", () => {
-  it("rejects an empty channel list", () => {
-    expect(validateFile(fx("file/invalid/full-no-channels.json")).valid).toBe(false);
-  });
-  it("rejects a name-only retailer", () => {
-    expect(validateFile(fx("file/invalid/full-name-only-retailer.json")).valid).toBe(false);
-  });
-
-  const physical = { type: "physical", address: "1 High St, London", country: "GB" } as const;
-  const web = { type: "web", domain: "retailer.example" } as const;
-  const withChannels = (channels: FullFile["authorizations"][number]["channels"]) => {
-    const f = signed();
-    f.authorizations[0]!.channels = channels;
-    return f;
-  };
-
-  it("rejects physical only, with a clear error", () => {
-    for (const validate of [validateFile, validateFullFile]) {
-      const r = validate(withChannels([physical]));
-      expect(r.valid).toBe(false);
-      expect(r.errors[0]).toMatchObject({ code: "no_online_channel", path: "/authorizations/0/channels" });
-      expect(r.errors[0]!.message).toMatch(/online channel identifier/);
-    }
-    expect(validateFile(fx("file/invalid/full-physical-only.json")).valid).toBe(false);
-  });
-  it("accepts physical + web", () => {
-    expect(validateFile(withChannels([physical, web])).valid).toBe(true);
-    expect(validateFullFile(withChannels([physical, web])).valid).toBe(true);
-  });
-  it("accepts web only", () => {
-    expect(validateFile(withChannels([web])).valid).toBe(true);
-    expect(validateFullFile(withChannels([web])).valid).toBe(true);
+  it("exclusions always win over inclusions", () => {
+    const l = withCatalog();
+    l.authorizations[0]!.scope = { territories: ["US"], product_lines: ["all"], products: ["EB-DTC-1"] };
+    const r = matchRequest(l, { brand_domain: "brand.example", channel: l.authorizations[0]!.channels[0]!, product: { gtin: "12345678901231" } }, at("2026-09-28T14:05:00Z"));
+    expect(r).toMatchObject({ status: "unlisted", reason: "product_excluded" });
   });
 });
 
-describe("§6 agents MUST match on the channel identifier, never the retailer name", () => {
-  const f = signed();
+describe("§5.1 pointer rules", () => {
+  const pointer = () => fx("pointer/valid/pointer.json");
+  it("readers MUST treat the v0.1 full and private forms as no file", () => {
+    expect(codes(validateFile({ ...pointer(), form: "full" }))).toEqual(["form_not_supported"]);
+    expect(codes(validateFile({ ...pointer(), form: "private" }))).toEqual(["form_not_supported"]);
+  });
+  it("brand.domain MUST be the domain the pointer was fetched from", () => {
+    expect(validateFile(pointer(), "brand.example").valid).toBe(true);
+    expect(validateFile(pointer(), "www.brand.example").valid).toBe(true);
+    expect(codes(validateFile(pointer(), "evil.example"))).toEqual(["brand_domain_mismatch"]);
+  });
+  it("list MUST be an https://authorizedretailers.ai/ URL", () => {
+    expect(codes(validateFile({ ...pointer(), list: "https://authorizedretailers.ai.evil.example/x" }))).toContain("list_not_on_registry");
+    expect(codes(validateFile({ ...pointer(), list: "https://lists.example/x" }))).toContain("list_not_on_registry");
+  });
+});
+
+describe("§5.2 a list that is not public carries no retailers or catalog", () => {
+  it("rejects a not-public response with authorizations", () => {
+    expect(validateList({ ...fx("list/valid/list-not-public.json"), authorizations: [] }).valid).toBe(false);
+  });
+});
+
+describe("§6 channel rules", () => {
+  it("every authorization MUST name at least one channel", () => {
+    const l = plain();
+    l.authorizations[0]!.channels = [];
+    expect(validateList(l).valid).toBe(false);
+  });
+  it("a marketplace channel's domain MUST be one of that type's domains", () => {
+    const l = plain();
+    l.authorizations[0]!.channels[0]!.domain = "ebay.com";
+    expect(codes(validateList(l))).toEqual(["marketplace_domain_mismatch"]);
+  });
+  it("a web channel MUST NOT use a marketplace domain", () => {
+    const l = plain();
+    l.authorizations[0]!.channels[2]!.domain = "walmart.com";
+    expect(codes(validateList(l))).toEqual(["marketplace_domain_mismatch"]);
+  });
+  it("readers MUST reject the removed marketplace field and physical type", () => {
+    const l = plain() as unknown as { authorizations: { channels: unknown[] }[] };
+    l.authorizations[0]!.channels[0] = { type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" };
+    l.authorizations[0]!.channels[1] = { type: "physical", address: "1 Main St", country: "US" };
+    expect(codes(validateList(l))).toEqual(["marketplace_field_removed", "unknown_channel_type"]);
+    expect(codes(validateVerifyRequest({ brand_domain: "brand.example", channel: { type: "amazon", marketplace: "US", seller_id: "A1" } }))).toContain("marketplace_field_removed");
+  });
+});
+
+describe("§6.1 agents MUST match on the channel identifier, never the retailer name", () => {
+  const auths = plain().authorizations;
   it("matches a different retailer name with the same identifier", () => {
-    const renamed = structuredClone(f.authorizations);
-    renamed[0]!.retailer.name = "Totally Different Name Inc";
-    expect(authorizationsForChannel(renamed, { type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" })).toHaveLength(1);
+    const renamed = [{ ...auths[0]!, retailer: { name: "Totally Different Name" } }];
+    expect(authorizationsForChannel(renamed, { type: "amazon", domain: "amazon.com", seller_id: "a1b2c3d4e5f6g7" })).toHaveLength(1);
   });
   it("does not match the same retailer name with a different identifier", () => {
-    expect(authorizationsForChannel(f.authorizations, { type: "amazon", marketplace: "US", seller_id: "ZZZZZZZZZZZZZZ" })).toEqual([]);
+    expect(authorizationsForChannel(auths, { type: "amazon", domain: "amazon.com", seller_id: "OTHER" })).toHaveLength(0);
   });
-  it("does not match the same seller id in a different marketplace", () => {
-    expect(authorizationsForChannel(f.authorizations, { type: "amazon", marketplace: "CA", seller_id: "A1B2C3D4E5F6G7" })).toEqual([]);
+  it("does not match the same seller ID on a different marketplace domain", () => {
+    expect(authorizationsForChannel(auths, { type: "amazon", domain: "amazon.ca", seller_id: "A1B2C3D4E5F6G7" })).toHaveLength(0);
   });
-  it("does not match the same seller id on a different platform", () => {
-    expect(authorizationsForChannel(f.authorizations, { type: "walmart", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" })).toEqual([]);
+  it("does not match the same seller ID on a different platform", () => {
+    expect(channelKey({ type: "walmart", domain: "walmart.com", seller_id: "A1B2C3D4E5F6G7" })).not.toBe(channelKey(auths[0]!.channels[0]!));
   });
   it("verify requests cannot carry a retailer name instead of an identifier", () => {
-    expect(validateVerifyRequest(fx("verify-request/invalid/retailer-name-only.json")).valid).toBe(false);
+    expect(validateVerifyRequest({ brand_domain: "brand.example", retailer: "Example Retail LLC" }).valid).toBe(false);
   });
-  it("physical channels never match (not verifiable by agents)", () => {
-    expect(channelKey({ type: "physical", address: "1 High St", country: "GB" })).toBeNull();
+});
+
+describe("§6.2 territory rules", () => {
+  it("a web store on a generic domain MUST list territories", () => {
+    const l = plain();
+    l.authorizations[0]!.scope = { product_lines: ["all"] };
+    expect(codes(validateList(l))).toEqual(["territories_required"]);
+  });
+  it("an authorization listing territories that leave out a marketplace's country is invalid", () => {
+    const l = plain();
+    l.authorizations[0]!.scope.territories = ["GB"];
+    expect(codes(validateList(l))).toContain("territory_mismatch");
+  });
+  it("warns, but accepts, a ccTLD store listing another territory", () => {
+    const l = plain();
+    l.authorizations[0]!.channels = [{ type: "web", domain: "shop.co.uk" }];
+    l.authorizations[0]!.scope = { territories: ["IE"], product_lines: ["all"] };
+    const r = validateList(l);
+    expect(r.valid).toBe(true);
+    expect(r.warnings.map((w) => w.code)).toEqual(["territory_differs_from_domain"]);
+  });
+  it("country codes are ISO 3166-1: GB, not UK", () => {
+    const l = plain();
+    l.authorizations[0]!.scope.territories = ["UK"];
+    expect(codes(validateList(l))).toContain("invalid_country");
   });
 });
 
 describe("§7 every answer MUST carry observed, null unless authorized", () => {
+  const answer = () => fx("verify-response/valid/authorized.json");
   it("rejects an answer with no observed field", () => {
-    expect(validateVerifyResponse(fx("verify-response/invalid/missing-observed.json")).valid).toBe(false);
+    const a = answer();
+    delete a.observed;
+    expect(validateVerifyResponse(a).valid).toBe(false);
   });
   it("allows last_seen on authorized answers only", () => {
-    expect(validateVerifyResponse(fx("verify-response/valid/authorized.json")).valid).toBe(true);
-    expect(validateVerifyResponse(fx("verify-response/valid/authorized-observed.json")).valid).toBe(true);
-    expect(validateVerifyResponse(fx("verify-response/invalid/unlisted-observed.json")).valid).toBe(false);
-    expect(validateVerifyResponse(fx("verify-response/invalid/observed-without-last-seen.json")).valid).toBe(false);
-  });
-  it("has no evidence tier", () => {
-    expect(validateVerifyResponse(fx("verify-response/invalid/with-tier.json")).valid).toBe(false);
+    expect(validateVerifyResponse({ ...answer(), observed: { last_seen: "2026-09-20T00:00:00Z" } }).valid).toBe(true);
+    expect(validateVerifyResponse({ ...fx("verify-response/valid/unlisted.json"), observed: { last_seen: "2026-09-20T00:00:00Z" } }).valid).toBe(false);
   });
 });
 
-describe("§9 every signed answer MUST carry valid_until, no later than 24h after checked", () => {
-  it("rejects a missing valid_until", () => {
-    expect(validateVerifyResponse(fx("verify-response/invalid/missing-valid-until.json")).valid).toBe(false);
+describe("§9 every signed answer MUST carry valid_until (15 minutes) and stale_until (24 hours)", () => {
+  const answer = () => fx("verify-response/valid/authorized.json");
+  it("rejects a missing valid_until or stale_until", () => {
+    for (const drop of ["valid_until", "stale_until"]) {
+      const a = answer();
+      delete a[drop];
+      expect(validateVerifyResponse(a).valid).toBe(false);
+    }
   });
-  it("accepts exactly 24h", () => {
-    expect(validateVerifyResponse(fx("verify-response/valid/authorized-observed.json")).valid).toBe(true);
+  it("accepts exactly 15 minutes and rejects one second more", () => {
+    expect(validateVerifyResponse({ ...answer(), valid_until: "2026-09-28T14:17:11Z" }).valid).toBe(true);
+    expect(codes(validateVerifyResponse({ ...answer(), valid_until: "2026-09-28T14:17:12Z" }))).toEqual(["valid_until_exceeds_max"]);
   });
-  it("rejects 24h plus one second", () => {
-    const r = validateVerifyResponse(fx("verify-response/invalid/valid-until-over-24h.json"));
-    expect(r.errors.map((e) => e.code)).toEqual(["valid_until_exceeds_max"]);
+  it("accepts exactly 24 hours of stale_until and rejects one second more", () => {
+    expect(validateVerifyResponse({ ...answer(), stale_until: "2026-09-29T14:02:11Z" }).valid).toBe(true);
+    expect(codes(validateVerifyResponse({ ...answer(), stale_until: "2026-09-29T14:02:12Z" }))).toEqual(["stale_until_exceeds_max"]);
   });
 });
 
-describe("§9 reason MUST NOT appear on any status other than brand_unverified", () => {
-  for (const status of ["authorized", "unlisted", "expired", "disputed"]) {
+describe("§9 reason MUST NOT appear on authorized, expired or disputed", () => {
+  for (const status of ["authorized", "expired", "disputed"]) {
     it(`rejects reason on ${status}`, () => {
-      const base = fx(status === "unlisted" ? "verify-response/valid/unlisted.json" : "verify-response/valid/authorized-observed.json");
-      base.status = status;
-      base.reason = "domain_unlinked";
-      expect(validateVerifyResponse(base).valid).toBe(false);
+      const a = { ...fx("verify-response/valid/authorized.json"), status, expires: "2026-09-01T00:00:00Z", reason: "product_excluded" };
+      if (status !== "authorized") delete a.revocation_id;
+      expect(validateVerifyResponse(a).valid).toBe(false);
     });
   }
 });
 
-describe("§5 private form carries no retailers (supports §9 private-mode MUST)", () => {
-  it("rejects a private file with authorizations", () => {
-    expect(validateFile(fx("file/invalid/private-with-authorizations.json")).valid).toBe(false);
+describe("§9.1 seller first: a product never makes an uncovered seller authorized", () => {
+  it("an unknown seller asking with a catalog product stays unlisted", () => {
+    const l = withCatalog();
+    const r = matchRequest(l, { brand_domain: "brand.example", channel: { type: "amazon", domain: "amazon.com", seller_id: "AUNKNOWN" }, product: { asin: "B0EXAMPLE1" } }, at("2026-09-28T14:05:00Z"));
+    expect(r.status).toBe("unlisted");
+    expect(r.reason).toBeUndefined();
   });
+});
+
+describe("§9.3 lists that are not public: answers name no other authorization", () => {
   it("rejects an unlisted answer that names an authorization", () => {
-    expect(validateVerifyResponse(fx("verify-response/invalid/unlisted-with-authorization-id.json")).valid).toBe(false);
+    expect(validateVerifyResponse({ ...fx("verify-response/valid/unlisted.json"), authorization_id: "auth_01J9X2" }).valid).toBe(false);
+  });
+  it("rejects product id on a product not in the catalog", () => {
+    expect(validateVerifyResponse({ ...fx("verify-response/valid/unlisted.json"), product: { in_catalog: false, id: "X" } }).valid).toBe(false);
+  });
+});
+
+describe("§10 authorizations last until revoked unless the brand sets an end date", () => {
+  it("keeps authorizations with no end date, drops those past theirs", () => {
+    const l = plain();
+    expect(validAuthorizations(l, at("2030-01-01T00:00:00Z"))).toHaveLength(1);
+    l.authorizations[0]!.expires = "2026-10-01T00:00:00Z";
+    expect(validAuthorizations(l, at("2026-09-30T00:00:00Z"))).toHaveLength(1);
+    expect(validAuthorizations(l, at("2026-10-01T00:00:00Z"))).toHaveLength(0);
   });
 });
 
 describe("§8 every signature names its kid", () => {
   it("rejects a signature without kid", () => {
-    expect(validateFile(fx("file/invalid/full-signature-missing-kid.json")).valid).toBe(false);
+    const l = plain() as unknown as { signature: Record<string, unknown> };
+    delete l.signature.kid;
+    expect(validateList(l).valid).toBe(false);
   });
 });

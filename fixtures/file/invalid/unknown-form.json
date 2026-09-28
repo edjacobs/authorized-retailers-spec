@@ -1,9 +1,0 @@
-{
-  "spec": "authorized-retailers/0.1",
-  "form": "partial",
-  "brand": {
-    "name": "Example Brand",
-    "domain": "brand.example"
-  },
-  "verify": "https://authorizedretailers.ai/v0/verify"
-}

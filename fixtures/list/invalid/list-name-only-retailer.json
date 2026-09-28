@@ -1,0 +1,36 @@
+{
+  "spec": "authorized-retailers/0.2",
+  "brand": {
+    "name": "Example Brand",
+    "domains": [
+      "brand.example"
+    ]
+  },
+  "public": true,
+  "issued": "2026-09-28T14:00:00Z",
+  "valid_until": "2026-09-28T14:15:00Z",
+  "stale_until": "2026-09-29T14:00:00Z",
+  "authorizations": [
+    {
+      "id": "auth_01J9X2",
+      "revocation_id": "rv_Q2l8dX4bT0aN5kPw",
+      "retailer": {
+        "name": "Example Retail LLC",
+        "entity_id": "ent_7Q4M"
+      },
+      "scope": {
+        "territories": [
+          "US"
+        ],
+        "product_lines": [
+          "all"
+        ]
+      },
+      "proposed_by": null
+    }
+  ],
+  "signature": {
+    "kid": "ar-20260928-6e37",
+    "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
+  }
+}

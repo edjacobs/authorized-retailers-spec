@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.2/verify-request.json",
+  "title": "POST /v0/verify request (section 9)",
+  "description": "Canonical form. Call normalizeVerifyRequest on raw input first.",
+  "type": "object",
+  "required": [
+    "brand_domain",
+    "channel"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "brand_domain": {
+      "$ref": "common.json#/$defs/domain"
+    },
+    "channel": {
+      "$ref": "common.json#/$defs/channel"
+    },
+    "territory": {
+      "$ref": "common.json#/$defs/countryCode"
+    },
+    "product_line": {
+      "$ref": "common.json#/$defs/productLine"
+    },
+    "product": {
+      "description": "Exactly one of gtin or asin.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "gtin"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "gtin": {
+              "$ref": "common.json#/$defs/gtin"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "asin"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "asin": {
+              "$ref": "common.json#/$defs/asin"
+            }
+          }
+        }
+      ]
+    },
+    "as_of": {
+      "anyOf": [
+        {
+          "$ref": "common.json#/$defs/date"
+        },
+        {
+          "$ref": "common.json#/$defs/timestamp"
+        }
+      ]
+    }
+  }
+}

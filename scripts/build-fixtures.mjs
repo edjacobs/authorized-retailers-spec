@@ -1,65 +1,15 @@
 // Generates fixtures/**.json and fixtures/manifest.json. Run: node scripts/build-fixtures.mjs
 // Each invalid fixture is one targeted mutation of a valid base, so it fails for exactly one reason.
+// "match" fixtures pair a public list with a verify request and the answer section 9 requires, so
+// other implementations can check their matching against the same cases.
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
-const JWS = "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYtMDkifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy";
-const brand = { name: "Example Brand", domain: "brand.example" };
-
-const fullSigned = {
-  spec: "authorized-retailers/0.1",
-  form: "full",
-  brand,
-  issued: "2026-09-23T00:00:00Z",
-  expires: "2026-12-22T00:00:00Z",
-  authorizations: [
-    {
-      id: "auth_01J9X2",
-      retailer: { name: "Example Retail LLC", entity_id: "ent_7Q4M" },
-      channels: [
-        { type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" },
-        { type: "walmart", marketplace: "US", seller_id: "101234567" },
-        { type: "web", domain: "retailer.example" },
-      ],
-      scope: { territories: ["US", "CA"], product_lines: ["all"] },
-      proposed_by: null,
-      expires: "2026-12-22T00:00:00Z",
-    },
-  ],
-  signature: { kid: "ar-2026-09", jws: JWS },
-};
-const { signature: _s, ...fullUnsigned } = fullSigned;
-
-const pointer = {
-  spec: "authorized-retailers/0.1",
-  form: "pointer",
-  brand,
-  list: "https://authorizedretailers.ai/v0/brands/brand.example/list",
-};
-const priv = { spec: "authorized-retailers/0.1", form: "private", brand, verify: "https://authorizedretailers.ai/v0/verify" };
-
-const request = {
-  brand_domain: "brand.example",
-  channel: { type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" },
-  territory: "US",
-  product_line: "all",
-};
-
-const sig = { kid: "ar-2026-09", jws: JWS };
-const authorized = {
-  status: "authorized",
-  authorization_id: "auth_01J9X2",
-  expires: "2026-12-22T00:00:00Z",
-  checked: "2026-09-23T14:02:11Z",
-  valid_until: "2026-09-24T14:02:11Z",
-  observed: null,
-  signals: [],
-  signature: sig,
-};
-const unlisted = { status: "unlisted", checked: authorized.checked, valid_until: authorized.valid_until, observed: null, signals: [], signature: sig };
-const unverified = { ...unlisted, status: "brand_unverified", reason: "domain_unlinked" };
+const SPEC = "authorized-retailers/0.2";
+const JWS = "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy";
+const sig = { kid: "ar-20260928-6e37", jws: JWS };
 
 const clone = (o) => structuredClone(o);
 const edit = (base, fn) => {
@@ -67,114 +17,296 @@ const edit = (base, fn) => {
   fn(o);
   return o;
 };
-const auth0 = (fn) => edit(fullUnsigned, (f) => fn(f.authorizations[0]));
 
-// [kind, name, document, expected error code or null for valid, note]
-const cases = [
-  // ---- files: valid
-  ["file", "full-signed", fullSigned, null, "Section 5 example"],
-  ["file", "full-unsigned-handwritten", fullUnsigned, null, "Section 5: hand-written unsigned files are accepted"],
-  ["file", "full-no-authorizations", edit(fullUnsigned, (f) => (f.authorizations = [])), null, "A brand with nothing authorized"],
-  [
-    "file",
-    "full-worldwide-physical-proposed",
-    edit(fullSigned, (f) => {
-      f.authorizations.push({
-        id: "auth_02",
-        retailer: { name: "Corner Shoes" },
-        channels: [
-          { type: "ebay", marketplace: "GB", seller_id: "cornershoes" },
-          { type: "physical", address: "1 High St, London", country: "GB" },
-        ],
-        scope: { territories: ["*"], product_lines: ["running", "trail"] },
-        proposed_by: { name: "Example Distribution Ltd", entity_id: "ent_DIST1" },
-        expires: "2026-11-01T00:00:00Z",
-      });
-    }),
-    null,
-    "Worldwide scope, named product lines, eBay + physical, distributor-proposed",
+// ---- pointer (section 5.1)
+const pointer = {
+  spec: SPEC,
+  form: "pointer",
+  brand: { name: "Example Brand", domain: "brand.example" },
+  verify_token: "tok_4f9KqX2mB7cD1eR8",
+  list: "https://authorizedretailers.ai/v0/brands/brand.example/list",
+};
+
+// ---- signed list (section 5.2)
+const times = { issued: "2026-09-28T14:00:00Z", valid_until: "2026-09-28T14:15:00Z", stale_until: "2026-09-29T14:00:00Z" };
+const catalog = [
+  { id: "EB-TEE-BLK-M", name: "Classic Tee, Black, M", product_line: "Classic Tee", attributes: { color: "Black", size: "M" }, gtin: "00012345678905", asins: ["B0EXAMPLE1"] },
+  { id: "EB-TEE-WHT-M", name: "Classic Tee, White, M", product_line: "Classic Tee", gtin: "4006381333931", asins: ["B0EXAMPLE2"] },
+  { id: "EB-RUN-V2", name: "Runner V2", product_line: "Running", gtin: "96385074" },
+  { id: "EB-RUN-V3", name: "Runner V3", product_line: "Running", asins: ["B0EXAMPLE3"] },
+  { id: "EB-DTC-1", name: "Founders Edition", product_line: "Limited", gtin: "12345678901231" },
+];
+const retailer = {
+  id: "auth_01J9X2",
+  revocation_id: "rv_Q2l8dX4bT0aN5kPw",
+  retailer: { name: "Example Retail LLC", entity_id: "ent_7Q4M" },
+  channels: [
+    { type: "amazon", domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" },
+    { type: "walmart", domain: "walmart.com", seller_id: "101234567" },
+    { type: "web", domain: "retailer.example" },
   ],
-  ["file", "full-max-expiry", edit(fullUnsigned, (f) => { f.expires = "2027-03-22T00:00:00Z"; }), null, "Exactly 180 days after issued (section 10)"],
-  ["file", "full-fractional-seconds", edit(fullUnsigned, (f) => { f.issued = "2026-09-23T00:00:00.123Z"; }), null, "Fractional seconds are allowed"],
-  ["file", "pointer", pointer, null, "Section 5 pointer form"],
-  ["file", "private", priv, null, "Section 5 private form"],
+  scope: { territories: ["US"], product_lines: ["all"] },
+  proposed_by: null,
+};
+const listNoCatalog = { spec: SPEC, brand: { name: "Example Brand", domains: ["brand.example"] }, public: true, ...times, authorizations: [retailer], signature: sig };
+const listWithCatalog = edit(listNoCatalog, (l) => {
+  l.brand.domains.push("brand.co.uk");
+  l.catalog = clone(catalog);
+  l.exclusions = { products: ["EB-DTC-1"] };
+  l.authorizations[0].scope = { territories: ["US"], product_lines: ["Classic Tee"] };
+});
+const notPublic = { spec: SPEC, brand: { name: "Example Brand", domains: ["brand.example"] }, public: false, ...times, signature: sig };
+const auth0 = (base, fn) => edit(base, (l) => fn(l.authorizations[0]));
+const noCatalog = (fn) => auth0(listNoCatalog, fn);
 
-  // ---- files: invalid, schema
-  ["file", "full-no-channels", auth0((a) => (a.channels = [])), "schema", "Section 6: at least one channel identifier"],
-  ["file", "full-name-only-retailer", auth0((a) => delete a.channels), "schema", "Section 6: a name alone is not verifiable"],
-  ["file", "full-missing-scope", auth0((a) => delete a.scope), "schema", "Section 3: every authorization MUST carry a scope"],
-  ["file", "full-missing-territories", auth0((a) => delete a.scope.territories), "schema", "Section 3: scope needs territories"],
-  ["file", "full-missing-product-lines", auth0((a) => delete a.scope.product_lines), "schema", "Section 3: scope needs product lines"],
-  ["file", "full-missing-authorization-expires", auth0((a) => delete a.expires), "schema", "Section 3: scope needs an expiry"],
-  ["file", "full-empty-territories", auth0((a) => (a.scope.territories = [])), "schema", "Territories cannot be empty"],
-  ["file", "full-wildcard-mixed", auth0((a) => (a.scope.territories = ["*", "US"])), "schema", "'*' must stand alone"],
-  ["file", "full-lowercase-territory", auth0((a) => (a.scope.territories = ["us"])), "schema", "Country codes are uppercase alpha-2"],
-  ["file", "full-all-mixed", auth0((a) => (a.scope.product_lines = ["all", "running"])), "schema", "'all' must stand alone"],
-  ["file", "full-unknown-channel-type", auth0((a) => a.channels.push({ type: "shopify", domain: "shop.example" })), "schema", "Section 6: unlisted channel type"],
-  ["file", "full-amazon-missing-seller-id", auth0((a) => delete a.channels[0].seller_id), "schema", "Section 6: amazon needs seller_id"],
-  ["file", "full-web-missing-domain", auth0((a) => delete a.channels[2].domain), "schema", "Section 6: web needs domain"],
-  ["file", "full-web-domain-is-url", auth0((a) => (a.channels[2].domain = "https://retailer.example/")), "schema", "Domains are bare hostnames"],
-  ["file", "full-physical-only", auth0((a) => (a.channels = [{ type: "physical", address: "1 High St, London", country: "GB" }])), "no_online_channel", "Section 6: physical alone does not authorize"],
-  ["file", "full-physical-missing-country", auth0((a) => a.channels.push({ type: "physical", address: "1 Main St" })), "schema", "Section 6: physical needs country"],
-  ["file", "full-wrong-spec", edit(fullUnsigned, (f) => (f.spec = "authorized-retailers/1.0")), "schema", "Unknown spec version"],
-  ["file", "full-missing-file-expires", edit(fullUnsigned, (f) => delete f.expires), "schema", "File needs expires"],
-  ["file", "full-non-utc-timestamp", edit(fullUnsigned, (f) => (f.issued = "2026-09-23T00:00:00+01:00")), "schema", "Timestamps are UTC with Z"],
-  ["file", "full-extra-property", edit(fullUnsigned, (f) => (f.price = 10)), "schema", "Section 1: no pricing; unknown properties rejected"],
-  ["file", "full-attached-jws", edit(fullSigned, (f) => (f.signature.jws = "aGVhZA.cGF5bG9hZA.c2ln")), "schema", "Section 8: JWS must be detached"],
-  ["file", "full-signature-missing-kid", edit(fullSigned, (f) => delete f.signature.kid), "schema", "Section 8: every signature names its kid"],
-  ["file", "pointer-http-url", edit(pointer, (f) => (f.list = "http://authorizedretailers.ai/v0/brands/brand.example/list")), "schema", "Pointer must be HTTPS"],
-  ["file", "private-missing-verify", edit(priv, (f) => delete f.verify), "schema", "Private form needs a verify endpoint"],
-  ["file", "private-with-authorizations", edit(priv, (f) => (f.authorizations = fullSigned.authorizations)), "schema", "Section 5: private form carries no retailers"],
-  ["file", "unknown-form", edit(priv, (f) => (f.form = "partial")), "schema", "Only full, pointer, private"],
+// ---- verify request / response (section 9)
+const request = {
+  brand_domain: "brand.example",
+  channel: { type: "amazon", domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" },
+  territory: "US",
+  product: { asin: "B0EXAMPLE1" },
+  as_of: "2026-09-28",
+};
+const authorized = {
+  status: "authorized",
+  authorization_id: "auth_01J9X2",
+  revocation_id: "rv_Q2l8dX4bT0aN5kPw",
+  checked: "2026-09-28T14:02:11Z",
+  valid_until: "2026-09-28T14:17:11Z",
+  stale_until: "2026-09-29T14:02:11Z",
+  product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee" },
+  observed: null,
+  signals: [],
+  signature: sig,
+};
+const base = { checked: authorized.checked, valid_until: authorized.valid_until, stale_until: authorized.stale_until, observed: null, signals: [], signature: sig };
+const unlisted = { status: "unlisted", ...base };
+const notRegistered = { status: "brand_not_registered", reason: "domain_unlinked", ...base };
 
-  // ---- files: invalid, semantic
-  ["file", "full-authorization-expires-after-file", auth0((a) => (a.expires = "2026-12-23T00:00:00Z")), "authorization_expires_after_file", "Section 5 MUST"],
-  ["file", "full-expiry-over-180-days", edit(fullUnsigned, (f) => { f.expires = "2027-03-22T00:00:01Z"; }), "file_expiry_exceeds_max", "Section 10: max 180 days"],
-  ["file", "full-expires-before-issued", edit(fullUnsigned, (f) => { f.expires = "2026-09-22T00:00:00Z"; f.authorizations[0].expires = "2026-09-22T00:00:00Z"; }), "expires_not_after_issued", "Expiry must follow issue"],
-  ["file", "full-duplicate-authorization-id", edit(fullUnsigned, (f) => f.authorizations.push(clone(f.authorizations[0]))), "duplicate_authorization_id", "Authorization ids are unique within a file"],
-  ["file", "full-impossible-date", edit(fullUnsigned, (f) => (f.issued = "2026-02-30T00:00:00Z")), "schema", "Feb 30 does not exist (format date-time; parseTimestamp also rejects it)"],
+// ---- revocation feed (section 10.3)
+const feed = {
+  spec: SPEC,
+  feed: "revocations",
+  issued: "2026-09-28T14:02:00Z",
+  valid_until: "2026-09-28T14:17:00Z",
+  stale_until: "2026-09-29T14:02:00Z",
+  entries: [{ revocation_id: "rv_Z9y8X7w6V5u4T3s2", revoked: "2026-09-28T13:40:12Z" }],
+  signature: sig,
+};
 
-  // ---- verify request
-  ["verify-request", "amazon", request, null, "Section 9 example"],
-  ["verify-request", "web-no-product-line", { brand_domain: "brand.example", channel: { type: "web", domain: "retailer.example" }, territory: "CA" }, null, "product_line defaults to all"],
-  ["verify-request", "physical-channel", edit(request, (r) => (r.channel = { type: "physical", address: "1 Main St", country: "US" })), "schema", "Section 6: physical is not verifiable"],
-  ["verify-request", "wildcard-territory", edit(request, (r) => (r.territory = "*")), "schema", "A request names one territory"],
-  ["verify-request", "missing-channel", edit(request, (r) => delete r.channel), "schema", "Channel is required"],
-  ["verify-request", "retailer-name-only", edit(request, (r) => { delete r.channel; r.retailer = "Example Retail LLC"; }), "schema", "Section 6: agents match on identifiers, not names"],
-  ["verify-request", "domain-with-scheme", edit(request, (r) => (r.brand_domain = "https://brand.example")), "schema", "Bare hostname only"],
+// ---- matching (section 9)
+const NOW = "2026-09-28T14:05:00Z";
+const matchList = edit(listWithCatalog, (l) => {
+  l.authorizations = [
+    // Amazon US seller: Classic Tee only, except the white one.
+    { ...clone(retailer), scope: { territories: ["US"], product_lines: ["Classic Tee"], exclude_products: ["EB-TEE-WHT-M"] } },
+    // Web store worldwide: everything except the Running line.
+    {
+      id: "auth_02",
+      revocation_id: "rv_A1b2C3d4E5f6G7h8",
+      retailer: { name: "Global Shoes" },
+      channels: [{ type: "web", domain: "globalshoes.example" }],
+      scope: { territories: ["*"], product_lines: ["all"], exclude_product_lines: ["Running"] },
+    },
+    // UK store on a ccTLD, one named product, with an end date in the past.
+    {
+      id: "auth_03",
+      revocation_id: "rv_J9k8L7m6N5o4P3q2",
+      retailer: { name: "UK Runners" },
+      channels: [{ type: "web", domain: "ukrunners.co.uk" }],
+      scope: { products: ["EB-RUN-V3"] },
+      expires: "2026-09-01T00:00:00Z",
+    },
+    // Amazon UK seller: all products, including the Founders Edition by name (the brand excludes it).
+    {
+      id: "auth_04",
+      revocation_id: "rv_R1s2T3u4V5w6X7y8",
+      retailer: { name: "Brit Retail" },
+      channels: [{ type: "amazon", domain: "amazon.co.uk", seller_id: "A9Z8Y7X6W5V4U3" }],
+      scope: { product_lines: ["all"], products: ["EB-DTC-1"] },
+    },
+  ];
+});
+const amazonUS = { type: "amazon", domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" };
+const amazonUK = { type: "amazon", domain: "amazon.co.uk", seller_id: "A9Z8Y7X6W5V4U3" };
+const global = { type: "web", domain: "globalshoes.example" };
+const req = (channel, extra = {}) => ({ brand_domain: "brand.example", channel, ...extra });
+const match = (request, expect) => ({ list: matchList, request, now: NOW, expect });
+
+// [kind, name, document, expected error code or null for valid, note, extra manifest fields]
+const cases = [
+  // ---- pointer: valid
+  ["pointer", "pointer", pointer, null, "Section 5.1 example", { fetched_from: "brand.example" }],
+  ["pointer", "pointer-fetched-via-www", pointer, null, "Section 5.1: www is ignored when matching the domain", { fetched_from: "www.brand.example" }],
+
+  // ---- pointer: invalid
+  ["pointer", "pointer-other-host", edit(pointer, (p) => (p.list = "https://lists.example/brand.example")), "list_not_on_registry", "Section 5.1: list MUST be on authorizedretailers.ai"],
+  ["pointer", "pointer-http-url", edit(pointer, (p) => (p.list = "http://authorizedretailers.ai/v0/brands/brand.example/list")), "schema", "Pointer list must be HTTPS"],
+  ["pointer", "pointer-missing-verify-token", edit(pointer, (p) => delete p.verify_token), "schema", "Section 5.1: verify_token is required"],
+  ["pointer", "pointer-domain-mismatch", pointer, "brand_domain_mismatch", "Section 5.1: a pointer vouches only for its own domain", { fetched_from: "other.example" }],
+  ["pointer", "full-form", edit(pointer, (p) => { p.form = "full"; p.authorizations = []; }), "form_not_supported", "v0.1 full form was removed"],
+  ["pointer", "private-form", edit(pointer, (p) => (p.form = "private")), "form_not_supported", "v0.1 private form was removed"],
+  ["pointer", "unknown-form", edit(pointer, (p) => (p.form = "partial")), "form_not_supported", "Only pointer"],
+  ["pointer", "pointer-wrong-spec", edit(pointer, (p) => (p.spec = "authorized-retailers/0.1")), "schema", "Spec version is 0.2"],
+
+  // ---- list: valid
+  ["list", "list-no-catalog", listNoCatalog, null, "Section 5.2, no catalog"],
+  ["list", "list-catalog-line-scope", listWithCatalog, null, "Section 3.1: catalog with a line-scoped authorization and a brand exclusion"],
+  ["list", "list-product-scope", auth0(listWithCatalog, (a) => (a.scope = { territories: ["US"], products: ["EB-TEE-BLK-M", "EB-RUN-V3"] })), null, "Section 3.1: authorization scoped to named products"],
+  ["list", "list-no-expires", listNoCatalog, null, "Section 10: no end date, lasts until revoked"],
+  ["list", "list-with-expires", noCatalog((a) => (a.expires = "2027-09-28T00:00:00Z")), null, "Section 10: brand-set end date"],
+  ["list", "list-generic-web-territories", noCatalog((a) => { a.channels = [{ type: "web", domain: "retailer.example" }]; a.scope = { territories: ["US", "CA"], product_lines: ["all"] }; }), null, "Section 6.2: generic-domain web store lists territories"],
+  ["list", "list-cctld-web", noCatalog((a) => { a.channels = [{ type: "web", domain: "retailer.co.uk" }]; a.scope = { product_lines: ["all"] }; }), null, "Section 6.2: ccTLD web store takes GB from its domain"],
+  ["list", "list-marketplace-no-territories", noCatalog((a) => { a.channels = [a.channels[0]]; a.scope = { product_lines: ["all"] }; }), null, "Section 6.2: marketplace territory comes from the domain"],
+  ["list", "list-worldwide", noCatalog((a) => (a.scope.territories = ["*"])), null, "Worldwide scope"],
+  ["list", "list-proposed-by", noCatalog((a) => (a.proposed_by = { name: "Example Distribution Ltd", entity_id: "ent_DIST1" })), null, "Section 3: distributor-proposed"],
+  ["list", "list-not-public", notPublic, null, "Section 5.2: signed not-public response"],
+  ["list", "list-no-authorizations", edit(listNoCatalog, (l) => (l.authorizations = [])), null, "A brand with nothing authorized"],
+  ["list", "list-fractional-seconds", edit(listNoCatalog, (l) => (l.issued = "2026-09-28T14:00:00.123Z")), null, "Fractional seconds are allowed"],
+
+  // ---- list: invalid (section 6)
+  ["list", "list-marketplace-field", noCatalog((a) => (a.channels[0] = { type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" })), "marketplace_field_removed", "Section 6: marketplace was replaced by domain"],
+  ["list", "list-amazon-on-walmart-domain", noCatalog((a) => (a.channels[0].domain = "walmart.com")), "marketplace_domain_mismatch", "Section 6: type and domain must match"],
+  ["list", "list-web-on-marketplace-domain", noCatalog((a) => (a.channels[2].domain = "amazon.com")), "marketplace_domain_mismatch", "Section 6: a web channel can't use a marketplace domain"],
+  ["list", "list-physical", noCatalog((a) => (a.channels = [{ type: "physical", address: "1 High St, London", country: "GB" }])), "unknown_channel_type", "Section 6: physical was removed"],
+  ["list", "list-unknown-channel-type", noCatalog((a) => a.channels.push({ type: "shopify", domain: "shop.example" })), "unknown_channel_type", "Section 6: unlisted channel type"],
+  ["list", "list-amazon-missing-seller-id", noCatalog((a) => delete a.channels[0].seller_id), "schema", "Section 6: amazon needs seller_id"],
+  ["list", "list-web-domain-is-url", noCatalog((a) => (a.channels[2].domain = "https://retailer.example/")), "schema", "Domains are bare hostnames"],
+  ["list", "list-no-channels", noCatalog((a) => (a.channels = [])), "schema", "Section 6: at least one channel identifier"],
+  ["list", "list-name-only-retailer", noCatalog((a) => delete a.channels), "schema", "Section 6: a name alone is not verifiable"],
+
+  // ---- list: invalid (section 6.2)
+  ["list", "list-generic-web-no-territories", noCatalog((a) => { a.channels = [{ type: "web", domain: "retailer.example" }]; a.scope = { product_lines: ["all"] }; }), "territories_required", "Section 6.2: generic domain needs territories"],
+  ["list", "list-marketplace-territory-mismatch", noCatalog((a) => (a.scope.territories = ["CA"])), "territory_mismatch", "Section 6.2: amazon.com is US"],
+  ["list", "list-territory-uk", noCatalog((a) => (a.scope.territories = ["UK"])), "invalid_country", "ISO 3166-1: the United Kingdom is GB"],
+  ["list", "list-lowercase-territory", noCatalog((a) => (a.scope.territories = ["us"])), "invalid_country", "Country codes are uppercase alpha-2"],
+  ["list", "list-wildcard-mixed", noCatalog((a) => (a.scope.territories = ["*", "US"])), "schema", "'*' must stand alone"],
+  ["list", "list-empty-territories", noCatalog((a) => (a.scope.territories = [])), "schema", "Territories cannot be empty when given"],
+
+  // ---- list: invalid (section 3 and 3.1)
+  ["list", "list-missing-scope", noCatalog((a) => delete a.scope), "schema", "Section 3: every authorization carries a scope"],
+  ["list", "list-scope-no-products", noCatalog((a) => (a.scope = { territories: ["US"] })), "schema", "Section 3: product_lines, products or both"],
+  ["list", "list-all-mixed", noCatalog((a) => (a.scope.product_lines = ["all", "Running"])), "schema", "'all' must stand alone"],
+  ["list", "list-bad-gtin", edit(listWithCatalog, (l) => (l.catalog[0].gtin = "00012345678906")), "invalid_gtin", "Section 3.1: GTIN check digit"],
+  ["list", "list-bad-asin", edit(listWithCatalog, (l) => (l.catalog[0].asins = ["b0example1"])), "invalid_asin", "Section 3.1: ASINs are 10 uppercase letters or digits"],
+  ["list", "list-product-no-identifier", edit(listWithCatalog, (l) => { delete l.catalog[0].gtin; delete l.catalog[0].asins; }), "product_without_identifier", "Section 3.1: gtin or asins"],
+  ["list", "list-duplicate-asin", edit(listWithCatalog, (l) => (l.catalog[1].asins = ["B0EXAMPLE1"])), "duplicate_identifier", "Section 3.1: one ASIN on two products"],
+  ["list", "list-gtin-11-digits", edit(listWithCatalog, (l) => (l.catalog[1].gtin = "12345678905")), "schema", "11 digits is not a GTIN length"],
+  ["list", "list-duplicate-gtin", edit(listWithCatalog, (l) => (l.catalog[1].gtin = "0012345678905")), "duplicate_identifier", "Section 3.1: GTIN-13 and GTIN-14 of the same number collide"],
+  ["list", "list-duplicate-product-id", edit(listWithCatalog, (l) => (l.catalog[1].id = "EB-TEE-BLK-M")), "duplicate_product_id", "Product IDs are unique"],
+  ["list", "list-unknown-line", auth0(listWithCatalog, (a) => (a.scope.product_lines = ["Hats"])), "unknown_product_line", "Section 3.1: scope names a line not in the catalog"],
+  ["list", "list-unknown-product", auth0(listWithCatalog, (a) => (a.scope.products = ["NOPE"])), "unknown_product", "Section 3.1: scope names a product not in the catalog"],
+  ["list", "list-exclude-unknown-product", auth0(listWithCatalog, (a) => (a.scope.exclude_products = ["NOPE"])), "unknown_product", "Section 3.1: exclusions must exist in the catalog"],
+  ["list", "list-brand-exclusion-no-catalog", edit(listNoCatalog, (l) => (l.exclusions = { product_lines: ["Running"] })), "unknown_product_line", "Section 3.1: exclusions need a catalog"],
+  ["list", "list-duplicate-authorization-id", edit(listNoCatalog, (l) => l.authorizations.push(clone(l.authorizations[0]))), "duplicate_authorization_id", "Authorization IDs are unique within a list"],
+  ["list", "list-missing-revocation-id", noCatalog((a) => delete a.revocation_id), "schema", "Section 10.3: every authorization has a revocation_id"],
+
+  // ---- list: invalid (sections 5.2 and 10)
+  ["list", "list-expires-field", edit(listNoCatalog, (l) => (l.expires = "2026-12-22T00:00:00Z")), "schema", "v0.2 lists use valid_until, not expires"],
+  ["list", "list-valid-over-15-minutes", edit(listNoCatalog, (l) => (l.valid_until = "2026-09-28T14:15:01Z")), "valid_until_exceeds_max", "Section 10.1: 15 minutes at most"],
+  ["list", "list-stale-over-24-hours", edit(listNoCatalog, (l) => (l.stale_until = "2026-09-29T14:00:01Z")), "stale_until_exceeds_max", "Section 10.2: 24 hours at most"],
+  ["list", "list-missing-stale-until", edit(listNoCatalog, (l) => delete l.stale_until), "schema", "stale_until is required"],
+  ["list", "list-single-domain", edit(listNoCatalog, (l) => (l.brand = { name: "Example Brand", domain: "brand.example" })), "schema", "Section 5.2: lists name brand.domains"],
+  ["list", "list-not-public-with-authorizations", edit(notPublic, (l) => (l.authorizations = [])), "schema", "Section 5.2: a not-public response carries no authorizations"],
+  ["list", "list-not-public-with-catalog", edit(notPublic, (l) => (l.catalog = [])), "schema", "Section 5.2: nor a catalog"],
+  ["list", "list-extra-property", edit(listNoCatalog, (l) => (l.price = 10)), "schema", "Section 1: no pricing; unknown properties rejected"],
+  ["list", "list-attached-jws", edit(listNoCatalog, (l) => (l.signature.jws = "aGVhZA.cGF5bG9hZA.c2ln")), "schema", "Section 8: JWS must be detached"],
+  ["list", "list-unsigned", edit(listNoCatalog, (l) => delete l.signature), "schema", "Section 5.2: lists are signed"],
+  ["list", "list-non-utc-timestamp", edit(listNoCatalog, (l) => (l.issued = "2026-09-28T14:00:00+01:00")), "schema", "Timestamps are UTC with Z"],
+  ["list", "list-impossible-date", noCatalog((a) => (a.expires = "2026-02-30T00:00:00Z")), "schema", "Feb 30 does not exist"],
+
+  // ---- verify request: valid
+  ["verify-request", "full", request, null, "Section 9 example"],
+  ["verify-request", "minimal-marketplace", req(amazonUS), null, "Territory defaults to amazon.com's country"],
+  ["verify-request", "web-generic-with-territory", req({ type: "web", domain: "retailer.example" }, { territory: "CA", product_line: "Running" }), null, "Section 6.2: generic domain names its territory"],
+  ["verify-request", "web-cctld-no-territory", req({ type: "web", domain: "retailer.co.uk" }), null, "Section 6.2: ccTLD implies GB"],
+  ["verify-request", "gtin", req(amazonUS, { product: { gtin: "00012345678905" } }), null, "Product by GTIN"],
+  ["verify-request", "as-of-datetime", req(amazonUS, { as_of: "2026-09-01T12:00:00Z" }), null, "as_of as a UTC date-time"],
+
+  // ---- verify request: invalid
+  ["verify-request", "marketplace-field", req({ type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" }), "marketplace_field_removed", "Section 6: marketplace was replaced by domain"],
+  ["verify-request", "gtin-and-asin", req(amazonUS, { product: { gtin: "00012345678905", asin: "B0EXAMPLE1" } }), "schema", "Section 9: exactly one of gtin or asin"],
+  ["verify-request", "bad-gtin", req(amazonUS, { product: { gtin: "00012345678906" } }), "invalid_gtin", "GTIN check digit"],
+  ["verify-request", "territory-uk", req(amazonUS, { territory: "UK" }), "invalid_country", "ISO 3166-1: GB, not UK (normalizeVerifyRequest maps it)"],
+  ["verify-request", "generic-web-no-territory", req({ type: "web", domain: "retailer.example" }), "territory_required", "Section 6.2: generic domain needs a territory"],
+  ["verify-request", "physical-channel", req({ type: "physical", address: "1 Main St", country: "US" }), "unknown_channel_type", "physical was removed"],
+  ["verify-request", "wildcard-territory", req(amazonUS, { territory: "*" }), "schema", "A request names one territory"],
+  ["verify-request", "missing-channel", { brand_domain: "brand.example" }, "schema", "Channel is required"],
+  ["verify-request", "retailer-name-only", { brand_domain: "brand.example", retailer: "Example Retail LLC" }, "schema", "Section 6: agents match on identifiers, not names"],
+  ["verify-request", "domain-with-scheme", req(amazonUS, { brand_domain: "https://brand.example" }), "schema", "Bare hostname only"],
+  ["verify-request", "bad-as-of", req(amazonUS, { as_of: "yesterday" }), "schema", "as_of is an ISO 8601 date or UTC date-time"],
 
   // ---- verify response: valid
   ["verify-response", "authorized", authorized, null, "Section 9 example"],
+  ["verify-response", "authorized-no-product", edit(authorized, (r) => delete r.product), null, "No product asked"],
+  ["verify-response", "authorized-with-end-date", edit(authorized, (r) => (r.expires = "2027-09-28T00:00:00Z")), null, "Brand-set end date"],
   ["verify-response", "authorized-observed", edit(authorized, (r) => (r.observed = { last_seen: "2026-09-20T00:00:00Z" })), null, "Section 7: seen selling within 30 days"],
-  ["verify-response", "expired", edit(authorized, (r) => { r.status = "expired"; r.expires = "2026-09-01T00:00:00Z"; }), null, ""],
-  ["verify-response", "disputed", edit(authorized, (r) => (r.status = "disputed")), null, ""],
+  ["verify-response", "authorized-not-in-catalog", edit(authorized, (r) => { r.product = { in_catalog: false }; r.signals = [{ type: "product_not_in_catalog", observed: "2026-09-28T14:02:11Z" }]; }), null, "Section 9.2 rule 5"],
+  ["verify-response", "authorized-private-product", edit(authorized, (r) => (r.product = { in_catalog: true })), null, "Section 9: private lists show only in_catalog"],
+  ["verify-response", "expired", edit(authorized, (r) => { r.status = "expired"; r.expires = "2026-09-01T00:00:00Z"; delete r.revocation_id; }), null, ""],
+  ["verify-response", "disputed", edit(authorized, (r) => { r.status = "disputed"; delete r.revocation_id; }), null, ""],
   ["verify-response", "unlisted", unlisted, null, ""],
-  ["verify-response", "brand-unverified-reason", unverified, null, "Section 9 reason"],
-  ["verify-response", "brand-unverified-no-reason", edit(unverified, (r) => delete r.reason), null, "reason is optional"],
+  ["verify-response", "unlisted-territory-mismatch", { ...unlisted, reason: "territory_mismatch" }, null, "Section 6.2"],
+  ["verify-response", "unlisted-product-excluded", { ...unlisted, reason: "product_excluded", product: { in_catalog: true, id: "EB-DTC-1", product_line: "Limited" } }, null, "Section 9.2 rule 2"],
+  ["verify-response", "unlisted-product-not-in-catalog", { ...unlisted, reason: "product_not_in_catalog", product: { in_catalog: false } }, null, "Section 9.2 rule 4"],
+  ["verify-response", "not-registered-reason", notRegistered, null, "Section 4 reason"],
+  ["verify-response", "not-registered-no-reason", edit(notRegistered, (r) => delete r.reason), null, "reason is optional"],
+  ["verify-response", "with-as-of", edit(authorized, (r) => (r.as_of = "2026-09-28T00:00:00Z")), null, "Section 9: as_of echoed"],
   ["verify-response", "with-signal", edit(authorized, (r) => r.signals.push({ type: "account_name_changed", observed: "2026-09-20T00:00:00Z", detail: "Storefront name changed" })), null, "Section 7 signals"],
 
   // ---- verify response: invalid
+  ["verify-response", "brand-unverified", { ...notRegistered, status: "brand_unverified" }, "schema", "Renamed brand_not_registered in v0.2"],
+  ["verify-response", "authorized-missing-revocation-id", edit(authorized, (r) => delete r.revocation_id), "schema", "Section 10.3: authorized answers carry revocation_id"],
+  ["verify-response", "unlisted-with-revocation-id", { ...unlisted, revocation_id: "rv_Q2l8dX4bT0aN5kPw" }, "schema", "Only authorized answers carry revocation_id"],
+  ["verify-response", "unlisted-with-not-registered-reason", { ...unlisted, reason: "domain_unlinked" }, "schema", "Section 9: reasons belong to their status"],
+  ["verify-response", "not-registered-with-unlisted-reason", { ...notRegistered, reason: "product_excluded" }, "schema", "Section 9: reasons belong to their status"],
+  ["verify-response", "authorized-with-reason", { ...authorized, reason: "product_excluded" }, "schema", "Section 9: no reason on authorized"],
+  ["verify-response", "not-in-catalog-with-id", { ...unlisted, reason: "product_not_in_catalog", product: { in_catalog: false, id: "X" } }, "schema", "A product not in the catalog has no id"],
+  ["verify-response", "expired-without-expires", edit(authorized, (r) => { r.status = "expired"; delete r.revocation_id; }), "schema", "expired names the end date"],
   ["verify-response", "missing-observed", edit(authorized, (r) => delete r.observed), "schema", "Section 7: every answer MUST carry observed"],
-  ["verify-response", "unlisted-observed", edit(unlisted, (r) => (r.observed = { last_seen: "2026-09-20T00:00:00Z" })), "schema", "Section 7: observed is null unless authorized"],
-  ["verify-response", "observed-without-last-seen", edit(authorized, (r) => (r.observed = {})), "schema", "Section 7: observed carries last_seen"],
-  ["verify-response", "with-tier", edit(authorized, (r) => (r.tier = "brand_attested")), "schema", "Evidence tiers were removed (section 7)"],
-  ["verify-response", "unlisted-with-reason", edit(unlisted, (r) => (r.reason = "domain_unlinked")), "schema", "Section 9: reason only on brand_unverified"],
-  ["verify-response", "unlisted-with-authorization-id", edit(unlisted, (r) => (r.authorization_id = "auth_01J9X2")), "schema", "Unlisted answers leak nothing about other authorizations"],
-  ["verify-response", "authorized-missing-authorization-id", edit(authorized, (r) => delete r.authorization_id), "schema", ""],
-  ["verify-response", "missing-valid-until", edit(authorized, (r) => delete r.valid_until), "schema", "Section 9: valid_until is required"],
+  ["verify-response", "unlisted-observed", { ...unlisted, observed: { last_seen: "2026-09-20T00:00:00Z" } }, "schema", "Section 7: observed is null unless authorized"],
+  ["verify-response", "unlisted-with-authorization-id", { ...unlisted, authorization_id: "auth_01J9X2" }, "schema", "Unlisted answers name no authorization"],
+  ["verify-response", "missing-stale-until", edit(authorized, (r) => delete r.stale_until), "schema", "Section 10.2: stale_until is required"],
   ["verify-response", "missing-signature", edit(authorized, (r) => delete r.signature), "schema", "Answers are signed"],
-  ["verify-response", "unknown-status", edit(authorized, (r) => (r.status = "unlawful")), "schema", "Section 1: unlisted is not unlawful"],
-  ["verify-response", "valid-until-over-24h", edit(authorized, (r) => (r.valid_until = "2026-09-24T14:02:12Z")), "valid_until_exceeds_max", "Section 9 MUST"],
-  ["verify-response", "valid-until-before-checked", edit(authorized, (r) => (r.valid_until = "2026-09-23T14:02:11Z")), "valid_until_not_after_checked", ""],
+  ["verify-response", "with-tier", edit(authorized, (r) => (r.tier = "brand_attested")), "schema", "Evidence tiers were removed (section 7)"],
+  ["verify-response", "with-stale-flag", edit(authorized, (r) => (r.stale = true)), "schema", "stale is the verifier's verdict, not part of a signed answer"],
+  ["verify-response", "valid-until-over-15-minutes", edit(authorized, (r) => (r.valid_until = "2026-09-28T14:17:12Z")), "valid_until_exceeds_max", "Section 9 MUST"],
+  ["verify-response", "valid-until-before-checked", edit(authorized, (r) => (r.valid_until = "2026-09-28T14:02:11Z")), "valid_until_not_after_issued", ""],
+  ["verify-response", "stale-until-over-24-hours", edit(authorized, (r) => (r.stale_until = "2026-09-29T14:02:12Z")), "stale_until_exceeds_max", "Section 10.2"],
+
+  // ---- revocation feed
+  ["revocation-feed", "feed", feed, null, "Section 10.3 example"],
+  ["revocation-feed", "feed-empty", edit(feed, (f) => (f.entries = [])), null, "No revocations in the last 24 hours"],
+  ["revocation-feed", "feed-hashed-entry", edit(feed, (f) => (f.entries = [{ hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", revoked: "2026-09-28T13:40:12Z" }])), "schema", "Section 10.3: entries are revocation IDs, not hashes"],
+  ["revocation-feed", "feed-valid-over-15-minutes", edit(feed, (f) => (f.valid_until = "2026-09-28T14:17:01Z")), "valid_until_exceeds_max", "Section 10.1"],
+
+  // ---- matching (section 9)
+  ["match", "seller-authorized-for-line", match(req(amazonUS, { product: { asin: "B0EXAMPLE1" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee" }, signals: [] }), null, "Rule 1: in the catalog and covered"],
+  ["match", "seller-authorized-by-gtin", match(req(amazonUS, { product: { gtin: "012345678905" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee" }, signals: [] }), null, "GTIN-12 matches the catalog's GTIN-14"],
+  ["match", "product-excluded-by-authorization", match(req(amazonUS, { product: { asin: "B0EXAMPLE2" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-TEE-WHT-M", product_line: "Classic Tee" }, signals: [] }), null, "Rule 2: authorization excludes the product"],
+  ["match", "product-not-in-scope", match(req(amazonUS, { product: { gtin: "96385074" } }), { status: "unlisted", reason: "product_not_in_scope", product: { in_catalog: true, id: "EB-RUN-V2", product_line: "Running" }, signals: [] }), null, "Rule 3: in the catalog, not included"],
+  ["match", "duplicate-asin-authorized-seller", match(req(amazonUS, { product: { asin: "B0DUPL1CAT" } }), { status: "unlisted", reason: "product_not_in_catalog", product: { in_catalog: false }, signals: [] }), null, "Rule 4: line-scoped seller, ASIN not in the catalog"],
+  ["match", "duplicate-asin-unauthorized-seller", match(req({ type: "amazon", domain: "amazon.com", seller_id: "AUNKNOWNSELLER" }, { product: { asin: "B0DUPL1CAT" } }), { status: "unlisted", product: { in_catalog: false }, signals: [] }), null, "Section 9.1: an unauthorized seller's duplicate ASIN never authorizes"],
+  ["match", "all-scope-not-in-catalog", match(req(global, { territory: "US", product: { asin: "B0DUPL1CAT" } }), { status: "authorized", authorization_id: "auth_02", product: { in_catalog: false }, signals: ["product_not_in_catalog"] }), null, "Rule 5: [\"all\"] covers it, with a signal"],
+  ["match", "all-scope-excluded-line", match(req(global, { territory: "FR", product: { asin: "B0EXAMPLE3" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running" }, signals: [] }), null, "[\"all\"] with one excluded line"],
+  ["match", "brand-exclusion-beats-named-product", match(req(amazonUK, { product: { gtin: "12345678901231" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-DTC-1", product_line: "Limited" }, signals: [] }), null, "Brand-level exclusion overrides an authorization naming the product"],
+  ["match", "marketplace-territory-default", match(req(amazonUK), { status: "authorized", authorization_id: "auth_04", signals: [] }), null, "Territory defaults to amazon.co.uk's GB"],
+  ["match", "marketplace-territory-mismatch", match(req(amazonUK, { territory: "US" }), { status: "unlisted", reason: "territory_mismatch", signals: [] }), null, "Section 6.2: amazon.co.uk is GB"],
+  ["match", "worldwide-web", match(req(global, { territory: "JP" }), { status: "authorized", authorization_id: "auth_02", signals: [] }), null, "Worldwide web store"],
+  ["match", "product-line-request", match(req(global, { territory: "US", product_line: "Running" }), { status: "unlisted", signals: [] }), null, "Excluded line asked by product_line"],
+  ["match", "expired-end-date", match(req({ type: "web", domain: "ukrunners.co.uk" }, { product: { asin: "B0EXAMPLE3" } }), { status: "expired", authorization_id: "auth_03", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running" }, signals: [] }), null, "Section 10: past the brand's end date"],
+  ["match", "as-of-before-end-date", match(req({ type: "web", domain: "ukrunners.co.uk" }, { product: { asin: "B0EXAMPLE3" }, as_of: "2026-08-15" }), { status: "authorized", authorization_id: "auth_03", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running" }, signals: [] }), null, "Section 9: as_of before the end date"],
+  ["match", "match-by-channel-key", match(req({ type: "amazon", domain: "amazon.com", seller_id: " a1b2c3d4e5f6g7 " }), { status: "authorized", authorization_id: "auth_01J9X2", signals: [] }), null, "Section 6.1: Amazon seller IDs compare uppercased"],
 ];
 
 rmSync(root, { recursive: true, force: true });
 const manifest = [];
-for (const [kind, name, doc, expect, note] of cases) {
-  const rel = `${kind}/${expect === null ? "valid" : "invalid"}/${name}.json`;
+for (const [kind, name, doc, expect, note, extra = {}] of cases) {
+  const valid = expect === null;
+  const rel = kind === "match" ? `match/${name}.json` : `${kind}/${valid ? "valid" : "invalid"}/${name}.json`;
   mkdirSync(join(root, dirname(rel)), { recursive: true });
   writeFileSync(join(root, rel), JSON.stringify(doc, null, 2) + "\n");
-  manifest.push({ path: rel, kind, valid: expect === null, ...(expect ? { expect } : {}), ...(note ? { note } : {}) });
+  manifest.push({ path: rel, kind, ...(kind === "match" ? {} : { valid }), ...(expect ? { expect } : {}), ...extra, ...(note ? { note } : {}) });
 }
 writeFileSync(join(root, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 console.log(`wrote ${manifest.length} fixtures`);

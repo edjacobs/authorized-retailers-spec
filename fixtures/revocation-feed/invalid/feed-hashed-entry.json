@@ -1,0 +1,17 @@
+{
+  "spec": "authorized-retailers/0.2",
+  "feed": "revocations",
+  "issued": "2026-09-28T14:02:00Z",
+  "valid_until": "2026-09-28T14:17:00Z",
+  "stale_until": "2026-09-29T14:02:00Z",
+  "entries": [
+    {
+      "hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "revoked": "2026-09-28T13:40:12Z"
+    }
+  ],
+  "signature": {
+    "kid": "ar-20260928-6e37",
+    "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
+  }
+}

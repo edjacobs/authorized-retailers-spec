@@ -1,19 +1,20 @@
 # authorized-retailers.json
 
-An open standard for brands to publish which retailers they have authorized, and for software to check a seller against that list.
+An open format with a single registry, for brands to record which retailers they have authorized and for software to check a seller against that record.
 
-> **Status: draft v0.1.** Breaking changes are possible before v1.0. See [GOVERNANCE.md](GOVERNANCE.md) for how changes are made.
+> **Status: draft v0.2.** Breaking changes are possible before v1.0. See [GOVERNANCE.md](GOVERNANCE.md) for how changes are made.
 
-The standard answers one question: has this brand authorized this seller, on this channel, in this territory, for this product line, as of this date? The format is built for AI shopping agents to check before they recommend or buy, and is ready for them as they adopt it. It works just as well for marketplaces, brand protection teams and anyone else who needs the answer.
+The standard answers one question: has this brand authorized this seller, on this channel, in this territory, for this product, as of this date? Built for AI shopping agents to check before they recommend or buy. It works just as well for marketplaces, brand protection teams and anyone else who needs the answer.
 
-- **Read the spec:** [`spec/spec-v0.1.md`](spec/spec-v0.1.md), also at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec)
-- **Reference registry:** [authorizedretailers.ai](https://authorizedretailers.ai)
+- **Read the spec:** [`spec/spec-v0.2.md`](spec/spec-v0.2.md), also at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec)
+- **The registry:** [authorizedretailers.ai](https://authorizedretailers.ai). The registry currently lists US channels. Other countries are coming.
 
 ## Core principles
 
-- **Every authorization comes from the brand.** No one else can authorize a retailer: not a distributor, not a retailer and not the registry.
+- **Every authorization comes from the brand.** No one else can authorize a retailer: not a distributor, not a retailer and not the registry. The registry confirms the brand controls its domain, publishes the brand's list and signs it. It never changes a list on its own. The signature says who published the list, not who is authorized.
 - **Distributors can propose, only the brand approves.** A proposal changes nothing until the brand says yes.
-- **Authorization is scoped and expires.** Each one names its channels, territories and product lines, and lapses unless the brand reconfirms it.
+- **Authorization is scoped.** Each authorization names its channels and territories and the product lines or products it covers. It lasts until the brand revokes it, or until an end date if the brand sets one.
+- **One source of truth.** authorizedretailers.ai is the only registry. An answer counts only if it verifies against the registry's published keys. Anyone may cache or relay signed answers, but no one else can issue them.
 - **Authorization is not authenticity.** An answer says what the brand has approved. It does not say whether any item is genuine.
 - **The registry doesn't rule on pricing.** Pricing and commercial terms are between the brand and its retailers.
 - **Listing is free.** Brands publish and retailers are listed at no cost.
@@ -23,69 +24,70 @@ The standard answers one question: has this brand authorized this seller, on thi
 
 | You are | You use it to |
 | --- | --- |
-| A brand | Publish which retailers you've authorized, where and for what |
-| A retailer | Show that the brands you sell have authorized you, and see how you're listed |
+| A brand | Record which retailers you've authorized, where and for which products |
 | An agent builder | Check a seller before recommending or buying, with an answer you can verify |
 
-## Publish a file (brands)
+## Register a brand
 
-A brand verifies control of its domain with a registry, which signs its list. The brand then serves a file at:
+A brand keeps its catalog and authorizations on the registry, which signs its list. The list lives on the registry, so it is always current. The brand proves it controls its domain with a DNS TXT record, which works on every site platform:
+
+```
+authorizedretailers-verify=<token from the registry>
+```
+
+A brand that can serve files under `/.well-known/` may also serve a pointer, or use one in place of the DNS record:
 
 ```
 https://<brand-domain>/.well-known/authorized-retailers.json
 ```
 
-The file takes one of three forms:
-
-| Form | What it holds | Use when |
-| --- | --- | --- |
-| `full` | The complete signed list | You want your list public |
-| `pointer` | A URL to your signed list on a registry | You want the file to stay current without re-uploading |
-| `private` | Your identity and a verify endpoint, no retailers | You don't want your distribution network public |
-
-Only files signed by a registry count. An unsigned file is well formed but treated as no file (spec section 5). The simplest choice is the `pointer` form:
-
 ```json
 {
-  "spec": "authorized-retailers/0.1",
+  "spec": "authorized-retailers/0.2",
   "form": "pointer",
   "brand": { "name": "Example Brand", "domain": "brand.example" },
+  "verify_token": "<token from the registry>",
   "list": "https://authorizedretailers.ai/v0/brands/brand.example/list"
 }
 ```
 
-## Validate a file
+The pointer holds no authorization data, so it never goes out of date. The token is public: it proves control only of the domain it was issued for. The registry checks the DNS record or pointer regularly. If both are removed, the brand's list stops counting until one is restored. The pointer itself is not signed. The list it names is, and so is every answer from the verify endpoint.
+
+## Validate a pointer and a list
 
 ```bash
 npm install @authorizedretailers/spec
 ```
 
-```ts
-import { validateFile, validAuthorizations } from "@authorizedretailers/spec";
+```js
+import { validateFile, checkPublishedList, validAuthorizations } from "@authorizedretailers/spec";
 
-const result = validateFile(file);
-if (!result.valid) console.log(result.errors);
-else if (result.value.form === "full") {
-  const current = validAuthorizations(result.value); // an expired file yields none
+// The registry's public keys. Fetch once and cache.
+const jwks = await fetch("https://authorizedretailers.ai/.well-known/jwks.json").then((r) => r.json());
+
+const pointer = await fetch("https://brand.example/.well-known/authorized-retailers.json").then((r) => r.json());
+const file = validateFile(pointer, "brand.example");
+if (!file.valid) console.log(file.errors);
+
+// Fetch the signed list the pointer names, then check it.
+const list = await fetch(file.value.list).then((r) => r.json());
+const check = await checkPublishedList("brand.example", list, jwks);
+// { counts: true, kid } or { counts: false, reason }
+
+if (check.counts && list.public) {
+  const current = validAuthorizations(list); // leaves out authorizations past their end date
 }
 ```
 
-To accept a file you fetched, check its signature and that it vouches for the domain it came from:
-
-```ts
-import { checkPublishedFile } from "@authorizedretailers/spec";
-
-const check = await checkPublishedFile("brand.example", file, jwks);
-// { counts: true, kid } or { counts: false, reason }
-```
+A brand with only a DNS record has no pointer. Its list is at the same registry URL: `https://authorizedretailers.ai/v0/brands/<domain>/list`.
 
 The package works in Node 20+, Cloudflare Workers, Deno and browsers. It uses only Web Crypto, makes no network calls and sends no telemetry.
 
 ## Verify a signed registry answer (agent builders)
 
-Ask a registry whether a seller is authorized, then verify the answer against the registry's published keys:
+Ask the registry whether a seller is authorized, then verify the answer against the registry's published keys (`jwks`, fetched above):
 
-```ts
+```js
 import { verifyDocument } from "@authorizedretailers/spec";
 
 const answer = await fetch("https://authorizedretailers.ai/v0/verify", {
@@ -93,34 +95,51 @@ const answer = await fetch("https://authorizedretailers.ai/v0/verify", {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     brand_domain: "brand.example",
-    channel: { type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" },
-    territory: "US",
+    channel: { type: "amazon", domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" },
+    // Optional:
+    territory: "US",                  // defaults to the domain's country
+    product: { asin: "B0EXAMPLE1" },  // or { gtin: "00012345678905" } for UPC or EAN
+    as_of: "2026-09-28",              // defaults to now
   }),
 }).then((r) => r.json());
 
-const jwks = await fetch("https://authorizedretailers.ai/.well-known/jwks.json").then((r) => r.json());
-const check = await verifyDocument(answer, jwks);
+const verified = await verifyDocument(answer, jwks);
 // { valid: true, kid } or { valid: false, reason }
 ```
 
-The verifier rejects keys no longer in the key set and answers past their `valid_until`. On `unknown_kid`, fetch the key set again once. Match sellers on the identifier you see, never on a retailer name: `channelKey()` normalizes identifiers so every reader agrees.
+Marketplace channels are identified by their domain and seller ID, and web stores by their domain. A marketplace domain sets the territory (amazon.com is US, amazon.ca is CA), and a request for a different territory is answered `unlisted`. Product is optional: ask with a GTIN or, on Amazon, an ASIN. Authorization is decided per seller first, then checked against the product lines or products the brand has authorized. Every answer that includes a product says whether it is in the brand's catalog. A product that isn't may be a duplicate listing.
+
+The verifier rejects keys no longer in the key set and answers past their `valid_until` (15 minutes). On `unknown_kid`, fetch the key set again once. Match sellers on the identifier you see, never on a retailer name: `channelKey()` normalizes identifiers so every reader agrees.
+
+If the registry is unreachable, never treat a seller as authorized without a current answer. Between `valid_until` and `stale_until` (24 hours) you may use an answer you already hold, marked as stale, after checking it against the revocation feed: `verifyDocument(answer, jwks, { allowStale: true, revocationFeed })`. Otherwise the seller is unconfirmed (spec section 10.2).
+
+## Upgrading from 0.1
+
+- `full` and `private` files are gone. Replace any `/.well-known/authorized-retailers.json` with a pointer, or remove it and rely on the DNS record.
+- The hosted `authorized-retailers-verify.txt` file is gone. Use the DNS record or the pointer's `verify_token`.
+- Marketplace channels use `domain` (`amazon.com`) instead of `marketplace` (`US`). The old field is rejected.
+- `brand_unverified` is now `brand_not_registered`.
+- Authorizations have no default expiry. `valid_until` is 15 minutes, with `stale_until` for outages.
+- `validateFullFile` is replaced by `validateList`, and `checkPublishedFile` by `checkPublishedList`. `validateFile` validates pointers only and takes the domain it was fetched from.
 
 ## What's in this repository
 
 | Path | What |
 | --- | --- |
-| `spec/` | The specification |
-| `schemas/` | JSON Schemas (draft 2020-12) for the three file forms and the verify request and response |
-| `fixtures/` | Valid and invalid examples, with `manifest.json` saying what each should produce. Usable as a conformance suite |
-| `src/` | Types, validator, identifier matching, RFC 8785 canonicalization (JCS) and detached EdDSA JWS signing and verification |
+| `spec/` | The specification, every version |
+| `schemas/` | JSON Schemas (draft 2020-12) for the pointer file, the signed list, the revocation feed and the verify request and response, one folder per version |
+| `fixtures/` | Valid and invalid examples and matching cases, with `manifest.json` saying what each should produce. Usable as a conformance suite |
+| `src/` | Types, validator, identifier, territory and product matching, RFC 8785 canonicalization (JCS) and detached EdDSA JWS signing and verification |
 | `test/` | Tests for all of the above |
 | `docs/MUST-coverage.md` | Every MUST in the spec and where it is tested |
 
-Anyone may run a registry that implements this standard. See [TRADEMARKS.md](TRADEMARKS.md) for how to describe it.
+authorizedretailers.ai is the only registry. Anyone may build on the standard and cache or relay signed answers, but only answers signed with the registry's published keys count. See [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Feedback
 
 Send feedback on the spec at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec#feedback). This repository doesn't accept pull requests. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Use of the registry is subject to the terms at authorizedretailers.ai/terms.
 
 ## License
 

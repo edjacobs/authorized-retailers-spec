@@ -4,7 +4,5 @@
     "type": "physical",
     "address": "1 Main St",
     "country": "US"
-  },
-  "territory": "US",
-  "product_line": "all"
+  }
 }

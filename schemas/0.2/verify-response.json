@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.2/verify-response.json",
+  "title": "POST /v0/verify response (section 9)",
+  "type": "object",
+  "required": [
+    "status",
+    "checked",
+    "valid_until",
+    "stale_until",
+    "observed",
+    "signals",
+    "signature"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "enum": [
+        "authorized",
+        "unlisted",
+        "expired",
+        "brand_not_registered",
+        "disputed"
+      ]
+    },
+    "reason": {
+      "enum": [
+        "not_registered",
+        "domain_unlinked",
+        "verification_lapsed",
+        "territory_mismatch",
+        "product_excluded",
+        "product_not_in_scope",
+        "product_not_in_catalog"
+      ]
+    },
+    "authorization_id": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "revocation_id": {
+      "$ref": "common.json#/$defs/revocationId"
+    },
+    "expires": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "checked": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "as_of": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "valid_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "stale_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "product": {
+      "type": "object",
+      "required": [
+        "in_catalog"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "in_catalog": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "common.json#/$defs/id"
+        },
+        "product_line": {
+          "$ref": "common.json#/$defs/productLine"
+        }
+      },
+      "if": {
+        "properties": {
+          "in_catalog": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "id"
+              ]
+            },
+            {
+              "required": [
+                "product_line"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "observed": {
+      "description": "Section 7: when the registry last saw this seller selling on the channel, within 30 days; otherwise null",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "last_seen"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "last_seen": {
+              "$ref": "common.json#/$defs/timestamp"
+            }
+          }
+        }
+      ]
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "observed"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,63}$"
+          },
+          "observed": {
+            "$ref": "common.json#/$defs/timestamp"
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        }
+      }
+    },
+    "signature": {
+      "$ref": "common.json#/$defs/signature"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "authorized",
+              "expired",
+              "disputed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "authorization_id"
+        ]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "authorization_id"
+              ]
+            },
+            {
+              "required": [
+                "expires"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "expired"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "expires"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "authorized"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "revocation_id"
+        ]
+      },
+      "else": {
+        "properties": {
+          "observed": {
+            "const": null
+          }
+        },
+        "not": {
+          "required": [
+            "revocation_id"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "brand_not_registered"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "not_registered",
+              "domain_unlinked",
+              "verification_lapsed"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unlisted"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "territory_mismatch",
+              "product_excluded",
+              "product_not_in_scope",
+              "product_not_in_catalog"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "authorized",
+              "expired",
+              "disputed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "reason"
+          ]
+        }
+      }
+    }
+  ]
+}

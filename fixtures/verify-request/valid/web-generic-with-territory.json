@@ -1,0 +1,9 @@
+{
+  "brand_domain": "brand.example",
+  "channel": {
+    "type": "web",
+    "domain": "retailer.example"
+  },
+  "territory": "CA",
+  "product_line": "Running"
+}

@@ -1,0 +1,9 @@
+{
+  "spec": "authorized-retailers/0.2",
+  "form": "pointer",
+  "brand": {
+    "name": "Example Brand",
+    "domain": "brand.example"
+  },
+  "list": "https://authorizedretailers.ai/v0/brands/brand.example/list"
+}

@@ -6,7 +6,7 @@
 
 import { canonicalBytes, canonicalize } from "./jcs.js";
 import { parseTimestamp } from "./timestamp.js";
-import type { Signature } from "./types.js";
+import type { RevocationFeed, Signature } from "./types.js";
 
 export const JWS_ALG = "EdDSA";
 const ED25519 = { name: "Ed25519" } as const;
@@ -68,22 +68,37 @@ export type VerifyFailure =
   | "unknown_kid"
   | "bad_signature"
   | "answer_expired"
-  | "list_expired";
+  | "list_expired"
+  | "feed_expired"
+  | "revocation_feed_required"
+  | "revocation_feed_invalid"
+  | "revoked";
 
-export type SignatureCheck = { valid: true; kid: string } | { valid: false; reason: VerifyFailure };
+export type SignatureCheck = { valid: true; kid: string; stale?: true } | { valid: false; reason: VerifyFailure };
 
 export interface VerifyOptions {
   /** Epoch ms to check validity against. Defaults to Date.now(). */
   now?: number;
+  /**
+   * Section 10.2: accept a list or answer between its valid_until and stale_until. Only for when the
+   * registry and every mirror are unreachable, and only with a revocation feed to check against.
+   */
+  allowStale?: boolean;
+  /** The newest revocation feed the caller could get, unverified; verifyDocument checks it. */
+  revocationFeed?: RevocationFeed;
 }
 
 /**
- * Reference verifier for agents (§8, §9, §12). Checks, in order:
+ * Reference verifier for agents (sections 8, 9, 10, 12). Checks, in order:
  *  - the signature is a well-formed detached EdDSA JWS whose header kid matches signature.kid;
- *  - the kid is in the current key set: signatures from keys no longer in the set are rejected (§8 MUST);
+ *  - the kid is in the current key set: signatures from keys no longer in the set are rejected (section 8 MUST);
  *  - the signature verifies over the canonical document;
- *  - a verify answer is not past its valid_until (§9, §12 MUST), and a list is not past its expires (§5).
- * Callers SHOULD refetch the key set once on "unknown_kid" before giving up (§8).
+ *  - the document is not past its valid_until (section 10.1 MUST). With allowStale and a revocation
+ *    feed, a list or answer up to its stale_until is accepted as { valid: true, stale: true }, unless
+ *    the feed lists the answer's revocation_id (section 10.3). A stale list's revoked authorizations
+ *    are dropped by validAuthorizations(list, now, feed), not here.
+ *  - a revocation feed is usable up to its own stale_until, and is flagged stale after valid_until.
+ * Callers SHOULD refetch the key set once on "unknown_kid" before giving up (section 8).
  */
 export async function verifyDocument(doc: object, jwks: Jwks, opts: VerifyOptions = {}): Promise<SignatureCheck> {
   const now = opts.now ?? Date.now();
@@ -110,13 +125,44 @@ export async function verifyDocument(doc: object, jwks: Jwks, opts: VerifyOption
   const ok = await crypto.subtle.verify(ED25519, key, signature, signingInput(parts[0], signingPayload(doc)));
   if (!ok) return { valid: false, reason: "bad_signature" };
 
-  const d = doc as { valid_until?: unknown; expires?: unknown; form?: unknown };
-  if (typeof d.valid_until === "string") {
-    const until = parseTimestamp(d.valid_until);
-    if (until === null || now > until) return { valid: false, reason: "answer_expired" };
-  } else if (d.form === "full" && typeof d.expires === "string") {
-    const expires = parseTimestamp(d.expires);
-    if (expires === null || now >= expires) return { valid: false, reason: "list_expired" };
+  const d = doc as { valid_until?: unknown; stale_until?: unknown; feed?: unknown; public?: unknown; status?: unknown; revocation_id?: unknown };
+  const until = typeof d.valid_until === "string" ? parseTimestamp(d.valid_until) : null;
+  const staleUntil = typeof d.stale_until === "string" ? parseTimestamp(d.stale_until) : null;
+  const isFeed = d.feed === "revocations";
+  const expired: VerifyFailure = isFeed ? "feed_expired" : typeof d.public === "boolean" ? "list_expired" : "answer_expired";
+  if (until === null) return { valid: false, reason: expired };
+  if (now <= until) return { valid: true, kid: sig.kid };
+
+  // Past valid_until. A feed stays usable to its own stale_until: it is what makes stale answers safe.
+  if (staleUntil === null || now > staleUntil) return { valid: false, reason: expired };
+  if (isFeed) return { valid: true, kid: sig.kid, stale: true };
+  if (!opts.allowStale) return { valid: false, reason: expired };
+  if (!opts.revocationFeed) return { valid: false, reason: "revocation_feed_required" };
+  const feed = await verifyDocument(opts.revocationFeed, jwks, { now });
+  if (!feed.valid || (opts.revocationFeed as { feed?: unknown }).feed !== "revocations") return { valid: false, reason: "revocation_feed_invalid" };
+  if (typeof d.revocation_id === "string" && isRevoked(opts.revocationFeed, d.revocation_id)) return { valid: false, reason: "revoked" };
+  return { valid: true, kid: sig.kid, stale: true };
+}
+
+/** Whether a revocation feed lists this revocation_id (section 10.3). Doesn't check the feed's signature. */
+export function isRevoked(feed: RevocationFeed, revocationId: string): boolean {
+  return feed.entries.some((e) => e.revocation_id === revocationId);
+}
+
+export type RevocationFeedCheck =
+  | { valid: true; kid: string; stale: boolean; revoked: (revocationId: string) => boolean }
+  | { valid: false; reason: VerifyFailure | "not_a_feed" };
+
+/**
+ * Section 10.3: checks a revocation feed's signature and freshness (usable to its stale_until) and
+ * returns a lookup for revocation IDs. Makes no network calls: the caller fetches the feed.
+ */
+export async function checkRevocationFeed(feed: unknown, jwks: Jwks, opts: { now?: number } = {}): Promise<RevocationFeedCheck> {
+  if (typeof feed !== "object" || feed === null || (feed as { feed?: unknown }).feed !== "revocations" || !Array.isArray((feed as RevocationFeed).entries)) {
+    return { valid: false, reason: "not_a_feed" };
   }
-  return { valid: true, kid: sig.kid };
+  const check = await verifyDocument(feed, jwks, opts);
+  if (!check.valid) return check;
+  const ids = new Set((feed as RevocationFeed).entries.map((e) => e.revocation_id));
+  return { valid: true, kid: check.kid, stale: check.stale === true, revoked: (id) => ids.has(id) };
 }

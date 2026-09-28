@@ -1,33 +1,45 @@
 # MUST rules and where they are tested
 
-Every MUST in [spec/spec-v0.1.md](../spec/spec-v0.1.md). Rules this package enforces are tested here. The rest are obligations on registries, indexes or agents, and each implementation has to test them itself. The `fixtures/` suite and the reference verifier are meant to help with that.
+Every MUST in [spec/spec-v0.2.md](../spec/spec-v0.2.md). Rules this package enforces are tested here. The rest are obligations on the registry or on agents, and each implementation has to test them itself. The `fixtures/` suite (including the `match` cases) and the reference verifier are meant to help with that.
 
 | § | Rule | Tested here |
 | --- | --- | --- |
 | 3 | Every authorization MUST come from the brand | Registry obligation |
-| 3 | Each authorization MUST carry a scope (territories, channels, product lines, expiry) | `test/must.test.ts` |
-| 4 | A registry MUST verify domain control before accepting authorizations | Registry obligation |
-| 4 | A registry MUST link the domain via an independent source; until then, listings MUST be `domain_unlinked` | Registry obligation |
-| 4 | On lapse, a registry MUST flag `verification_lapsed`, notify the brand, and MUST NOT keep returning `authorized` | Registry obligation |
-| 5 | An authorization's `expires` MUST NOT be later than the file's `expires` | `test/must.test.ts`, fixture `full-authorization-expires-after-file` |
-| 5 | Readers MUST treat an expired file as containing no valid authorizations | `test/must.test.ts` (`validAuthorizations`), `test/jws.test.ts` (`list_expired`) |
-| 5 | Readers MUST treat an unsigned file, or one whose signature doesn't verify, as no file | `test/jws.test.ts` (`checkPublishedFile`) |
-| 5 | Readers MUST check the file's `brand.domain` is the domain it was fetched from | `test/jws.test.ts` (`checkPublishedFile`, `domain_mismatch`) |
-| 6 | Every authorization MUST name at least one online channel identifier (`physical` alone fails) | `test/must.test.ts` |
-| 6 | Registry-proposed identifier links MUST be confirmed by the brand | Registry obligation |
-| 6 | Confirming a marketplace seller ID exists MUST NOT be presented as proof of control | Registry obligation |
-| 6 | Agents MUST match on the channel identifier, never the name | `test/must.test.ts` (`channelKey`, `authorizationsForChannel`) |
+| 3 | The registry MUST NOT add, remove or change an authorization except on the brand's instruction or approval | Registry obligation |
+| 3 | The registry MUST keep a change log for each brand and MUST show it to the brand | Registry obligation |
+| 3 | Each authorization MUST carry channels and a product scope (product lines, products or both) | `test/must.test.ts`, fixtures `list-missing-scope`, `list-scope-no-products` |
+| 3.1 | Each product MUST have a `gtin` or at least one ASIN | `test/must.test.ts`, fixture `list-product-no-identifier` |
+| 3.1 | A GTIN or ASIN MUST NOT appear on two products | `test/must.test.ts`, fixtures `list-duplicate-asin`, `list-duplicate-gtin` |
+| 3.1 | Named and excluded product lines and products MUST exist in the catalog | `test/must.test.ts`, fixtures `list-unknown-line`, `list-unknown-product`, `list-exclude-unknown-product`, `list-brand-exclusion-no-catalog` |
+| 4 | The registry MUST verify control of a domain before accepting authorizations for it | Registry obligation |
+| 4 | The registry MUST link the domain to the brand through an independent source | Registry obligation |
+| 4 | On lapse, the registry MUST treat the domain as `verification_lapsed`, notify the brand, and MUST NOT keep returning `authorized` | Registry obligation |
+| 5.1 | Readers MUST treat a file with any `form` other than `pointer` as no file | `test/must.test.ts`, fixtures `full-form`, `private-form`, `unknown-form` |
+| 5.1 | `brand.domain` MUST be the domain the pointer was fetched from, also after redirects | `test/must.test.ts`, fixtures `pointer-domain-mismatch`, `pointer-fetched-via-www` |
+| 5.1 | `list` MUST be an `https://authorizedretailers.ai/` URL | `test/must.test.ts`, fixture `pointer-other-host` |
+| 5.2 | Readers MUST treat an unsigned list, or one whose signature doesn't verify, as no list; a list counts only for the domains it names | `test/jws.test.ts` (`checkPublishedList`) |
+| 6 | Every authorization MUST name at least one channel identifier | `test/must.test.ts`, fixtures `list-no-channels`, `list-name-only-retailer` |
+| 6 | A marketplace channel's `domain` MUST be one of that type's marketplace domains; a `web` channel MUST NOT use one | `test/must.test.ts`, fixtures `list-amazon-on-walmart-domain`, `list-web-on-marketplace-domain` |
+| 6 | Readers MUST reject the removed `marketplace` field and `physical` type | `test/must.test.ts`, fixtures `list-marketplace-field`, `list-physical`, `marketplace-field`, `physical-channel` |
+| 6.1 | Agents MUST match on the channel identifier, never the name | `test/must.test.ts` (`channelKey`, `authorizationsForChannel`), fixture `match-by-channel-key` |
+| 6.1 | Registry-proposed identifier links MUST be confirmed by the brand | Registry obligation |
+| 6.2 | A web store on a generic domain MUST list `scope.territories` | `test/must.test.ts`, fixture `list-generic-web-no-territories` |
+| 6.3 | Confirming a marketplace seller ID exists MUST NOT be presented as proof of control | Registry obligation |
 | 7 | Every answer MUST carry `observed`, and it MUST be `null` unless the status is `authorized` | `test/must.test.ts` (verify-response schema) |
 | 8 | Agents MUST reject signatures from keys no longer in the key set | `test/jws.test.ts` (`unknown_kid`) |
-| 9 | Every signed answer MUST carry `valid_until`, at most 24 hours after `checked`; agents MUST NOT rely on it afterwards | `test/must.test.ts` (schema and rule), `test/jws.test.ts` (`answer_expired`) |
-| 9 | `reason` MUST NOT appear on statuses other than `brand_unverified` | `test/must.test.ts` |
-| 9 | Private mode MUST NOT return the brand's other retailers | Schema side (private files carry no retailers; `unlisted` answers name no authorization): `test/must.test.ts`. Otherwise a registry obligation |
-| 9 | List endpoints MUST answer private brands exactly as unknown brands | Registry obligation |
-| 10 | The verify API MUST reflect a revocation within 15 minutes | Registry obligation |
+| 8 | Agents MUST NOT trust a key they haven't fetched from authorizedretailers.ai | Agent obligation |
+| 9 | Every signed answer MUST carry `valid_until` (at most 15 minutes after `checked`) and `stale_until` (at most 24 hours) | `test/must.test.ts`, fixtures `valid-until-over-15-minutes`, `stale-until-over-24-hours` |
+| 9 | `reason` MUST NOT appear on `authorized`, `expired` or `disputed` | `test/must.test.ts`, fixture `authorized-with-reason` |
+| 9.3 | For a list that is not public, the verify API MUST NOT return the brand's other retailers or catalog | Schema side (not-public lists carry neither; unlisted answers name no authorization; products outside the catalog carry no ID): `test/must.test.ts`. Otherwise a registry obligation |
+| 10 | The verify API MUST reflect a revocation within 1 minute | Registry obligation |
+| 10.1 | Agents MUST NOT rely on a cached list or answer past its `valid_until`, except as 10.2 allows | `test/jws.test.ts` (`answer_expired`, `list_expired`) |
+| 10.2 | Agents MUST NOT describe a seller as authorized without a current or allowed stale answer | Agent obligation. `verifyDocument` refuses stale documents unless `allowStale` is set and a feed is given |
+| 10.2 | Agents MUST mark a stale result as stale | `verifyDocument` returns `stale: true`; showing it is an agent obligation |
+| 10.3 | Agents MUST check a stale answer or list against a feed that is itself before its `stale_until`, and MUST drop revoked authorizations | `test/jws.test.ts` (`revocation_feed_required`, `revoked`, `feed_expired`, `validAuthorizations` with a feed) |
 | 11 | Unclaimed entries MUST be labeled unverified, MUST NOT verify as `authorized`, and MUST link to their source | Registry obligation |
 | 12 | Brand accounts MUST use multi-factor authentication | Registry obligation |
-| 12 | Agents MUST reject answers past their `valid_until` | `test/jws.test.ts` |
-| 12 | Registries MUST NOT publish personal addresses of sole-trader retailers | Registry obligation |
 | 12 | A mailbox-address warning MUST NOT change verify answers | Registry obligation |
+| 12 | The registry MUST NOT publish personal addresses of sole-trader retailers | Registry obligation |
+| 12 | Agents MUST reject answers past their `valid_until`, except as 10.2 allows | `test/jws.test.ts` |
 
-Also tested, though not MUST-keyword rules: RFC 8785 canonicalization against the RFC's own test vectors (`test/jcs.test.ts`), and the 180-day maximum expiry (fixtures `full-expiry-over-180-days`, `full-max-expiry`).
+Also tested, though not MUST-keyword rules: RFC 8785 canonicalization against the RFC's own test vectors (`test/jcs.test.ts`); the section 9.2 product matching rules, territory mismatch, `as_of` and end dates (`fixtures/match/`); marketplace territory mismatch in a list (`list-marketplace-territory-mismatch`); and the `territory_differs_from_domain` warning.

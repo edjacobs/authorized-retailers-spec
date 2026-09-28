@@ -1,29 +1,97 @@
 name: Release
 
-# Push a tag like v0.1.0 (matching package.json) to publish to npm. Uses npm trusted
-# publishing (OIDC): configure it for this repo and workflow on npmjs.com; no token is stored.
+# Push a tag like v0.2.0 (matching package.json) to publish to npm and deploy the matching spec pages
+# on authorizedretailers.ai. Both happen in this one workflow: if either fails, the release fails.
+#
+# npm uses trusted publishing (OIDC): no token is stored. The site lives in the private
+# authorizedretailers/authorizedretailers repo; SITE_DEPLOY_TOKEN (a fine-grained token with Actions
+# read and write on that repo only) starts its spec-release workflow and waits for it.
+#
+# Run it by hand (Actions > Release > Run workflow) for a dry run: npm publish --dry-run, and the
+# site builds and tests against this commit's packed package without deploying.
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: publish nothing, deploy nothing"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
   id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: npm
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      - id: version
+        run: echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
       - name: Tag matches package version
-        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+        if: github.event_name == 'push'
+        run: test "v${{ steps.version.outputs.version }}" = "$GITHUB_REF_NAME"
       - run: npm install -g npm@latest # trusted publishing needs npm >= 11.5
       - run: npm ci
-      - run: npm run typecheck && npm test
-      - run: npm publish # access and provenance come from publishConfig
+      - run: npm run typecheck && npm test && npm run test:dist
+      - name: Pack for the site dry run
+        run: npm pack && mv authorizedretailers-spec-*.tgz spec.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spec-package
+          path: spec.tgz
+          retention-days: 7
+      - name: Publish
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then npm publish --dry-run; else npm publish; fi # access and provenance come from publishConfig
+
+  site:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Wait for npm to serve the new version
+        if: env.DRY_RUN != 'true'
+        run: |
+          for i in $(seq 1 30); do
+            npm view "@authorizedretailers/spec@${{ needs.publish.outputs.version }}" version && exit 0
+            sleep 10
+          done
+          echo "npm never served ${{ needs.publish.outputs.version }}" && exit 1
+      - name: Deploy the spec pages
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DEPLOY_TOKEN }}
+          SITE_REPO: authorizedretailers/authorizedretailers
+        run: |
+          started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          gh workflow run spec-release.yml -R "$SITE_REPO" \
+            -f version="${{ needs.publish.outputs.version }}" \
+            -f spec_run_id="${{ github.run_id }}" \
+            -f dry_run="$DRY_RUN"
+          # gh workflow run doesn't return the run ID: find the run it started.
+          for i in $(seq 1 30); do
+            sleep 5
+            run=$(gh run list -R "$SITE_REPO" --workflow spec-release.yml --event workflow_dispatch \
+              --created ">=$started" --limit 1 --json databaseId --jq '.[0].databaseId')
+            [ -n "$run" ] && break
+          done
+          [ -n "$run" ] || { echo "the site workflow never started"; exit 1; }
+          echo "site run: https://github.com/$SITE_REPO/actions/runs/$run"
+          gh run watch "$run" -R "$SITE_REPO" --exit-status --interval 15

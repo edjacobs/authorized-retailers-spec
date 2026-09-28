@@ -1,0 +1,13 @@
+{
+  "status": "brand_not_registered",
+  "reason": "product_excluded",
+  "checked": "2026-09-28T14:02:11Z",
+  "valid_until": "2026-09-28T14:17:11Z",
+  "stale_until": "2026-09-29T14:02:11Z",
+  "observed": null,
+  "signals": [],
+  "signature": {
+    "kid": "ar-20260928-6e37",
+    "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
+  }
+}

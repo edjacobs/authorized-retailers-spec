@@ -1,0 +1,7 @@
+{
+  "brand_domain": "brand.example",
+  "channel": {
+    "type": "web",
+    "domain": "retailer.co.uk"
+  }
+}

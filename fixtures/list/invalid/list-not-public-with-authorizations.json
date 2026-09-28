@@ -1,0 +1,18 @@
+{
+  "spec": "authorized-retailers/0.2",
+  "brand": {
+    "name": "Example Brand",
+    "domains": [
+      "brand.example"
+    ]
+  },
+  "public": false,
+  "issued": "2026-09-28T14:00:00Z",
+  "valid_until": "2026-09-28T14:15:00Z",
+  "stale_until": "2026-09-29T14:00:00Z",
+  "signature": {
+    "kid": "ar-20260928-6e37",
+    "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
+  },
+  "authorizations": []
+}

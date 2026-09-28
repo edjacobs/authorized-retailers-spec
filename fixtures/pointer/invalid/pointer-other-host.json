@@ -1,0 +1,10 @@
+{
+  "spec": "authorized-retailers/0.2",
+  "form": "pointer",
+  "brand": {
+    "name": "Example Brand",
+    "domain": "brand.example"
+  },
+  "verify_token": "tok_4f9KqX2mB7cD1eR8",
+  "list": "https://lists.example/brand.example"
+}

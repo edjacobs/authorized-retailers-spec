@@ -1,0 +1,52 @@
+{
+  "spec": "authorized-retailers/0.2",
+  "brand": {
+    "name": "Example Brand",
+    "domains": [
+      "brand.example"
+    ]
+  },
+  "public": true,
+  "issued": "2026-09-28T14:00:00Z",
+  "valid_until": "2026-09-28T14:15:00Z",
+  "stale_until": "2026-09-29T14:00:00Z",
+  "authorizations": [
+    {
+      "id": "auth_01J9X2",
+      "revocation_id": "rv_Q2l8dX4bT0aN5kPw",
+      "retailer": {
+        "name": "Example Retail LLC",
+        "entity_id": "ent_7Q4M"
+      },
+      "channels": [
+        {
+          "type": "amazon",
+          "domain": "amazon.com",
+          "seller_id": "A1B2C3D4E5F6G7"
+        },
+        {
+          "type": "walmart",
+          "domain": "walmart.com",
+          "seller_id": "101234567"
+        },
+        {
+          "type": "web",
+          "domain": "retailer.example"
+        }
+      ],
+      "scope": {
+        "territories": [
+          "US"
+        ],
+        "product_lines": [
+          "all"
+        ]
+      },
+      "proposed_by": null
+    }
+  ],
+  "signature": {
+    "kid": "ar-20260928-6e37",
+    "jws": "aGVhZA.cGF5bG9hZA.c2ln"
+  }
+}

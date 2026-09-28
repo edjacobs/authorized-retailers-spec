@@ -1,13 +1,14 @@
 {
   "status": "unlisted",
-  "checked": "2026-09-23T14:02:11Z",
-  "valid_until": "2026-09-24T14:02:11Z",
+  "checked": "2026-09-28T14:02:11Z",
+  "valid_until": "2026-09-28T14:17:11Z",
+  "stale_until": "2026-09-29T14:02:11Z",
   "observed": {
     "last_seen": "2026-09-20T00:00:00Z"
   },
   "signals": [],
   "signature": {
-    "kid": "ar-2026-09",
-    "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYtMDkifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
+    "kid": "ar-20260928-6e37",
+    "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
   }
 }

@@ -1,61 +1,102 @@
-import type { Authorization, Channel, FullFile } from "./types.js";
-import { parseTimestamp } from "./timestamp.js";
+import type { Authorization, Channel, MarketplaceChannel } from "./types.js";
+import { GENERIC_CCTLDS, MARKETPLACE_DOMAINS } from "./constants.js";
+import { common } from "./schemas.js";
 
-/** Marketplace codes some platforms use in place of ISO 3166-1 alpha-2. */
-const MARKETPLACE_ALIASES: Record<string, string> = { UK: "GB" };
+/** ISO 3166-1 alpha-2 codes, from the schema so the two can't disagree. */
+const ISO_COUNTRIES: ReadonlySet<string> = new Set(common.$defs.countryCode.enum);
 
+/** Codes people commonly type in place of ISO 3166-1 alpha-2. Schemas accept only the ISO code. */
+const COUNTRY_ALIASES: Record<string, string> = { UK: "GB" };
+
+/** Section 6: lowercase, no trailing dot, no leading "www.". */
 export function normalizeDomain(domain: string): string {
   return domain.trim().toLowerCase().replace(/\.$/, "").replace(/^www\./, "");
 }
 
+/** Uppercases and maps common aliases (UK) to ISO 3166-1 alpha-2 (GB). */
 export function normalizeCountry(code: string): string {
   const upper = code.trim().toUpperCase();
-  return MARKETPLACE_ALIASES[upper] ?? upper;
+  return COUNTRY_ALIASES[upper] ?? upper;
+}
+
+export function isCountryCode(code: string): boolean {
+  return ISO_COUNTRIES.has(code);
+}
+
+export function isMarketplaceDomain(domain: string): boolean {
+  return Object.hasOwn(MARKETPLACE_DOMAINS, normalizeDomain(domain));
 }
 
 /**
- * The identity an agent matches on (section 6: match on the channel identifier, never the
- * retailer name). Returns null for physical channels, which agents cannot verify.
+ * Section 6.2: the country a domain implies. A marketplace domain's country from the table, a
+ * country-code domain's country (".co.uk" is GB), or null for a generic domain (".com", ".io").
  */
-export function channelKey(channel: Channel): string | null {
+export function territoryForDomain(domain: string): string | null {
+  const d = normalizeDomain(domain);
+  const market = MARKETPLACE_DOMAINS[d];
+  if (market) return market.country;
+  const tld = d.slice(d.lastIndexOf(".") + 1);
+  if (tld.length !== 2 || GENERIC_CCTLDS.has(tld)) return null;
+  const country = tld === "uk" ? "GB" : tld.toUpperCase();
+  return ISO_COUNTRIES.has(country) ? country : null;
+}
+
+/**
+ * Section 6.2: the territories one channel of an authorization covers. A marketplace channel covers
+ * only its domain's country, and only if the scope (when given) allows it. A web store covers
+ * scope.territories when given, otherwise its domain's country. An empty result means none: a
+ * marketplace country the scope leaves out, or a generic-domain web store with no territories.
+ */
+export function effectiveTerritories(authorization: Authorization, channel: Channel): string[] {
+  const listed = authorization.scope.territories;
+  const own = territoryForDomain(channel.domain);
+  if (channel.type !== "web") {
+    if (own === null) return [];
+    return !listed || listed[0] === "*" || listed.includes(own) ? [own] : [];
+  }
+  if (listed) return listed;
+  return own === null ? [] : [own];
+}
+
+/** Whether a channel of an authorization covers a territory. */
+export function coversTerritory(authorization: Authorization, channel: Channel, territory: string): boolean {
+  const t = effectiveTerritories(authorization, channel);
+  return t[0] === "*" || t.includes(territory);
+}
+
+/**
+ * Section 6.1: the identity an agent matches on (never the retailer name). Domains are normalized;
+ * Amazon seller IDs are uppercased, eBay user IDs lowercased and Walmart partner IDs kept as they are.
+ */
+export function channelKey(channel: Channel): string {
+  const domain = normalizeDomain(channel.domain);
   switch (channel.type) {
     case "amazon":
-      return `amazon:${normalizeCountry(channel.marketplace)}:${channel.seller_id.trim().toUpperCase()}`;
+      return `amazon:${domain}:${channel.seller_id.trim().toUpperCase()}`;
     case "walmart":
-      return `walmart:${normalizeCountry(channel.marketplace)}:${channel.seller_id.trim()}`;
+      return `walmart:${domain}:${channel.seller_id.trim()}`;
     case "ebay":
-      return `ebay:${normalizeCountry(channel.marketplace)}:${channel.seller_id.trim().toLowerCase()}`;
+      return `ebay:${domain}:${channel.seller_id.trim().toLowerCase()}`;
     case "web":
-      return `web:${normalizeDomain(channel.domain)}`;
-    case "physical":
-      return null;
+      return `web:${domain}`;
   }
+}
+
+/** The marketplace channel's type as its domain implies, or null for a non-marketplace domain. */
+export function marketplaceTypeForDomain(domain: string): MarketplaceChannel["type"] | null {
+  return MARKETPLACE_DOMAINS[normalizeDomain(domain)]?.type ?? null;
 }
 
 /** Authorizations naming this channel. Matching uses channelKey only; retailer names are ignored. */
 export function authorizationsForChannel(authorizations: Authorization[], channel: Channel): Authorization[] {
   const key = channelKey(channel);
-  if (key === null) return [];
   return authorizations.filter((a) => a.channels.some((c) => channelKey(c) === key));
 }
 
 /**
- * The authorizations a reader may rely on at `now`. Section 5: an expired file contains no valid
- * authorizations. Individually expired authorizations are dropped too.
- */
-export function validAuthorizations(file: FullFile, now: number = Date.now()): Authorization[] {
-  const fileExpires = parseTimestamp(file.expires);
-  if (fileExpires === null || now >= fileExpires) return [];
-  return file.authorizations.filter((a) => {
-    const exp = parseTimestamp(a.expires);
-    return exp !== null && now < exp;
-  });
-}
-
-/**
  * Brings raw agent input into the canonical form validateVerifyRequest expects: trims strings,
- * lowercases domains (dropping "www."), uppercases country codes. Leaves unexpected shapes alone
- * so the validator reports them.
+ * lowercases domains (dropping "www."), uppercases country codes and ASINs, maps "UK" to "GB" and
+ * strips spaces and dashes from GTINs. Leaves unexpected shapes alone so the validator reports them.
  */
 export function normalizeVerifyRequest(input: unknown): unknown {
   if (!isRecord(input)) return input;
@@ -63,27 +104,30 @@ export function normalizeVerifyRequest(input: unknown): unknown {
   if (typeof out.brand_domain === "string") out.brand_domain = normalizeDomain(out.brand_domain);
   if (typeof out.territory === "string") out.territory = normalizeCountry(out.territory);
   if (typeof out.product_line === "string") out.product_line = out.product_line.trim();
+  if (typeof out.as_of === "string") out.as_of = out.as_of.trim();
+  if (isRecord(out.product)) {
+    const p: Record<string, unknown> = { ...out.product };
+    if (typeof p.gtin === "string") p.gtin = p.gtin.replace(/[\s-]/g, "");
+    if (typeof p.asin === "string") p.asin = p.asin.trim().toUpperCase();
+    out.product = p;
+  }
   out.channel = normalizeChannel(out.channel);
   return out;
 }
 
 /**
- * Canonical form of a channel as typed by a person or agent: trims, lowercases the type and
- * domains (dropping "www."), uppercases country codes. Unexpected shapes pass through untouched.
- * Identifier case is kept; channelKey decides how case compares.
+ * Canonical form of a channel as typed by a person or agent: trims, lowercases the type and domain
+ * (dropping "www."). Seller ID case is kept; channelKey decides how case compares.
  */
 export function normalizeChannel(input: unknown): unknown {
   if (!isRecord(input)) return input;
   const ch: Record<string, unknown> = { ...input };
   if (typeof ch.type === "string") ch.type = ch.type.trim().toLowerCase();
-  if (typeof ch.marketplace === "string") ch.marketplace = normalizeCountry(ch.marketplace);
   if (typeof ch.seller_id === "string") ch.seller_id = ch.seller_id.trim();
   if (typeof ch.domain === "string") ch.domain = normalizeDomain(ch.domain);
-  if (typeof ch.address === "string") ch.address = ch.address.trim();
-  if (typeof ch.country === "string") ch.country = ch.country.trim().toUpperCase();
   return ch;
 }
 
-function isRecord(v: unknown): v is Record<string, unknown> {
+export function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }

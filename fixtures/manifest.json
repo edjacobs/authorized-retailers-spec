@@ -1,287 +1,531 @@
 [
   {
-    "path": "file/valid/full-signed.json",
-    "kind": "file",
+    "path": "pointer/valid/pointer.json",
+    "kind": "pointer",
     "valid": true,
-    "note": "Section 5 example"
+    "fetched_from": "brand.example",
+    "note": "Section 5.1 example"
   },
   {
-    "path": "file/valid/full-unsigned-handwritten.json",
-    "kind": "file",
+    "path": "pointer/valid/pointer-fetched-via-www.json",
+    "kind": "pointer",
     "valid": true,
-    "note": "Section 5: hand-written unsigned files are accepted"
+    "fetched_from": "www.brand.example",
+    "note": "Section 5.1: www is ignored when matching the domain"
   },
   {
-    "path": "file/valid/full-no-authorizations.json",
-    "kind": "file",
+    "path": "pointer/invalid/pointer-other-host.json",
+    "kind": "pointer",
+    "valid": false,
+    "expect": "list_not_on_registry",
+    "note": "Section 5.1: list MUST be on authorizedretailers.ai"
+  },
+  {
+    "path": "pointer/invalid/pointer-http-url.json",
+    "kind": "pointer",
+    "valid": false,
+    "expect": "schema",
+    "note": "Pointer list must be HTTPS"
+  },
+  {
+    "path": "pointer/invalid/pointer-missing-verify-token.json",
+    "kind": "pointer",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 5.1: verify_token is required"
+  },
+  {
+    "path": "pointer/invalid/pointer-domain-mismatch.json",
+    "kind": "pointer",
+    "valid": false,
+    "expect": "brand_domain_mismatch",
+    "fetched_from": "other.example",
+    "note": "Section 5.1: a pointer vouches only for its own domain"
+  },
+  {
+    "path": "pointer/invalid/full-form.json",
+    "kind": "pointer",
+    "valid": false,
+    "expect": "form_not_supported",
+    "note": "v0.1 full form was removed"
+  },
+  {
+    "path": "pointer/invalid/private-form.json",
+    "kind": "pointer",
+    "valid": false,
+    "expect": "form_not_supported",
+    "note": "v0.1 private form was removed"
+  },
+  {
+    "path": "pointer/invalid/unknown-form.json",
+    "kind": "pointer",
+    "valid": false,
+    "expect": "form_not_supported",
+    "note": "Only pointer"
+  },
+  {
+    "path": "pointer/invalid/pointer-wrong-spec.json",
+    "kind": "pointer",
+    "valid": false,
+    "expect": "schema",
+    "note": "Spec version is 0.2"
+  },
+  {
+    "path": "list/valid/list-no-catalog.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 5.2, no catalog"
+  },
+  {
+    "path": "list/valid/list-catalog-line-scope.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 3.1: catalog with a line-scoped authorization and a brand exclusion"
+  },
+  {
+    "path": "list/valid/list-product-scope.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 3.1: authorization scoped to named products"
+  },
+  {
+    "path": "list/valid/list-no-expires.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 10: no end date, lasts until revoked"
+  },
+  {
+    "path": "list/valid/list-with-expires.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 10: brand-set end date"
+  },
+  {
+    "path": "list/valid/list-generic-web-territories.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 6.2: generic-domain web store lists territories"
+  },
+  {
+    "path": "list/valid/list-cctld-web.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 6.2: ccTLD web store takes GB from its domain"
+  },
+  {
+    "path": "list/valid/list-marketplace-no-territories.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 6.2: marketplace territory comes from the domain"
+  },
+  {
+    "path": "list/valid/list-worldwide.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Worldwide scope"
+  },
+  {
+    "path": "list/valid/list-proposed-by.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 3: distributor-proposed"
+  },
+  {
+    "path": "list/valid/list-not-public.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 5.2: signed not-public response"
+  },
+  {
+    "path": "list/valid/list-no-authorizations.json",
+    "kind": "list",
     "valid": true,
     "note": "A brand with nothing authorized"
   },
   {
-    "path": "file/valid/full-worldwide-physical-proposed.json",
-    "kind": "file",
-    "valid": true,
-    "note": "Worldwide scope, named product lines, eBay + physical, distributor-proposed"
-  },
-  {
-    "path": "file/valid/full-max-expiry.json",
-    "kind": "file",
-    "valid": true,
-    "note": "Exactly 180 days after issued (section 10)"
-  },
-  {
-    "path": "file/valid/full-fractional-seconds.json",
-    "kind": "file",
+    "path": "list/valid/list-fractional-seconds.json",
+    "kind": "list",
     "valid": true,
     "note": "Fractional seconds are allowed"
   },
   {
-    "path": "file/valid/pointer.json",
-    "kind": "file",
-    "valid": true,
-    "note": "Section 5 pointer form"
-  },
-  {
-    "path": "file/valid/private.json",
-    "kind": "file",
-    "valid": true,
-    "note": "Section 5 private form"
-  },
-  {
-    "path": "file/invalid/full-no-channels.json",
-    "kind": "file",
+    "path": "list/invalid/list-marketplace-field.json",
+    "kind": "list",
     "valid": false,
-    "expect": "schema",
-    "note": "Section 6: at least one channel identifier"
+    "expect": "marketplace_field_removed",
+    "note": "Section 6: marketplace was replaced by domain"
   },
   {
-    "path": "file/invalid/full-name-only-retailer.json",
-    "kind": "file",
+    "path": "list/invalid/list-amazon-on-walmart-domain.json",
+    "kind": "list",
     "valid": false,
-    "expect": "schema",
-    "note": "Section 6: a name alone is not verifiable"
+    "expect": "marketplace_domain_mismatch",
+    "note": "Section 6: type and domain must match"
   },
   {
-    "path": "file/invalid/full-missing-scope.json",
-    "kind": "file",
+    "path": "list/invalid/list-web-on-marketplace-domain.json",
+    "kind": "list",
     "valid": false,
-    "expect": "schema",
-    "note": "Section 3: every authorization MUST carry a scope"
+    "expect": "marketplace_domain_mismatch",
+    "note": "Section 6: a web channel can't use a marketplace domain"
   },
   {
-    "path": "file/invalid/full-missing-territories.json",
-    "kind": "file",
+    "path": "list/invalid/list-physical.json",
+    "kind": "list",
     "valid": false,
-    "expect": "schema",
-    "note": "Section 3: scope needs territories"
+    "expect": "unknown_channel_type",
+    "note": "Section 6: physical was removed"
   },
   {
-    "path": "file/invalid/full-missing-product-lines.json",
-    "kind": "file",
+    "path": "list/invalid/list-unknown-channel-type.json",
+    "kind": "list",
     "valid": false,
-    "expect": "schema",
-    "note": "Section 3: scope needs product lines"
-  },
-  {
-    "path": "file/invalid/full-missing-authorization-expires.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
-    "note": "Section 3: scope needs an expiry"
-  },
-  {
-    "path": "file/invalid/full-empty-territories.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
-    "note": "Territories cannot be empty"
-  },
-  {
-    "path": "file/invalid/full-wildcard-mixed.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
-    "note": "'*' must stand alone"
-  },
-  {
-    "path": "file/invalid/full-lowercase-territory.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
-    "note": "Country codes are uppercase alpha-2"
-  },
-  {
-    "path": "file/invalid/full-all-mixed.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
-    "note": "'all' must stand alone"
-  },
-  {
-    "path": "file/invalid/full-unknown-channel-type.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
+    "expect": "unknown_channel_type",
     "note": "Section 6: unlisted channel type"
   },
   {
-    "path": "file/invalid/full-amazon-missing-seller-id.json",
-    "kind": "file",
+    "path": "list/invalid/list-amazon-missing-seller-id.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
     "note": "Section 6: amazon needs seller_id"
   },
   {
-    "path": "file/invalid/full-web-missing-domain.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
-    "note": "Section 6: web needs domain"
-  },
-  {
-    "path": "file/invalid/full-web-domain-is-url.json",
-    "kind": "file",
+    "path": "list/invalid/list-web-domain-is-url.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
     "note": "Domains are bare hostnames"
   },
   {
-    "path": "file/invalid/full-physical-only.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "no_online_channel",
-    "note": "Section 6: physical alone does not authorize"
-  },
-  {
-    "path": "file/invalid/full-physical-missing-country.json",
-    "kind": "file",
+    "path": "list/invalid/list-no-channels.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
-    "note": "Section 6: physical needs country"
+    "note": "Section 6: at least one channel identifier"
   },
   {
-    "path": "file/invalid/full-wrong-spec.json",
-    "kind": "file",
+    "path": "list/invalid/list-name-only-retailer.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
-    "note": "Unknown spec version"
+    "note": "Section 6: a name alone is not verifiable"
   },
   {
-    "path": "file/invalid/full-missing-file-expires.json",
-    "kind": "file",
+    "path": "list/invalid/list-generic-web-no-territories.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "territories_required",
+    "note": "Section 6.2: generic domain needs territories"
+  },
+  {
+    "path": "list/invalid/list-marketplace-territory-mismatch.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "territory_mismatch",
+    "note": "Section 6.2: amazon.com is US"
+  },
+  {
+    "path": "list/invalid/list-territory-uk.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "invalid_country",
+    "note": "ISO 3166-1: the United Kingdom is GB"
+  },
+  {
+    "path": "list/invalid/list-lowercase-territory.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "invalid_country",
+    "note": "Country codes are uppercase alpha-2"
+  },
+  {
+    "path": "list/invalid/list-wildcard-mixed.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
-    "note": "File needs expires"
+    "note": "'*' must stand alone"
   },
   {
-    "path": "file/invalid/full-non-utc-timestamp.json",
-    "kind": "file",
+    "path": "list/invalid/list-empty-territories.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
-    "note": "Timestamps are UTC with Z"
+    "note": "Territories cannot be empty when given"
   },
   {
-    "path": "file/invalid/full-extra-property.json",
-    "kind": "file",
+    "path": "list/invalid/list-missing-scope.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 3: every authorization carries a scope"
+  },
+  {
+    "path": "list/invalid/list-scope-no-products.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 3: product_lines, products or both"
+  },
+  {
+    "path": "list/invalid/list-all-mixed.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "'all' must stand alone"
+  },
+  {
+    "path": "list/invalid/list-bad-gtin.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "invalid_gtin",
+    "note": "Section 3.1: GTIN check digit"
+  },
+  {
+    "path": "list/invalid/list-bad-asin.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "invalid_asin",
+    "note": "Section 3.1: ASINs are 10 uppercase letters or digits"
+  },
+  {
+    "path": "list/invalid/list-product-no-identifier.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "product_without_identifier",
+    "note": "Section 3.1: gtin or asins"
+  },
+  {
+    "path": "list/invalid/list-duplicate-asin.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "duplicate_identifier",
+    "note": "Section 3.1: one ASIN on two products"
+  },
+  {
+    "path": "list/invalid/list-gtin-11-digits.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "11 digits is not a GTIN length"
+  },
+  {
+    "path": "list/invalid/list-duplicate-gtin.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "duplicate_identifier",
+    "note": "Section 3.1: GTIN-13 and GTIN-14 of the same number collide"
+  },
+  {
+    "path": "list/invalid/list-duplicate-product-id.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "duplicate_product_id",
+    "note": "Product IDs are unique"
+  },
+  {
+    "path": "list/invalid/list-unknown-line.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "unknown_product_line",
+    "note": "Section 3.1: scope names a line not in the catalog"
+  },
+  {
+    "path": "list/invalid/list-unknown-product.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "unknown_product",
+    "note": "Section 3.1: scope names a product not in the catalog"
+  },
+  {
+    "path": "list/invalid/list-exclude-unknown-product.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "unknown_product",
+    "note": "Section 3.1: exclusions must exist in the catalog"
+  },
+  {
+    "path": "list/invalid/list-brand-exclusion-no-catalog.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "unknown_product_line",
+    "note": "Section 3.1: exclusions need a catalog"
+  },
+  {
+    "path": "list/invalid/list-duplicate-authorization-id.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "duplicate_authorization_id",
+    "note": "Authorization IDs are unique within a list"
+  },
+  {
+    "path": "list/invalid/list-missing-revocation-id.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 10.3: every authorization has a revocation_id"
+  },
+  {
+    "path": "list/invalid/list-expires-field.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "v0.2 lists use valid_until, not expires"
+  },
+  {
+    "path": "list/invalid/list-valid-over-15-minutes.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "valid_until_exceeds_max",
+    "note": "Section 10.1: 15 minutes at most"
+  },
+  {
+    "path": "list/invalid/list-stale-over-24-hours.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "stale_until_exceeds_max",
+    "note": "Section 10.2: 24 hours at most"
+  },
+  {
+    "path": "list/invalid/list-missing-stale-until.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "stale_until is required"
+  },
+  {
+    "path": "list/invalid/list-single-domain.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 5.2: lists name brand.domains"
+  },
+  {
+    "path": "list/invalid/list-not-public-with-authorizations.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 5.2: a not-public response carries no authorizations"
+  },
+  {
+    "path": "list/invalid/list-not-public-with-catalog.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 5.2: nor a catalog"
+  },
+  {
+    "path": "list/invalid/list-extra-property.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
     "note": "Section 1: no pricing; unknown properties rejected"
   },
   {
-    "path": "file/invalid/full-attached-jws.json",
-    "kind": "file",
+    "path": "list/invalid/list-attached-jws.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
     "note": "Section 8: JWS must be detached"
   },
   {
-    "path": "file/invalid/full-signature-missing-kid.json",
-    "kind": "file",
+    "path": "list/invalid/list-unsigned.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
-    "note": "Section 8: every signature names its kid"
+    "note": "Section 5.2: lists are signed"
   },
   {
-    "path": "file/invalid/pointer-http-url.json",
-    "kind": "file",
+    "path": "list/invalid/list-non-utc-timestamp.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
-    "note": "Pointer must be HTTPS"
+    "note": "Timestamps are UTC with Z"
   },
   {
-    "path": "file/invalid/private-missing-verify.json",
-    "kind": "file",
+    "path": "list/invalid/list-impossible-date.json",
+    "kind": "list",
     "valid": false,
     "expect": "schema",
-    "note": "Private form needs a verify endpoint"
+    "note": "Feb 30 does not exist"
   },
   {
-    "path": "file/invalid/private-with-authorizations.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
-    "note": "Section 5: private form carries no retailers"
-  },
-  {
-    "path": "file/invalid/unknown-form.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
-    "note": "Only full, pointer, private"
-  },
-  {
-    "path": "file/invalid/full-authorization-expires-after-file.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "authorization_expires_after_file",
-    "note": "Section 5 MUST"
-  },
-  {
-    "path": "file/invalid/full-expiry-over-180-days.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "file_expiry_exceeds_max",
-    "note": "Section 10: max 180 days"
-  },
-  {
-    "path": "file/invalid/full-expires-before-issued.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "expires_not_after_issued",
-    "note": "Expiry must follow issue"
-  },
-  {
-    "path": "file/invalid/full-duplicate-authorization-id.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "duplicate_authorization_id",
-    "note": "Authorization ids are unique within a file"
-  },
-  {
-    "path": "file/invalid/full-impossible-date.json",
-    "kind": "file",
-    "valid": false,
-    "expect": "schema",
-    "note": "Feb 30 does not exist (format date-time; parseTimestamp also rejects it)"
-  },
-  {
-    "path": "verify-request/valid/amazon.json",
+    "path": "verify-request/valid/full.json",
     "kind": "verify-request",
     "valid": true,
     "note": "Section 9 example"
   },
   {
-    "path": "verify-request/valid/web-no-product-line.json",
+    "path": "verify-request/valid/minimal-marketplace.json",
     "kind": "verify-request",
     "valid": true,
-    "note": "product_line defaults to all"
+    "note": "Territory defaults to amazon.com's country"
+  },
+  {
+    "path": "verify-request/valid/web-generic-with-territory.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 6.2: generic domain names its territory"
+  },
+  {
+    "path": "verify-request/valid/web-cctld-no-territory.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 6.2: ccTLD implies GB"
+  },
+  {
+    "path": "verify-request/valid/gtin.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Product by GTIN"
+  },
+  {
+    "path": "verify-request/valid/as-of-datetime.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "as_of as a UTC date-time"
+  },
+  {
+    "path": "verify-request/invalid/marketplace-field.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "marketplace_field_removed",
+    "note": "Section 6: marketplace was replaced by domain"
+  },
+  {
+    "path": "verify-request/invalid/gtin-and-asin.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9: exactly one of gtin or asin"
+  },
+  {
+    "path": "verify-request/invalid/bad-gtin.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "invalid_gtin",
+    "note": "GTIN check digit"
+  },
+  {
+    "path": "verify-request/invalid/territory-uk.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "invalid_country",
+    "note": "ISO 3166-1: GB, not UK (normalizeVerifyRequest maps it)"
+  },
+  {
+    "path": "verify-request/invalid/generic-web-no-territory.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "territory_required",
+    "note": "Section 6.2: generic domain needs a territory"
   },
   {
     "path": "verify-request/invalid/physical-channel.json",
     "kind": "verify-request",
     "valid": false,
-    "expect": "schema",
-    "note": "Section 6: physical is not verifiable"
+    "expect": "unknown_channel_type",
+    "note": "physical was removed"
   },
   {
     "path": "verify-request/invalid/wildcard-territory.json",
@@ -312,16 +556,47 @@
     "note": "Bare hostname only"
   },
   {
+    "path": "verify-request/invalid/bad-as-of.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "schema",
+    "note": "as_of is an ISO 8601 date or UTC date-time"
+  },
+  {
     "path": "verify-response/valid/authorized.json",
     "kind": "verify-response",
     "valid": true,
     "note": "Section 9 example"
   },
   {
+    "path": "verify-response/valid/authorized-no-product.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "No product asked"
+  },
+  {
+    "path": "verify-response/valid/authorized-with-end-date.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Brand-set end date"
+  },
+  {
     "path": "verify-response/valid/authorized-observed.json",
     "kind": "verify-response",
     "valid": true,
     "note": "Section 7: seen selling within 30 days"
+  },
+  {
+    "path": "verify-response/valid/authorized-not-in-catalog.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.2 rule 5"
+  },
+  {
+    "path": "verify-response/valid/authorized-private-product.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9: private lists show only in_catalog"
   },
   {
     "path": "verify-response/valid/expired.json",
@@ -339,22 +614,102 @@
     "valid": true
   },
   {
-    "path": "verify-response/valid/brand-unverified-reason.json",
+    "path": "verify-response/valid/unlisted-territory-mismatch.json",
     "kind": "verify-response",
     "valid": true,
-    "note": "Section 9 reason"
+    "note": "Section 6.2"
   },
   {
-    "path": "verify-response/valid/brand-unverified-no-reason.json",
+    "path": "verify-response/valid/unlisted-product-excluded.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.2 rule 2"
+  },
+  {
+    "path": "verify-response/valid/unlisted-product-not-in-catalog.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.2 rule 4"
+  },
+  {
+    "path": "verify-response/valid/not-registered-reason.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 4 reason"
+  },
+  {
+    "path": "verify-response/valid/not-registered-no-reason.json",
     "kind": "verify-response",
     "valid": true,
     "note": "reason is optional"
+  },
+  {
+    "path": "verify-response/valid/with-as-of.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9: as_of echoed"
   },
   {
     "path": "verify-response/valid/with-signal.json",
     "kind": "verify-response",
     "valid": true,
     "note": "Section 7 signals"
+  },
+  {
+    "path": "verify-response/invalid/brand-unverified.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Renamed brand_not_registered in v0.2"
+  },
+  {
+    "path": "verify-response/invalid/authorized-missing-revocation-id.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 10.3: authorized answers carry revocation_id"
+  },
+  {
+    "path": "verify-response/invalid/unlisted-with-revocation-id.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Only authorized answers carry revocation_id"
+  },
+  {
+    "path": "verify-response/invalid/unlisted-with-not-registered-reason.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9: reasons belong to their status"
+  },
+  {
+    "path": "verify-response/invalid/not-registered-with-unlisted-reason.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9: reasons belong to their status"
+  },
+  {
+    "path": "verify-response/invalid/authorized-with-reason.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9: no reason on authorized"
+  },
+  {
+    "path": "verify-response/invalid/not-in-catalog-with-id.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "A product not in the catalog has no id"
+  },
+  {
+    "path": "verify-response/invalid/expired-without-expires.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "expired names the end date"
   },
   {
     "path": "verify-response/invalid/missing-observed.json",
@@ -371,45 +726,18 @@
     "note": "Section 7: observed is null unless authorized"
   },
   {
-    "path": "verify-response/invalid/observed-without-last-seen.json",
-    "kind": "verify-response",
-    "valid": false,
-    "expect": "schema",
-    "note": "Section 7: observed carries last_seen"
-  },
-  {
-    "path": "verify-response/invalid/with-tier.json",
-    "kind": "verify-response",
-    "valid": false,
-    "expect": "schema",
-    "note": "Evidence tiers were removed (section 7)"
-  },
-  {
-    "path": "verify-response/invalid/unlisted-with-reason.json",
-    "kind": "verify-response",
-    "valid": false,
-    "expect": "schema",
-    "note": "Section 9: reason only on brand_unverified"
-  },
-  {
     "path": "verify-response/invalid/unlisted-with-authorization-id.json",
     "kind": "verify-response",
     "valid": false,
     "expect": "schema",
-    "note": "Unlisted answers leak nothing about other authorizations"
+    "note": "Unlisted answers name no authorization"
   },
   {
-    "path": "verify-response/invalid/authorized-missing-authorization-id.json",
-    "kind": "verify-response",
-    "valid": false,
-    "expect": "schema"
-  },
-  {
-    "path": "verify-response/invalid/missing-valid-until.json",
+    "path": "verify-response/invalid/missing-stale-until.json",
     "kind": "verify-response",
     "valid": false,
     "expect": "schema",
-    "note": "Section 9: valid_until is required"
+    "note": "Section 10.2: stale_until is required"
   },
   {
     "path": "verify-response/invalid/missing-signature.json",
@@ -419,14 +747,21 @@
     "note": "Answers are signed"
   },
   {
-    "path": "verify-response/invalid/unknown-status.json",
+    "path": "verify-response/invalid/with-tier.json",
     "kind": "verify-response",
     "valid": false,
     "expect": "schema",
-    "note": "Section 1: unlisted is not unlawful"
+    "note": "Evidence tiers were removed (section 7)"
   },
   {
-    "path": "verify-response/invalid/valid-until-over-24h.json",
+    "path": "verify-response/invalid/with-stale-flag.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "stale is the verifier's verdict, not part of a signed answer"
+  },
+  {
+    "path": "verify-response/invalid/valid-until-over-15-minutes.json",
     "kind": "verify-response",
     "valid": false,
     "expect": "valid_until_exceeds_max",
@@ -436,6 +771,119 @@
     "path": "verify-response/invalid/valid-until-before-checked.json",
     "kind": "verify-response",
     "valid": false,
-    "expect": "valid_until_not_after_checked"
+    "expect": "valid_until_not_after_issued"
+  },
+  {
+    "path": "verify-response/invalid/stale-until-over-24-hours.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "stale_until_exceeds_max",
+    "note": "Section 10.2"
+  },
+  {
+    "path": "revocation-feed/valid/feed.json",
+    "kind": "revocation-feed",
+    "valid": true,
+    "note": "Section 10.3 example"
+  },
+  {
+    "path": "revocation-feed/valid/feed-empty.json",
+    "kind": "revocation-feed",
+    "valid": true,
+    "note": "No revocations in the last 24 hours"
+  },
+  {
+    "path": "revocation-feed/invalid/feed-hashed-entry.json",
+    "kind": "revocation-feed",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 10.3: entries are revocation IDs, not hashes"
+  },
+  {
+    "path": "revocation-feed/invalid/feed-valid-over-15-minutes.json",
+    "kind": "revocation-feed",
+    "valid": false,
+    "expect": "valid_until_exceeds_max",
+    "note": "Section 10.1"
+  },
+  {
+    "path": "match/seller-authorized-for-line.json",
+    "kind": "match",
+    "note": "Rule 1: in the catalog and covered"
+  },
+  {
+    "path": "match/seller-authorized-by-gtin.json",
+    "kind": "match",
+    "note": "GTIN-12 matches the catalog's GTIN-14"
+  },
+  {
+    "path": "match/product-excluded-by-authorization.json",
+    "kind": "match",
+    "note": "Rule 2: authorization excludes the product"
+  },
+  {
+    "path": "match/product-not-in-scope.json",
+    "kind": "match",
+    "note": "Rule 3: in the catalog, not included"
+  },
+  {
+    "path": "match/duplicate-asin-authorized-seller.json",
+    "kind": "match",
+    "note": "Rule 4: line-scoped seller, ASIN not in the catalog"
+  },
+  {
+    "path": "match/duplicate-asin-unauthorized-seller.json",
+    "kind": "match",
+    "note": "Section 9.1: an unauthorized seller's duplicate ASIN never authorizes"
+  },
+  {
+    "path": "match/all-scope-not-in-catalog.json",
+    "kind": "match",
+    "note": "Rule 5: [\"all\"] covers it, with a signal"
+  },
+  {
+    "path": "match/all-scope-excluded-line.json",
+    "kind": "match",
+    "note": "[\"all\"] with one excluded line"
+  },
+  {
+    "path": "match/brand-exclusion-beats-named-product.json",
+    "kind": "match",
+    "note": "Brand-level exclusion overrides an authorization naming the product"
+  },
+  {
+    "path": "match/marketplace-territory-default.json",
+    "kind": "match",
+    "note": "Territory defaults to amazon.co.uk's GB"
+  },
+  {
+    "path": "match/marketplace-territory-mismatch.json",
+    "kind": "match",
+    "note": "Section 6.2: amazon.co.uk is GB"
+  },
+  {
+    "path": "match/worldwide-web.json",
+    "kind": "match",
+    "note": "Worldwide web store"
+  },
+  {
+    "path": "match/product-line-request.json",
+    "kind": "match",
+    "note": "Excluded line asked by product_line"
+  },
+  {
+    "path": "match/expired-end-date.json",
+    "kind": "match",
+    "note": "Section 10: past the brand's end date"
+  },
+  {
+    "path": "match/as-of-before-end-date.json",
+    "kind": "match",
+    "note": "Section 9: as_of before the end date"
+  },
+  {
+    "path": "match/match-by-channel-key.json",
+    "kind": "match",
+    "note": "Section 6.1: Amazon seller IDs compare uppercased"
   }
 ]
