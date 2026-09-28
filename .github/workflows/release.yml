@@ -81,7 +81,8 @@ jobs:
           SITE_REPO: authorizedretailers/authorizedretailers
         run: |
           started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          gh workflow run spec-release.yml -R "$SITE_REPO" \
+          # --ref: without it gh looks up the default branch over GraphQL, which the token can't read.
+          gh workflow run spec-release.yml -R "$SITE_REPO" --ref main \
             -f version="${{ needs.publish.outputs.version }}" \
             -f spec_run_id="${{ github.run_id }}" \
             -f dry_run="$DRY_RUN"
