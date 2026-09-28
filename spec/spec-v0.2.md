@@ -61,7 +61,7 @@ Distributors and retailers can request an authorization. Only the brand's approv
 
 The registry MUST NOT add, remove or change an authorization except on the brand's instruction, or when the brand approves a distributor's proposal. The registry MUST keep a change log for each brand, recording what changed, who changed it and when, and MUST show that log to the brand.
 
-The registry SHOULD accept proposals from a distributor only if the brand has designated it and it has proven control of its own domain as in section 4. A brand MAY limit what a designated distributor can propose: by territory, by product line, by product and to web stores, marketplace sellers or both.
+The registry SHOULD accept proposals from a distributor only if the brand has designated it and it has proven control of its own domain, by a DNS TXT record as in section 4 or another method the registry offers. A brand MAY limit what a designated distributor can propose: by territory, by product line, by product and to web stores, marketplace sellers or both.
 
 A request to a brand that is not yet registered MAY be held by the registry and delivered once the brand registers. A held request has no effect on verify answers.
 
@@ -290,7 +290,7 @@ Country codes are ISO 3166-1 alpha-2: the United Kingdom is `GB`, not `UK`.
 
 ### 6.3 Proving channel identifiers
 
-The registry MAY let retailers prove their own channel identifiers before they request a listing: a `web` domain by the same DNS TXT or pointer method as a brand domain (section 4), and a marketplace seller ID by confirming with the marketplace that it exists on that domain. Confirming that a seller ID exists does not prove that the retailer controls it, and the registry MUST NOT present it as proof of control.
+The registry MAY let retailers prove their own channel identifiers before they request a listing: a `web` domain by a DNS TXT record as in section 4 or another method the registry offers, and a marketplace seller ID by confirming with the marketplace that it exists on that domain. Confirming that a seller ID exists does not prove that the retailer controls it, and the registry MUST NOT present it as proof of control.
 
 The registry MAY decline to register a marketplace seller that does not publicly list a seller name, business name and address on its marketplace.
 
