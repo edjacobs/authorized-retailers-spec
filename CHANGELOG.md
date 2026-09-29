@@ -4,6 +4,7 @@ This file covers the package. Changes to the specification text are also listed 
 
 ## Unreleased
 
+- Governance: one three-part version for the spec and the package. Before 1.0, breaking changes can come in a minor version. Changes are batched into releases, each listed here with its reason.
 - Spec: brand domain verification is by DNS TXT record only. The pointer is optional, offered after DNS verification, and never verifies a domain. Its `verify_token` stays so the registry can tell whether a pointer is current. Distributors and retailer web stores publish nothing: the registry confirms them by a sign-in with an email address at their domain. No schema or API changes (spec sections 3, 4, 5.1, 6, 14).
 
 ## 0.2.0 (breaking)

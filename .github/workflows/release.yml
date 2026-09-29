@@ -39,6 +39,8 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # tags and their dates, for the cadence check
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -48,6 +50,8 @@ jobs:
       - name: Tag matches package version
         if: github.event_name == 'push'
         run: test "v${{ steps.version.outputs.version }}" = "$GITHUB_REF_NAME"
+      - name: Headline version changes at most once every 30 days
+        run: node scripts/check-release-cadence.mjs "${{ steps.version.outputs.version }}"
       - run: npm install -g npm@latest # trusted publishing needs npm >= 11.5
       - run: npm ci
       - run: npm run typecheck && npm test && npm run test:dist
