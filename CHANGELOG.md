@@ -2,7 +2,7 @@
 
 This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.2.md).
 
-## 0.2.1
+## Unreleased
 
 - Spec: brand domain verification is by DNS TXT record only. The pointer is optional, offered after DNS verification, and never verifies a domain. Its `verify_token` stays so the registry can tell whether a pointer is current. Distributors and retailer web stores publish nothing: the registry confirms them by a sign-in with an email address at their domain. No schema or API changes (spec sections 3, 4, 5.1, 6, 14).
 
