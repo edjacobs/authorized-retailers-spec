@@ -1,7 +1,7 @@
 # Authorized Retailers Specification v0.1
 
 Draft v0.1 · 23 September 2026, updated 26 September 2026  
-Editor: Ed Jacobs
+Editor: authorizedretailers.ai
 
 Licensed under [CC BY 4.0](https://github.com/authorizedretailers/spec/blob/main/LICENSE-SPEC). JSON Schemas and reference code: Apache-2.0.
 
