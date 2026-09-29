@@ -61,7 +61,7 @@ Distributors and retailers can request an authorization. Only the brand's approv
 
 The registry MUST NOT add, remove or change an authorization except on the brand's instruction, or when the brand approves a distributor's proposal. The registry MUST keep a change log for each brand, recording what changed, who changed it and when, and MUST show that log to the brand.
 
-The registry SHOULD accept proposals from a distributor only if the brand has designated it and it has proven control of its own domain, by a DNS TXT record as in section 4 or another method the registry offers. A brand MAY limit what a designated distributor can propose: by territory, by product line, by product and to web stores, marketplace sellers or both.
+The registry SHOULD accept proposals from a distributor only if the brand has designated it and the registry has confirmed it through an account signed in with an email address at the distributor's own domain. Distributors do not publish anything on their domain. A brand MAY limit what a designated distributor can propose: by territory, by product line, by product and to web stores, marketplace sellers or both.
 
 A request to a brand that is not yet registered MAY be held by the registry and delivered once the brand registers. A held request has no effect on verify answers.
 
@@ -117,24 +117,21 @@ Matching a verify request against the catalog is described in section 9.2.
 
 A brand is identified by its web domain. The registry MUST verify control of a domain before accepting any authorization for it.
 
-The registry issues a verification token for each domain. The brand proves control by one of two methods:
-
-1. **DNS TXT record** (recommended): `authorizedretailers-verify=<token>` on the brand's domain. This works on every site platform, because every domain's DNS can hold a TXT record.
-2. **Pointer file:** the token in the `verify_token` field of a pointer served at the domain (section 5.1). Use it when the brand can serve files under `/.well-known/` but cannot change DNS.
+The registry issues a verification token for each domain. The brand proves control with a **DNS TXT record**, `authorizedretailers-verify=<token>`, on the brand's domain. This is the only method. It works on every site platform, because every domain's DNS can hold a TXT record. A file on the brand's site, including the pointer (section 5.1), never proves control of the domain.
 
 The token is public. It proves control only of the domain it was issued for, found on that domain, and it grants no access to the brand's account.
 
 Domain control does not prove brand ownership, because a counterfeiter can register a lookalike domain and verify it. The registry MUST also link the domain to the brand through at least one independent source, such as the domain listed on the brand's trademark filing, official website or marketplace storefront.
 
-The registry SHOULD recheck each domain at least weekly. If neither the DNS record nor a pointer with the right token is found, the registry MUST treat the domain as `verification_lapsed` and notify the brand. It MUST NOT keep returning `authorized` on a lapsed domain.
+The registry SHOULD recheck each domain at least weekly. If the DNS record is not found, the registry MUST treat the domain as `verification_lapsed` and notify the brand. It MUST NOT keep returning `authorized` on a lapsed domain.
 
-A brand is **registered** for a domain when it has an account on the registry, the domain is verified by one of the methods above and the independent link is made. For any domain that is not registered, verify answers are `brand_not_registered` with a reason (section 9):
+A brand is **registered** for a domain when it has an account on the registry, the domain is verified by its DNS record and the independent link is made. For any domain that is not registered, verify answers are `brand_not_registered` with a reason (section 9):
 
 | `reason` | Meaning |
 | --- | --- |
 | `not_registered` | The registry holds no account for this domain. A file on the brand's domain alone doesn't count |
 | `domain_unlinked` | Domain control is verified, but the independent brand link has not been made |
-| `verification_lapsed` | Neither the DNS record nor a pointer with the right token is in place any more |
+| `verification_lapsed` | The DNS record is not in place any more |
 
 ### 4.1 Several domains per brand
 
@@ -146,7 +143,7 @@ A domain is identity, not territory: a brand whose domain is brand.co.uk can aut
 
 ### 5.1 The pointer (optional)
 
-A brand MAY serve a pointer at `https://<brand-domain>/.well-known/authorized-retailers.json`, as JSON over HTTPS. The pointer is optional: DNS verification (section 4) is enough for a brand's list to count. A pointer helps software that finds brands by domain, and it lets a brand that cannot change DNS verify its domain.
+A brand MAY serve a pointer at `https://<brand-domain>/.well-known/authorized-retailers.json`, as JSON over HTTPS. The pointer is optional and is offered only once the domain is verified by DNS (section 4). It helps software that finds brands by domain. It does not verify the domain, and a brand's list counts without it.
 
 ```json
 {
@@ -161,9 +158,9 @@ A brand MAY serve a pointer at `https://<brand-domain>/.well-known/authorized-re
 - `form` is `pointer`. It is the only form in v0.2. The field stays so that later versions can add forms. Readers MUST treat a file with any other `form`, including the v0.1 `full` and `private` forms, as no file.
 - `brand.domain` MUST be the domain the pointer was fetched from. A pointer vouches only for its own domain.
 - `list` MUST be an `https://authorizedretailers.ai/` URL. A pointer naming any other host is treated as no file.
-- `verify_token` is the domain's token from the registry (section 4).
+- `verify_token` is the domain's token from the registry (section 4). It lets the registry tell whether a pointer is current. It is not proof of control.
 
-The pointer carries no authorization data, so it never goes out of date, and it is not signed. The list it names is signed, and so is every verify answer.
+The pointer carries no authorization data, so it does not change when the brand's list changes, and it is not signed. It needs replacing only when its own fields change: a new verification token, domain or spec version. The registry SHOULD tell a brand when a pointer it finds on the brand's domain is out of date. The list it names is signed, and so is every verify answer.
 
 Readers MAY follow up to 3 HTTPS redirects when fetching the pointer (for example from the bare domain to `www`), but `brand.domain` MUST still match the domain the reader first asked for, ignoring a leading `www.`. Readers SHOULD accept the file when it is served as `application/json` or `text/plain`.
 
@@ -290,7 +287,7 @@ Country codes are ISO 3166-1 alpha-2: the United Kingdom is `GB`, not `UK`.
 
 ### 6.3 Proving channel identifiers
 
-The registry MAY let retailers prove their own channel identifiers before they request a listing: a `web` domain by a DNS TXT record as in section 4 or another method the registry offers, and a marketplace seller ID by confirming with the marketplace that it exists on that domain. Confirming that a seller ID exists does not prove that the retailer controls it, and the registry MUST NOT present it as proof of control.
+The registry MAY let retailers prove their own channel identifiers before they request a listing: a `web` domain by an account signed in with an email address at that domain, without publishing anything on it, and a marketplace seller ID by confirming with the marketplace that it exists on that domain. Confirming that a seller ID exists does not prove that the retailer controls it, and the registry MUST NOT present it as proof of control.
 
 The registry MAY decline to register a marketplace seller that does not publicly list a seller name, business name and address on its marketplace.
 
@@ -529,3 +526,7 @@ The registry's liability position, dispute timelines and data handling are set o
   - The verify API MUST reflect a revocation within 1 minute (was 15). `valid_until` is at most 15 minutes (was 24 hours) (sections 9, 10).
   - Availability: `stale_until`, mirrors, a revocation feed of random IDs, and the rule that an outage leaves a seller unconfirmed, never authorized or unauthorized (section 10.2, 10.3).
   - Bring-your-own-key signing and SKU-level scope are removed from the open questions. Cross-border purchases, per-marketplace ASINs and finding the brand domain are added (section 13).
+- **2026-09-28 (v0.2.1)**
+  - Brand domain verification is by DNS TXT record only. The pointer no longer verifies a domain; it is offered once DNS verification is done. A lapsed domain is one whose DNS record is gone (sections 4, 5.1).
+  - Distributors and retailer web stores publish nothing on their domain. The registry confirms them through an account signed in with an email address at that domain (sections 3, 6).
+  - The pointer's `verify_token` lets the registry tell whether a pointer is current. The registry SHOULD tell a brand when its pointer is out of date (section 5.1).
