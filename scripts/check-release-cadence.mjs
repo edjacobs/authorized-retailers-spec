@@ -1,5 +1,5 @@
-// Release rule: the headline version (0.x before 1.0, then the major) changes at most once every 30
-// days. Patch releases in between are fine. Run before tagging, and by the Release workflow.
+// Release rule: the major version (the first of the three parts) changes at most once every 30
+// days. Minor and patch releases in between are fine, so before 1.0 the rule never applies. Run before tagging, and by the Release workflow.
 //
 //   node scripts/check-release-cadence.mjs [version] [--now=ISO]   (version defaults to package.json)
 
@@ -9,28 +9,25 @@ import { readFileSync } from "node:fs";
 export const MIN_DAYS = 30;
 const DAY = 86_400_000;
 
-/** "0.2.3" -> "0.2"; "1.4.0" -> "1". */
-export const headline = (v) => {
-  const [major, minor] = v.replace(/^v/, "").split(".");
-  return major === "0" ? `0.${minor}` : major;
-};
+/** The major version: "0.2.3" -> "0"; "1.4.0" -> "1". */
+export const major = (v) => v.replace(/^v/, "").split(".")[0];
 
 /**
  * tags: [{ version, date }] of earlier releases. Returns null if releasing `version` is allowed,
  * or the reason it isn't.
  */
 export function cadenceProblem(version, tags, now) {
-  const current = headline(version);
+  const current = major(version);
   const earlier = tags.filter((t) => t.version !== version.replace(/^v/, ""));
   if (!earlier.length) return null;
   const latest = earlier.reduce((a, b) => (b.date > a.date ? b : a));
-  if (headline(latest.version) === current) return null;
-  // When did the latest headline start? Its earliest release.
-  const started = Math.min(...earlier.filter((t) => headline(t.version) === headline(latest.version)).map((t) => t.date));
+  if (major(latest.version) === current) return null;
+  // When did the latest major version start? Its earliest release.
+  const started = Math.min(...earlier.filter((t) => major(t.version) === major(latest.version)).map((t) => t.date));
   const days = (now - started) / DAY;
   if (days >= MIN_DAYS) return null;
   const allowed = new Date(started + MIN_DAYS * DAY).toISOString().slice(0, 10);
-  return `v${version} changes the headline version from ${headline(latest.version)} to ${current}, but ${headline(latest.version)} was first released ${Math.floor(days)} days ago. The headline version changes at most once every ${MIN_DAYS} days: release it on or after ${allowed}, or ship these changes as a patch.`;
+  return `v${version} changes the major version from ${major(latest.version)} to ${current}, but ${major(latest.version)} was first released ${Math.floor(days)} days ago. The major version changes at most once every ${MIN_DAYS} days: release it on or after ${allowed}, or ship these changes as a minor or patch release.`;
 }
 
 function releaseTags() {

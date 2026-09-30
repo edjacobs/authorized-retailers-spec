@@ -5,5 +5,5 @@ authorized-retailers.json is an open format with a single registry. The format i
 - **Maintainer:** the specification is maintained by authorizedretailers.ai.
 - **Changes in public:** every change is made through a public pull request in this repository, so each change and its reasoning is visible. Every change is listed in the changelog.
 - **Feedback:** anyone can tell us where the standard gets a real case wrong or leaves it out at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec#feedback). No account needed. The changelog notes where feedback shaped a change.
-- **Versioning:** the specification and this package share one three-part version. Before 1.0, breaking changes can come in a minor version (0.2 to 0.3). Changes are batched into releases, and every change is listed in the changelog with the reason for it.
+- **Versioning:** the specification and this package share one three-part version. Before 1.0, breaking changes can come in a minor version (0.2 to 0.3). The major version changes at most once every 30 days. Changes are batched into releases, and every change is listed in the changelog with the reason for it.
 - **Future:** as adoption grows, the specification may move to a neutral body.
