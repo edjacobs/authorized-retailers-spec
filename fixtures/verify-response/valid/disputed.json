@@ -1,5 +1,10 @@
 {
   "status": "disputed",
+  "brand": {
+    "domain": "brand.example",
+    "name": "Example Brand"
+  },
+  "resolved_by": "brand_domain",
   "authorization_id": "auth_01J9X2",
   "checked": "2026-09-28T14:02:11Z",
   "valid_until": "2026-09-28T14:17:11Z",

@@ -1,0 +1,10 @@
+{
+  "channel": {
+    "type": "walmart",
+    "domain": "walmart.com",
+    "seller_id": "900000001"
+  },
+  "product": {
+    "asin": "B0EXAMPLE1"
+  }
+}

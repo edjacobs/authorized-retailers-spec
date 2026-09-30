@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
-const SPEC = "authorized-retailers/0.2";
+const SPEC = "authorized-retailers/0.3";
 const JWS = "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy";
 const sig = { kid: "ar-20260928-6e37", jws: JWS };
 
@@ -67,8 +67,12 @@ const request = {
   product: { asin: "B0EXAMPLE1" },
   as_of: "2026-09-28",
 };
+const exampleBrand = { domain: "brand.example", name: "Example Brand" };
+const otherBrand = { domain: "other.example", name: "Other Brand" };
 const authorized = {
   status: "authorized",
+  brand: exampleBrand,
+  resolved_by: "brand_domain",
   authorization_id: "auth_01J9X2",
   revocation_id: "rv_Q2l8dX4bT0aN5kPw",
   checked: "2026-09-28T14:02:11Z",
@@ -80,8 +84,14 @@ const authorized = {
   signature: sig,
 };
 const base = { checked: authorized.checked, valid_until: authorized.valid_until, stale_until: authorized.stale_until, observed: null, signals: [], signature: sig };
-const unlisted = { status: "unlisted", ...base };
-const notRegistered = { status: "brand_not_registered", reason: "domain_unlinked", ...base };
+const unlisted = { status: "unlisted", brand: exampleBrand, resolved_by: "brand_domain", ...base };
+const notRegistered = { status: "brand_not_registered", reason: "domain_unlinked", brand: { domain: "brand.example" }, resolved_by: "brand_domain", ...base };
+const productNotFound = { status: "product_not_found", product: { in_catalog: false }, ...base };
+const ambiguous = { status: "brand_ambiguous", candidates: [exampleBrand, otherBrand], product: { in_catalog: true }, ...base };
+const mismatch = { status: "brand_mismatch", brand: exampleBrand, resolved_by: "brand_domain", candidates: [otherBrand], product: { in_catalog: false }, ...base };
+
+// ---- resolve (section 9.5)
+const resolved = { status: "resolved", brand: exampleBrand, resolved_by: "gtin", checked: base.checked, valid_until: base.valid_until, stale_until: base.stale_until, signature: sig };
 
 // ---- revocation feed (section 10.3)
 const feed = {
@@ -127,6 +137,20 @@ const matchList = edit(listWithCatalog, (l) => {
     },
   ];
 });
+// A second registered brand: shares one GTIN with Example Brand and has an ASIN of its own.
+const otherList = {
+  spec: SPEC,
+  brand: { name: "Other Brand", domains: ["other.example"], aliases: ["Other"] },
+  public: true,
+  ...times,
+  catalog: [
+    { id: "OB-HAT", name: "Other Hat", gtin: "4006381333931" },
+    { id: "OB-CAP", name: "Other Cap", asins: ["B0OTHER001"] },
+  ],
+  authorizations: [],
+  signature: sig,
+};
+const resolveCase = (product, expect) => ({ lists: [matchList, otherList], product, expect });
 const amazonUS = { type: "amazon", domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" };
 const amazonUK = { type: "amazon", domain: "amazon.co.uk", seller_id: "A9Z8Y7X6W5V4U3" };
 const global = { type: "web", domain: "globalshoes.example" };
@@ -147,7 +171,7 @@ const cases = [
   ["pointer", "full-form", edit(pointer, (p) => { p.form = "full"; p.authorizations = []; }), "form_not_supported", "v0.1 full form was removed"],
   ["pointer", "private-form", edit(pointer, (p) => (p.form = "private")), "form_not_supported", "v0.1 private form was removed"],
   ["pointer", "unknown-form", edit(pointer, (p) => (p.form = "partial")), "form_not_supported", "Only pointer"],
-  ["pointer", "pointer-wrong-spec", edit(pointer, (p) => (p.spec = "authorized-retailers/0.1")), "schema", "Spec version is 0.2"],
+  ["pointer", "pointer-wrong-spec", edit(pointer, (p) => (p.spec = "authorized-retailers/0.2")), "schema", "Spec version is 0.3"],
 
   // ---- list: valid
   ["list", "list-no-catalog", listNoCatalog, null, "Section 5.2, no catalog"],
@@ -202,7 +226,7 @@ const cases = [
   ["list", "list-missing-revocation-id", noCatalog((a) => delete a.revocation_id), "schema", "Section 10.3: every authorization has a revocation_id"],
 
   // ---- list: invalid (sections 5.2 and 10)
-  ["list", "list-expires-field", edit(listNoCatalog, (l) => (l.expires = "2026-12-22T00:00:00Z")), "schema", "v0.2 lists use valid_until, not expires"],
+  ["list", "list-expires-field", edit(listNoCatalog, (l) => (l.expires = "2026-12-22T00:00:00Z")), "schema", "Since v0.2, lists use valid_until, not expires"],
   ["list", "list-valid-over-15-minutes", edit(listNoCatalog, (l) => (l.valid_until = "2026-09-28T14:15:01Z")), "valid_until_exceeds_max", "Section 10.1: 15 minutes at most"],
   ["list", "list-stale-over-24-hours", edit(listNoCatalog, (l) => (l.stale_until = "2026-09-29T14:00:01Z")), "stale_until_exceeds_max", "Section 10.2: 24 hours at most"],
   ["list", "list-missing-stale-until", edit(listNoCatalog, (l) => delete l.stale_until), "schema", "stale_until is required"],
@@ -221,11 +245,18 @@ const cases = [
   ["verify-request", "web-generic-with-territory", req({ type: "web", domain: "retailer.example" }, { territory: "CA", product_line: "Running" }), null, "Section 6.2: generic domain names its territory"],
   ["verify-request", "web-cctld-no-territory", req({ type: "web", domain: "retailer.co.uk" }), null, "Section 6.2: ccTLD implies GB"],
   ["verify-request", "gtin", req(amazonUS, { product: { gtin: "00012345678905" } }), null, "Product by GTIN"],
+  ["verify-request", "gtin-and-asin", req(amazonUS, { product: { gtin: "00012345678905", asin: "B0EXAMPLE1" } }), null, "Section 9: a product may name both"],
+  ["verify-request", "product-only-upc", { channel: amazonUS, product: { gtin: "012345678905" } }, null, "Section 9.5: no brand_domain, found by UPC-A"],
+  ["verify-request", "product-only-ean", { channel: { type: "web", domain: "retailer.co.uk" }, product: { gtin: "4006381333931" } }, null, "Section 9.5: no brand_domain, found by EAN-13"],
+  ["verify-request", "product-only-asin", { channel: amazonUS, product: { asin: "B0EXAMPLE1" } }, null, "Section 9.5: an ASIN on an Amazon channel"],
   ["verify-request", "as-of-datetime", req(amazonUS, { as_of: "2026-09-01T12:00:00Z" }), null, "as_of as a UTC date-time"],
 
   // ---- verify request: invalid
   ["verify-request", "marketplace-field", req({ type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" }), "marketplace_field_removed", "Section 6: marketplace was replaced by domain"],
-  ["verify-request", "gtin-and-asin", req(amazonUS, { product: { gtin: "00012345678905", asin: "B0EXAMPLE1" } }), "schema", "Section 9: exactly one of gtin or asin"],
+  ["verify-request", "no-brand-no-product", { channel: amazonUS }, "brand_or_product_required", "Section 9: brand_domain, product or both"],
+  ["verify-request", "asin-only-on-walmart", { channel: { type: "walmart", domain: "walmart.com", seller_id: "900000001" }, product: { asin: "B0EXAMPLE1" } }, "asin_needs_amazon_channel", "Section 9.5: an ASIN alone finds a brand only on Amazon"],
+  ["verify-request", "empty-product", req(amazonUS, { product: {} }), "schema", "A product names a gtin, an asin or both"],
+  ["verify-request", "product-only-bad-gtin", { channel: amazonUS, product: { gtin: "012345678906" } }, "invalid_gtin", "Section 9.5: a bad check digit is rejected, never resolved"],
   ["verify-request", "bad-gtin", req(amazonUS, { product: { gtin: "00012345678906" } }), "invalid_gtin", "GTIN check digit"],
   ["verify-request", "territory-uk", req(amazonUS, { territory: "UK" }), "invalid_country", "ISO 3166-1: GB, not UK (normalizeVerifyRequest maps it)"],
   ["verify-request", "generic-web-no-territory", req({ type: "web", domain: "retailer.example" }), "territory_required", "Section 6.2: generic domain needs a territory"],
@@ -254,7 +285,20 @@ const cases = [
   ["verify-response", "with-as-of", edit(authorized, (r) => (r.as_of = "2026-09-28T00:00:00Z")), null, "Section 9: as_of echoed"],
   ["verify-response", "with-signal", edit(authorized, (r) => r.signals.push({ type: "account_name_changed", observed: "2026-09-20T00:00:00Z", detail: "Storefront name changed" })), null, "Section 7 signals"],
 
+  ["verify-response", "authorized-resolved-by-asin", { ...authorized, resolved_by: "asin" }, null, "Section 9.5: brand found from the ASIN"],
+  ["verify-response", "product-not-found", productNotFound, null, "Section 9.5: no registered brand's catalog has it"],
+  ["verify-response", "brand-ambiguous", ambiguous, null, "Section 9.5: two brands claim the product"],
+  ["verify-response", "brand-mismatch", mismatch, null, "Section 9.5: the product belongs to another brand"],
+
   // ---- verify response: invalid
+  ["verify-response", "authorized-missing-brand", edit(authorized, (r) => delete r.brand), "schema", "Section 9.5: every answer about a brand names it"],
+  ["verify-response", "authorized-missing-resolved-by", edit(authorized, (r) => delete r.resolved_by), "schema", "Section 9.5: and says how it was found"],
+  ["verify-response", "ambiguous-one-candidate", { ...ambiguous, candidates: [exampleBrand] }, "schema", "Section 9.5: ambiguous means two or more brands"],
+  ["verify-response", "ambiguous-with-brand", { ...ambiguous, brand: exampleBrand }, "schema", "Section 9.5: an ambiguous answer picks no brand"],
+  ["verify-response", "ambiguous-authorized", { ...authorized, status: "brand_ambiguous", candidates: [exampleBrand, otherBrand] }, "schema", "Section 9.5: brand_ambiguous is never authorized"],
+  ["verify-response", "not-found-with-candidates", { ...productNotFound, candidates: [otherBrand] }, "schema", "Candidates only on brand_ambiguous and brand_mismatch"],
+  ["verify-response", "mismatch-resolved-by-gtin", { ...mismatch, resolved_by: "gtin" }, "schema", "Section 9.5: a mismatch is about the brand_domain asked"],
+  ["verify-response", "unlisted-with-candidates", { ...unlisted, candidates: [otherBrand] }, "schema", "Candidates only on brand_ambiguous and brand_mismatch"],
   ["verify-response", "brand-unverified", { ...notRegistered, status: "brand_unverified" }, "schema", "Renamed brand_not_registered in v0.2"],
   ["verify-response", "authorized-missing-revocation-id", edit(authorized, (r) => delete r.revocation_id), "schema", "Section 10.3: authorized answers carry revocation_id"],
   ["verify-response", "unlisted-with-revocation-id", { ...unlisted, revocation_id: "rv_Q2l8dX4bT0aN5kPw" }, "schema", "Only authorized answers carry revocation_id"],
@@ -273,6 +317,21 @@ const cases = [
   ["verify-response", "valid-until-over-15-minutes", edit(authorized, (r) => (r.valid_until = "2026-09-28T14:17:12Z")), "valid_until_exceeds_max", "Section 9 MUST"],
   ["verify-response", "valid-until-before-checked", edit(authorized, (r) => (r.valid_until = "2026-09-28T14:02:11Z")), "valid_until_not_after_issued", ""],
   ["verify-response", "stale-until-over-24-hours", edit(authorized, (r) => (r.stale_until = "2026-09-29T14:02:12Z")), "stale_until_exceeds_max", "Section 10.2"],
+
+  // ---- resolve request and response (section 9.5)
+  ["resolve-request", "gtin", { product: { gtin: "012345678905" } }, null, "UPC-A"],
+  ["resolve-request", "asin-with-domain", { product: { asin: "B0EXAMPLE1" }, domain: "amazon.co.uk" }, null, "ASIN and the marketplace it was seen on"],
+  ["resolve-request", "gtin-and-asin", { product: { gtin: "4006381333931", asin: "B0EXAMPLE2" } }, null, "Both identifiers"],
+  ["resolve-request", "no-product", { domain: "amazon.com" }, "schema", "product is required"],
+  ["resolve-request", "bad-gtin", { product: { gtin: "4006381333932" } }, "invalid_gtin", "Bad check digit"],
+  ["resolve-request", "non-amazon-domain", { product: { asin: "B0EXAMPLE1" }, domain: "walmart.com" }, "asin_needs_amazon_channel", "domain is an Amazon marketplace"],
+  ["resolve-request", "brand-name", { product: { gtin: "012345678905" }, brand_name: "Example Brand" }, "schema", "Section 4.2: a name never resolves a brand"],
+  ["resolve-response", "resolved", resolved, null, ""],
+  ["resolve-response", "not-found", { ...resolved, status: "product_not_found", brand: undefined, resolved_by: undefined }, null, ""],
+  ["resolve-response", "ambiguous", { ...resolved, status: "brand_ambiguous", brand: undefined, resolved_by: undefined, candidates: [exampleBrand, otherBrand] }, null, ""],
+  ["resolve-response", "resolved-by-brand-domain", { ...resolved, resolved_by: "brand_domain" }, "schema", "A resolve request has no brand_domain"],
+  ["resolve-response", "resolved-with-retailers", { ...resolved, authorizations: [] }, "schema", "Section 9.5: resolution never reveals retailers"],
+  ["resolve-response", "valid-until-over-15-minutes", { ...resolved, valid_until: "2026-09-28T14:17:12Z" }, "valid_until_exceeds_max", "Section 9"],
 
   // ---- revocation feed
   ["revocation-feed", "feed", feed, null, "Section 10.3 example"],
@@ -297,16 +356,26 @@ const cases = [
   ["match", "expired-end-date", match(req({ type: "web", domain: "ukrunners.co.uk" }, { product: { asin: "B0EXAMPLE3" } }), { status: "expired", authorization_id: "auth_03", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running" }, signals: [] }), null, "Section 10: past the brand's end date"],
   ["match", "as-of-before-end-date", match(req({ type: "web", domain: "ukrunners.co.uk" }, { product: { asin: "B0EXAMPLE3" }, as_of: "2026-08-15" }), { status: "authorized", authorization_id: "auth_03", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running" }, signals: [] }), null, "Section 9: as_of before the end date"],
   ["match", "match-by-channel-key", match(req({ type: "amazon", domain: "amazon.com", seller_id: " a1b2c3d4e5f6g7 " }), { status: "authorized", authorization_id: "auth_01J9X2", signals: [] }), null, "Section 6.1: Amazon seller IDs compare uppercased"],
+
+  // ---- resolution (section 9.5)
+  ["resolve", "by-upc-a", resolveCase({ gtin: "012345678905" }, { status: "resolved", brand: exampleBrand, resolved_by: "gtin" }), null, "UPC-A"],
+  ["resolve", "by-ean-13", resolveCase({ gtin: "0012345678905" }, { status: "resolved", brand: exampleBrand, resolved_by: "gtin" }), null, "The same number as EAN-13"],
+  ["resolve", "by-gtin-14", resolveCase({ gtin: "00012345678905" }, { status: "resolved", brand: exampleBrand, resolved_by: "gtin" }), null, "And as GTIN-14"],
+  ["resolve", "by-asin", resolveCase({ asin: "B0EXAMPLE1" }, { status: "resolved", brand: exampleBrand, resolved_by: "asin" }), null, ""],
+  ["resolve", "gtin-and-asin-agree", resolveCase({ gtin: "012345678905", asin: "B0EXAMPLE1" }, { status: "resolved", brand: exampleBrand, resolved_by: "gtin" }), null, "Both identifiers, one brand"],
+  ["resolve", "shared-gtin", resolveCase({ gtin: "4006381333931" }, { status: "brand_ambiguous", candidates: [exampleBrand, otherBrand] }), null, "Two brands claim one GTIN: never pick one"],
+  ["resolve", "gtin-and-asin-disagree", resolveCase({ gtin: "012345678905", asin: "B0OTHER001" }, { status: "brand_ambiguous", candidates: [exampleBrand, otherBrand] }), null, "GTIN and ASIN point to different brands"],
+  ["resolve", "unknown-gtin", resolveCase({ gtin: "5012345678900" }, { status: "product_not_found" }), null, "No catalog has it"],
 ];
 
 rmSync(root, { recursive: true, force: true });
 const manifest = [];
 for (const [kind, name, doc, expect, note, extra = {}] of cases) {
   const valid = expect === null;
-  const rel = kind === "match" ? `match/${name}.json` : `${kind}/${valid ? "valid" : "invalid"}/${name}.json`;
+  const rel = kind === "match" || kind === "resolve" ? `${kind}/${name}.json` : `${kind}/${valid ? "valid" : "invalid"}/${name}.json`;
   mkdirSync(join(root, dirname(rel)), { recursive: true });
   writeFileSync(join(root, rel), JSON.stringify(doc, null, 2) + "\n");
-  manifest.push({ path: rel, kind, ...(kind === "match" ? {} : { valid }), ...(expect ? { expect } : {}), ...extra, ...(note ? { note } : {}) });
+  manifest.push({ path: rel, kind, ...(kind === "match" || kind === "resolve" ? {} : { valid }), ...(expect ? { expect } : {}), ...extra, ...(note ? { note } : {}) });
 }
 writeFileSync(join(root, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 console.log(`wrote ${manifest.length} fixtures`);

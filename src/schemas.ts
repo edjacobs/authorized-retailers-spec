@@ -2,11 +2,11 @@
 
 export const common = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.2/common.json",
-  "title": "Authorized Retailers v0.2 shared definitions",
+  "$id": "https://authorizedretailers.ai/schemas/0.3/common.json",
+  "title": "Authorized Retailers v0.3 shared definitions",
   "$defs": {
     "specVersion": {
-      "const": "authorized-retailers/0.2"
+      "const": "authorized-retailers/0.3"
     },
     "timestamp": {
       "description": "RFC 3339 timestamp in UTC with a Z suffix.",
@@ -737,6 +737,15 @@ export const common = {
           "items": {
             "$ref": "#/$defs/domain"
           }
+        },
+        "aliases": {
+          "description": "Section 4.2: other names the brand is known by, for display and search. Never used to resolve a brand.",
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
         }
       }
     },
@@ -758,13 +767,60 @@ export const common = {
           "pattern": "^[A-Za-z0-9_-]+\\.\\.[A-Za-z0-9_-]+$"
         }
       }
+    },
+    "productRef": {
+      "description": "Section 9: a product by GTIN, ASIN or both.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "gtin": {
+          "$ref": "#/$defs/gtin"
+        },
+        "asin": {
+          "$ref": "#/$defs/asin"
+        }
+      }
+    },
+    "answerBrand": {
+      "description": "Section 9.5: the brand an answer is about. name is absent for a domain that is not registered.",
+      "type": "object",
+      "required": [
+        "domain"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "$ref": "#/$defs/domain"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "resolvedBy": {
+      "description": "Section 9.5: how the registry found the brand.",
+      "enum": [
+        "brand_domain",
+        "gtin",
+        "asin"
+      ]
+    },
+    "candidates": {
+      "description": "Section 9.5: the registered brands whose catalogs hold the product.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/answerBrand"
+      }
     }
   }
 };
 
 export const list = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.2/list.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.3/list.json",
   "title": "Signed list (section 5.2)",
   "type": "object",
   "required": [
@@ -852,7 +908,7 @@ export const list = {
 
 export const pointer = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.2/pointer.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.3/pointer.json",
   "title": "authorized-retailers.json pointer (section 5.1)",
   "type": "object",
   "required": [
@@ -884,9 +940,142 @@ export const pointer = {
   }
 };
 
+export const resolveRequest = {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.3/resolve-request.json",
+  "title": "POST /v0/resolve request (section 9.5)",
+  "description": "Canonical form. Call normalizeResolveRequest on raw input first.",
+  "type": "object",
+  "required": [
+    "product"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "product": {
+      "$ref": "common.json#/$defs/productRef"
+    },
+    "domain": {
+      "description": "The Amazon marketplace domain the ASIN was seen on.",
+      "$ref": "common.json#/$defs/domain"
+    }
+  }
+};
+
+export const resolveResponse = {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.3/resolve-response.json",
+  "title": "POST /v0/resolve response (section 9.5)",
+  "type": "object",
+  "required": [
+    "status",
+    "checked",
+    "valid_until",
+    "stale_until",
+    "signature"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "enum": [
+        "resolved",
+        "product_not_found",
+        "brand_ambiguous"
+      ]
+    },
+    "brand": {
+      "$ref": "common.json#/$defs/answerBrand"
+    },
+    "resolved_by": {
+      "enum": [
+        "gtin",
+        "asin"
+      ]
+    },
+    "candidates": {
+      "$ref": "common.json#/$defs/candidates"
+    },
+    "checked": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "valid_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "stale_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "signature": {
+      "$ref": "common.json#/$defs/signature"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "resolved"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "brand",
+          "resolved_by"
+        ],
+        "not": {
+          "required": [
+            "candidates"
+          ]
+        }
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "brand"
+              ]
+            },
+            {
+              "required": [
+                "resolved_by"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "brand_ambiguous"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "candidates"
+        ],
+        "properties": {
+          "candidates": {
+            "minItems": 2
+          }
+        }
+      },
+      "else": {
+        "not": {
+          "required": [
+            "candidates"
+          ]
+        }
+      }
+    }
+  ]
+};
+
 export const revocationFeed = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.2/revocation-feed.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.3/revocation-feed.json",
   "title": "Revocation feed (section 10.3)",
   "type": "object",
   "required": [
@@ -942,12 +1131,11 @@ export const revocationFeed = {
 
 export const verifyRequest = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.2/verify-request.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.3/verify-request.json",
   "title": "POST /v0/verify request (section 9)",
-  "description": "Canonical form. Call normalizeVerifyRequest on raw input first.",
+  "description": "Canonical form. Call normalizeVerifyRequest on raw input first. At least one of brand_domain or product is required.",
   "type": "object",
   "required": [
-    "brand_domain",
     "channel"
   ],
   "additionalProperties": false,
@@ -965,33 +1153,7 @@ export const verifyRequest = {
       "$ref": "common.json#/$defs/productLine"
     },
     "product": {
-      "description": "Exactly one of gtin or asin.",
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "gtin"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "gtin": {
-              "$ref": "common.json#/$defs/gtin"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "asin"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "asin": {
-              "$ref": "common.json#/$defs/asin"
-            }
-          }
-        }
-      ]
+      "$ref": "common.json#/$defs/productRef"
     },
     "as_of": {
       "anyOf": [
@@ -1003,12 +1165,24 @@ export const verifyRequest = {
         }
       ]
     }
-  }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "brand_domain"
+      ]
+    },
+    {
+      "required": [
+        "product"
+      ]
+    }
+  ]
 };
 
 export const verifyResponse = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.2/verify-response.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.3/verify-response.json",
   "title": "POST /v0/verify response (section 9)",
   "type": "object",
   "required": [
@@ -1028,7 +1202,10 @@ export const verifyResponse = {
         "unlisted",
         "expired",
         "brand_not_registered",
-        "disputed"
+        "disputed",
+        "product_not_found",
+        "brand_ambiguous",
+        "brand_mismatch"
       ]
     },
     "reason": {
@@ -1150,6 +1327,15 @@ export const verifyResponse = {
     },
     "signature": {
       "$ref": "common.json#/$defs/signature"
+    },
+    "brand": {
+      "$ref": "common.json#/$defs/answerBrand"
+    },
+    "resolved_by": {
+      "$ref": "common.json#/$defs/resolvedBy"
+    },
+    "candidates": {
+      "$ref": "common.json#/$defs/candidates"
     }
   },
   "allOf": [
@@ -1277,6 +1463,120 @@ export const verifyResponse = {
               "expired",
               "disputed"
             ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "reason"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "product_not_found",
+              "brand_ambiguous"
+            ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "brand"
+              ]
+            },
+            {
+              "required": [
+                "resolved_by"
+              ]
+            },
+            {
+              "required": [
+                "reason"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "brand",
+          "resolved_by"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "brand_ambiguous",
+              "brand_mismatch"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "candidates"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "candidates"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "brand_ambiguous"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "candidates": {
+            "minItems": 2
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "brand_mismatch",
+              "brand_not_registered"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "resolved_by": {
+            "const": "brand_domain"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "brand_mismatch"
           }
         }
       },

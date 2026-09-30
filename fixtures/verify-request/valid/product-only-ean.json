@@ -1,0 +1,9 @@
+{
+  "channel": {
+    "type": "web",
+    "domain": "retailer.co.uk"
+  },
+  "product": {
+    "gtin": "4006381333931"
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.3/resolve-response.json",
+  "title": "POST /v0/resolve response (section 9.5)",
+  "type": "object",
+  "required": [
+    "status",
+    "checked",
+    "valid_until",
+    "stale_until",
+    "signature"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "enum": [
+        "resolved",
+        "product_not_found",
+        "brand_ambiguous"
+      ]
+    },
+    "brand": {
+      "$ref": "common.json#/$defs/answerBrand"
+    },
+    "resolved_by": {
+      "enum": [
+        "gtin",
+        "asin"
+      ]
+    },
+    "candidates": {
+      "$ref": "common.json#/$defs/candidates"
+    },
+    "checked": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "valid_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "stale_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "signature": {
+      "$ref": "common.json#/$defs/signature"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "resolved"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "brand",
+          "resolved_by"
+        ],
+        "not": {
+          "required": [
+            "candidates"
+          ]
+        }
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "brand"
+              ]
+            },
+            {
+              "required": [
+                "resolved_by"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "brand_ambiguous"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "candidates"
+        ],
+        "properties": {
+          "candidates": {
+            "minItems": 2
+          }
+        }
+      },
+      "else": {
+        "not": {
+          "required": [
+            "candidates"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -5,10 +5,14 @@ import { describe, expect, it } from "vitest";
 import {
   authorizationsForChannel,
   channelKey,
+  findProduct,
   matchRequest,
+  resolveClaims,
   validAuthorizations,
   validateFile,
   validateList,
+  validateResolveRequest,
+  validateResolveResponse,
   validateVerifyRequest,
   validateVerifyResponse,
   type PublicList,
@@ -237,5 +241,62 @@ describe("§8 every signature names its kid", () => {
     const l = plain() as unknown as { signature: Record<string, unknown> };
     delete l.signature.kid;
     expect(validateList(l).valid).toBe(false);
+  });
+});
+
+describe("§9.5 finding the brand from a product", () => {
+  const amazon = { type: "amazon", domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" };
+  const ex = { domain: "brand.example", name: "Example Brand" };
+  const other = { domain: "other.example", name: "Other Brand" };
+
+  it("a verify request MUST name a brand_domain or a product", () => {
+    expect(codes(validateVerifyRequest({ channel: amazon }))).toContain("brand_or_product_required");
+    expect(validateVerifyRequest({ channel: amazon, product: { gtin: "012345678905" } }).valid).toBe(true);
+  });
+
+  it("the UPC-A, EAN-13 and GTIN-14 forms of one number find the same product; a bad check digit is rejected", () => {
+    const l = withCatalog();
+    const ids = ["012345678905", "0012345678905", "00012345678905"].map((gtin) => findProduct(l.catalog, { gtin })?.id);
+    expect(new Set(ids)).toEqual(new Set(["EB-TEE-BLK-M"]));
+    expect(codes(validateVerifyRequest({ channel: amazon, product: { gtin: "012345678906" } }))).toContain("invalid_gtin");
+  });
+
+  it("an ASIN alone finds a brand only on an Amazon channel", () => {
+    const walmart = { type: "walmart", domain: "walmart.com", seller_id: "900000001" };
+    expect(codes(validateVerifyRequest({ channel: walmart, product: { asin: "B0EXAMPLE1" } }))).toContain("asin_needs_amazon_channel");
+    expect(validateVerifyRequest({ channel: walmart, brand_domain: "brand.example", product: { asin: "B0EXAMPLE1" } }).valid).toBe(true);
+    expect(validateVerifyRequest({ channel: amazon, product: { asin: "B0EXAMPLE1" } }).valid).toBe(true);
+  });
+
+  it("more than one brand claiming a product MUST NOT resolve, and brand_ambiguous is never authorized", () => {
+    expect(resolveClaims({ gtin: [ex, other] })).toEqual({ status: "brand_ambiguous", candidates: [ex, other] });
+    expect(resolveClaims({ gtin: [ex], asin: [other] })).toEqual({ status: "brand_ambiguous", candidates: [ex, other] });
+    const answer = fx("verify-response/valid/brand-ambiguous.json");
+    expect(validateVerifyResponse({ ...answer, status: "authorized", authorization_id: "auth_1", revocation_id: "rv_Q2l8dX4bT0aN5kPw" }).valid).toBe(false);
+  });
+
+  it("one brand resolves, preferring the GTIN when both identifiers agree; none is product_not_found", () => {
+    expect(resolveClaims({ gtin: [ex], asin: [ex] })).toEqual({ status: "resolved", brand: ex, resolved_by: "gtin" });
+    expect(resolveClaims({ asin: [ex] })).toEqual({ status: "resolved", brand: ex, resolved_by: "asin" });
+    expect(resolveClaims({})).toEqual({ status: "product_not_found" });
+  });
+
+  it("a brand name MUST NOT resolve a brand", () => {
+    expect(validateVerifyRequest({ channel: amazon, brand_name: "Example Brand" }).valid).toBe(false);
+    expect(validateResolveRequest({ product: { gtin: "012345678905" }, brand_name: "Example Brand" }).valid).toBe(false);
+  });
+
+  it("a resolve answer MUST NOT carry retailers", () => {
+    expect(validateResolveResponse(fx("resolve-response/invalid/resolved-with-retailers.json")).valid).toBe(false);
+  });
+
+  it("every answer about a brand names it and how it was found; a mismatch names the other brands", () => {
+    const authorized = fx("verify-response/valid/authorized.json");
+    delete authorized.brand;
+    expect(validateVerifyResponse(authorized).valid).toBe(false);
+    const mismatch = fx("verify-response/valid/brand-mismatch.json");
+    expect(validateVerifyResponse(mismatch).valid).toBe(true);
+    delete mismatch.candidates;
+    expect(validateVerifyResponse(mismatch).valid).toBe(false);
   });
 });

@@ -1,0 +1,10 @@
+{
+  "channel": {
+    "type": "amazon",
+    "domain": "amazon.com",
+    "seller_id": "A1B2C3D4E5F6G7"
+  },
+  "product": {
+    "gtin": "012345678905"
+  }
+}

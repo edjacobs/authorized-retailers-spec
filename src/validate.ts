@@ -1,5 +1,5 @@
 import { Validator, type OutputUnit } from "@cfworker/json-schema";
-import { common, list, pointer, revocationFeed, verifyRequest, verifyResponse } from "./schemas.js";
+import { common, list, pointer, resolveRequest, resolveResponse, revocationFeed, verifyRequest, verifyResponse } from "./schemas.js";
 import { MAX_STALE_MS, MAX_VALIDITY_MS, MARKETPLACE_DOMAINS } from "./constants.js";
 import { isCountryCode, isMarketplaceDomain, isRecord, normalizeDomain, territoryForDomain } from "./identity.js";
 import { isValidAsin, isValidGtin, toGtin14 } from "./product.js";
@@ -8,6 +8,8 @@ import type {
   Channel,
   PointerFile,
   PublicList,
+  ResolveRequest,
+  ResolveResponse,
   RevocationFeed,
   Scope,
   SignedList,
@@ -27,6 +29,8 @@ export type ErrorCode =
   | "territory_mismatch"
   | "territories_required"
   | "territory_required"
+  | "brand_or_product_required"
+  | "asin_needs_amazon_channel"
   | "invalid_gtin"
   | "invalid_asin"
   | "product_without_identifier"
@@ -61,8 +65,8 @@ export type ValidationResult<T> =
   | { valid: false; errors: ValidationError[]; warnings: ValidationWarning[] };
 
 type Schema = Record<string, unknown>;
-const V = "https://authorizedretailers.ai/schemas/0.2";
-const ALL_SCHEMAS: Schema[] = [common, pointer, list, verifyRequest, verifyResponse, revocationFeed];
+const V = "https://authorizedretailers.ai/schemas/0.3";
+const ALL_SCHEMAS: Schema[] = [common, pointer, list, verifyRequest, verifyResponse, resolveRequest, resolveResponse, revocationFeed];
 const scopeSchema: Schema = { $id: `${V}/scope.json`, $ref: "common.json#/$defs/scope" };
 const channelSchema: Schema = { $id: `${V}/channel.json`, $ref: "common.json#/$defs/channel" };
 const productSchema: Schema = { $id: `${V}/product.json`, $ref: "common.json#/$defs/product" };
@@ -297,7 +301,7 @@ export function validateFile(input: unknown, fetchedFrom?: string): ValidationRe
   const r = new Report();
   const form = isRecord(input) ? input.form : undefined;
   if (form !== "pointer") {
-    r.error("form_not_supported", "/form", `form ${JSON.stringify(form)} is not supported; v0.2 has only "pointer" (section 5.1)`);
+    r.error("form_not_supported", "/form", `form ${JSON.stringify(form)} is not supported; the only form is "pointer" (section 5.1)`);
     return r.done(input);
   }
   const list = (input as { list?: unknown }).list;
@@ -339,12 +343,13 @@ export function validateList(input: unknown): ValidationResult<SignedList> {
 export function validateVerifyRequest(input: unknown): ValidationResult<VerifyRequest> {
   const r = new Report();
   preSchemaChecks(r, input);
-  const product = isRecord(input) && isRecord(input.product) ? input.product : undefined;
-  if (typeof product?.gtin === "string" && /^(\d{8}|\d{12,14})$/.test(product.gtin) && !isValidGtin(product.gtin)) {
-    r.error("invalid_gtin", "/product/gtin", `${product.gtin} has a bad check digit`);
-  }
-  if (typeof product?.asin === "string" && !isValidAsin(product.asin)) {
-    r.error("invalid_asin", "/product/asin", `${product.asin} is not an ASIN (10 uppercase letters or digits)`);
+  productRefRules(r, input);
+  if (isRecord(input) && input.brand_domain === undefined) {
+    if (input.product === undefined) {
+      r.error("brand_or_product_required", "", "a verify request names a brand_domain, a product or both (section 9)");
+    } else if (isRecord(input.product) && input.product.gtin === undefined && typeof input.product.asin === "string" && isRecord(input.channel) && input.channel.type !== "amazon") {
+      r.error("asin_needs_amazon_channel", "/channel/type", "an ASIN alone finds a brand only on an Amazon channel; give a GTIN or the brand_domain (section 9.5)");
+    }
   }
   merge(r, schemaErrors(verifyRequest, input));
   if (r.errors.length === 0) {
@@ -353,6 +358,37 @@ export function validateVerifyRequest(input: unknown): ValidationResult<VerifyRe
       r.error("territory_required", "/territory", `${req.channel.domain} is a generic domain, so the request must name a territory (section 6.2)`);
     }
     if (req.as_of !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(req.as_of)) ts(r, "/as_of", req.as_of);
+  }
+  return r.done(input);
+}
+
+function productRefRules(r: Report, input: unknown) {
+  const product = isRecord(input) && isRecord(input.product) ? input.product : undefined;
+  if (typeof product?.gtin === "string" && /^(\d{8}|\d{12,14})$/.test(product.gtin) && !isValidGtin(product.gtin)) {
+    r.error("invalid_gtin", "/product/gtin", `${product.gtin} has a bad check digit`);
+  }
+  if (typeof product?.asin === "string" && !isValidAsin(product.asin)) {
+    r.error("invalid_asin", "/product/asin", `${product.asin} is not an ASIN (10 uppercase letters or digits)`);
+  }
+}
+
+/** Validates a canonical resolve request (section 9.5). Call normalizeResolveRequest on raw input first. */
+export function validateResolveRequest(input: unknown): ValidationResult<ResolveRequest> {
+  const r = new Report();
+  productRefRules(r, input);
+  if (isRecord(input) && typeof input.domain === "string" && MARKETPLACE_DOMAINS[input.domain]?.type !== "amazon") {
+    r.error("asin_needs_amazon_channel", "/domain", `${input.domain} is not an Amazon marketplace domain (section 6)`);
+  }
+  merge(r, schemaErrors(resolveRequest, input));
+  return r.done(input);
+}
+
+export function validateResolveResponse(input: unknown): ValidationResult<ResolveResponse> {
+  const r = new Report();
+  merge(r, schemaErrors(resolveResponse, input));
+  if (r.errors.length === 0) {
+    const res = input as ResolveResponse;
+    freshnessRules(r, res.checked, "/checked", res);
   }
   return r.done(input);
 }

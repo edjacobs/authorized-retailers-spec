@@ -68,7 +68,7 @@
     "kind": "pointer",
     "valid": false,
     "expect": "schema",
-    "note": "Spec version is 0.2"
+    "note": "Spec version is 0.3"
   },
   {
     "path": "list/valid/list-no-catalog.json",
@@ -370,7 +370,7 @@
     "kind": "list",
     "valid": false,
     "expect": "schema",
-    "note": "v0.2 lists use valid_until, not expires"
+    "note": "Since v0.2, lists use valid_until, not expires"
   },
   {
     "path": "list/invalid/list-valid-over-15-minutes.json",
@@ -480,6 +480,30 @@
     "note": "Product by GTIN"
   },
   {
+    "path": "verify-request/valid/gtin-and-asin.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 9: a product may name both"
+  },
+  {
+    "path": "verify-request/valid/product-only-upc.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 9.5: no brand_domain, found by UPC-A"
+  },
+  {
+    "path": "verify-request/valid/product-only-ean.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 9.5: no brand_domain, found by EAN-13"
+  },
+  {
+    "path": "verify-request/valid/product-only-asin.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 9.5: an ASIN on an Amazon channel"
+  },
+  {
     "path": "verify-request/valid/as-of-datetime.json",
     "kind": "verify-request",
     "valid": true,
@@ -493,11 +517,32 @@
     "note": "Section 6: marketplace was replaced by domain"
   },
   {
-    "path": "verify-request/invalid/gtin-and-asin.json",
+    "path": "verify-request/invalid/no-brand-no-product.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "brand_or_product_required",
+    "note": "Section 9: brand_domain, product or both"
+  },
+  {
+    "path": "verify-request/invalid/asin-only-on-walmart.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "asin_needs_amazon_channel",
+    "note": "Section 9.5: an ASIN alone finds a brand only on Amazon"
+  },
+  {
+    "path": "verify-request/invalid/empty-product.json",
     "kind": "verify-request",
     "valid": false,
     "expect": "schema",
-    "note": "Section 9: exactly one of gtin or asin"
+    "note": "A product names a gtin, an asin or both"
+  },
+  {
+    "path": "verify-request/invalid/product-only-bad-gtin.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "invalid_gtin",
+    "note": "Section 9.5: a bad check digit is rejected, never resolved"
   },
   {
     "path": "verify-request/invalid/bad-gtin.json",
@@ -656,6 +701,86 @@
     "note": "Section 7 signals"
   },
   {
+    "path": "verify-response/valid/authorized-resolved-by-asin.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.5: brand found from the ASIN"
+  },
+  {
+    "path": "verify-response/valid/product-not-found.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.5: no registered brand's catalog has it"
+  },
+  {
+    "path": "verify-response/valid/brand-ambiguous.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.5: two brands claim the product"
+  },
+  {
+    "path": "verify-response/valid/brand-mismatch.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.5: the product belongs to another brand"
+  },
+  {
+    "path": "verify-response/invalid/authorized-missing-brand.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9.5: every answer about a brand names it"
+  },
+  {
+    "path": "verify-response/invalid/authorized-missing-resolved-by.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9.5: and says how it was found"
+  },
+  {
+    "path": "verify-response/invalid/ambiguous-one-candidate.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9.5: ambiguous means two or more brands"
+  },
+  {
+    "path": "verify-response/invalid/ambiguous-with-brand.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9.5: an ambiguous answer picks no brand"
+  },
+  {
+    "path": "verify-response/invalid/ambiguous-authorized.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9.5: brand_ambiguous is never authorized"
+  },
+  {
+    "path": "verify-response/invalid/not-found-with-candidates.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Candidates only on brand_ambiguous and brand_mismatch"
+  },
+  {
+    "path": "verify-response/invalid/mismatch-resolved-by-gtin.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9.5: a mismatch is about the brand_domain asked"
+  },
+  {
+    "path": "verify-response/invalid/unlisted-with-candidates.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Candidates only on brand_ambiguous and brand_mismatch"
+  },
+  {
     "path": "verify-response/invalid/brand-unverified.json",
     "kind": "verify-response",
     "valid": false,
@@ -781,6 +906,88 @@
     "note": "Section 10.2"
   },
   {
+    "path": "resolve-request/valid/gtin.json",
+    "kind": "resolve-request",
+    "valid": true,
+    "note": "UPC-A"
+  },
+  {
+    "path": "resolve-request/valid/asin-with-domain.json",
+    "kind": "resolve-request",
+    "valid": true,
+    "note": "ASIN and the marketplace it was seen on"
+  },
+  {
+    "path": "resolve-request/valid/gtin-and-asin.json",
+    "kind": "resolve-request",
+    "valid": true,
+    "note": "Both identifiers"
+  },
+  {
+    "path": "resolve-request/invalid/no-product.json",
+    "kind": "resolve-request",
+    "valid": false,
+    "expect": "schema",
+    "note": "product is required"
+  },
+  {
+    "path": "resolve-request/invalid/bad-gtin.json",
+    "kind": "resolve-request",
+    "valid": false,
+    "expect": "invalid_gtin",
+    "note": "Bad check digit"
+  },
+  {
+    "path": "resolve-request/invalid/non-amazon-domain.json",
+    "kind": "resolve-request",
+    "valid": false,
+    "expect": "asin_needs_amazon_channel",
+    "note": "domain is an Amazon marketplace"
+  },
+  {
+    "path": "resolve-request/invalid/brand-name.json",
+    "kind": "resolve-request",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 4.2: a name never resolves a brand"
+  },
+  {
+    "path": "resolve-response/valid/resolved.json",
+    "kind": "resolve-response",
+    "valid": true
+  },
+  {
+    "path": "resolve-response/valid/not-found.json",
+    "kind": "resolve-response",
+    "valid": true
+  },
+  {
+    "path": "resolve-response/valid/ambiguous.json",
+    "kind": "resolve-response",
+    "valid": true
+  },
+  {
+    "path": "resolve-response/invalid/resolved-by-brand-domain.json",
+    "kind": "resolve-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "A resolve request has no brand_domain"
+  },
+  {
+    "path": "resolve-response/invalid/resolved-with-retailers.json",
+    "kind": "resolve-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9.5: resolution never reveals retailers"
+  },
+  {
+    "path": "resolve-response/invalid/valid-until-over-15-minutes.json",
+    "kind": "resolve-response",
+    "valid": false,
+    "expect": "valid_until_exceeds_max",
+    "note": "Section 9"
+  },
+  {
     "path": "revocation-feed/valid/feed.json",
     "kind": "revocation-feed",
     "valid": true,
@@ -885,5 +1092,44 @@
     "path": "match/match-by-channel-key.json",
     "kind": "match",
     "note": "Section 6.1: Amazon seller IDs compare uppercased"
+  },
+  {
+    "path": "resolve/by-upc-a.json",
+    "kind": "resolve",
+    "note": "UPC-A"
+  },
+  {
+    "path": "resolve/by-ean-13.json",
+    "kind": "resolve",
+    "note": "The same number as EAN-13"
+  },
+  {
+    "path": "resolve/by-gtin-14.json",
+    "kind": "resolve",
+    "note": "And as GTIN-14"
+  },
+  {
+    "path": "resolve/by-asin.json",
+    "kind": "resolve"
+  },
+  {
+    "path": "resolve/gtin-and-asin-agree.json",
+    "kind": "resolve",
+    "note": "Both identifiers, one brand"
+  },
+  {
+    "path": "resolve/shared-gtin.json",
+    "kind": "resolve",
+    "note": "Two brands claim one GTIN: never pick one"
+  },
+  {
+    "path": "resolve/gtin-and-asin-disagree.json",
+    "kind": "resolve",
+    "note": "GTIN and ASIN point to different brands"
+  },
+  {
+    "path": "resolve/unknown-gtin.json",
+    "kind": "resolve",
+    "note": "No catalog has it"
   }
 ]

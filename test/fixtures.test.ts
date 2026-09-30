@@ -3,27 +3,35 @@ import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   matchRequest,
+  normalizeResolveRequest,
   normalizeVerifyRequest,
+  resolveFromLists,
   validateFile,
   validateList,
+  validateResolveRequest,
+  validateResolveResponse,
   validateRevocationFeed,
   validateVerifyRequest,
   validateVerifyResponse,
+  type ProductRef,
   type PublicList,
+  type ResolveRequest,
   type ValidationResult,
   type VerifyRequest,
 } from "../src";
 
 const root = join(import.meta.dirname, "..", "fixtures");
-type Kind = "pointer" | "list" | "verify-request" | "verify-response" | "revocation-feed" | "match";
+type Kind = "pointer" | "list" | "verify-request" | "verify-response" | "resolve-request" | "resolve-response" | "revocation-feed" | "match" | "resolve";
 interface Entry { path: string; kind: Kind; valid?: boolean; expect?: string; fetched_from?: string; note?: string }
 const manifest: Entry[] = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
 
-const validators: Record<Exclude<Kind, "match">, (x: unknown, e: Entry) => ValidationResult<unknown>> = {
+const validators: Record<Exclude<Kind, "match" | "resolve">, (x: unknown, e: Entry) => ValidationResult<unknown>> = {
   pointer: (x, e) => validateFile(x, e.fetched_from),
   list: validateList,
   "verify-request": validateVerifyRequest,
   "verify-response": validateVerifyResponse,
+  "resolve-request": validateResolveRequest,
+  "resolve-response": validateResolveResponse,
   "revocation-feed": validateRevocationFeed,
 };
 
@@ -57,6 +65,15 @@ describe("fixtures", () => {
           ...(got.product ? { product: got.product } : {}),
           signals: got.signals,
         }).toEqual(want);
+        return;
+      }
+      if (entry.kind === "resolve") {
+        // Every list is valid, the product is a valid resolve request, then resolution matches.
+        const { lists, product, expect: want } = doc as { lists: PublicList[]; product: unknown; expect: unknown };
+        for (const l of lists) expect(validateList(l).errors).toEqual([]);
+        const req = normalizeResolveRequest({ product });
+        expect(validateResolveRequest(req).errors).toEqual([]);
+        expect(resolveFromLists(lists, (req as ResolveRequest).product as ProductRef)).toEqual(want);
         return;
       }
       const result = validators[entry.kind](doc, entry);

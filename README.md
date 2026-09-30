@@ -2,11 +2,11 @@
 
 An open format with a single registry, for brands to record which retailers they have authorized and for software to check a seller against that record.
 
-> **Status: draft v0.2.** Breaking changes are possible before v1.0. See [GOVERNANCE.md](GOVERNANCE.md) for how changes are made.
+> **Status: draft v0.3.** Breaking changes are possible before v1.0. See [GOVERNANCE.md](GOVERNANCE.md) for how changes are made.
 
 The standard answers one question: has this brand authorized this seller, on this channel, in this territory, for this product, as of this date? Built for AI shopping agents to check before they recommend or buy. It works just as well for marketplaces, brand protection teams and anyone else who needs the answer.
 
-- **Read the spec:** [`spec/spec-v0.2.md`](spec/spec-v0.2.md), also at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec)
+- **Read the spec:** [`spec/spec-v0.3.md`](spec/spec-v0.3.md), also at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec)
 - **The registry:** [authorizedretailers.ai](https://authorizedretailers.ai). The registry currently lists US channels. Other countries are coming.
 
 ## Core principles
@@ -35,7 +35,7 @@ A brand keeps its catalog and authorizations on the registry, which signs its li
 authorizedretailers-verify=<token from the registry>
 ```
 
-A brand that can serve files under `/.well-known/` may also serve a pointer, or use one in place of the DNS record:
+Once the domain is verified, a brand that can serve files under `/.well-known/` may also serve a pointer. The pointer helps software that finds brands by domain. It never verifies the domain:
 
 ```
 https://<brand-domain>/.well-known/authorized-retailers.json
@@ -43,7 +43,7 @@ https://<brand-domain>/.well-known/authorized-retailers.json
 
 ```json
 {
-  "spec": "authorized-retailers/0.2",
+  "spec": "authorized-retailers/0.3",
   "form": "pointer",
   "brand": { "name": "Example Brand", "domain": "brand.example" },
   "verify_token": "<token from the registry>",
@@ -51,7 +51,11 @@ https://<brand-domain>/.well-known/authorized-retailers.json
 }
 ```
 
-The pointer holds no authorization data, so it never goes out of date. The token is public: it proves control only of the domain it was issued for. The registry checks the DNS record or pointer regularly. If both are removed, the brand's list stops counting until one is restored. The pointer itself is not signed. The list it names is, and so is every answer from the verify endpoint.
+The pointer holds no authorization data, so it never goes out of date. The token is public: it proves control only of the domain it was issued for. The registry rechecks the DNS record daily. If it is removed, the brand's list stops counting until it is restored. The pointer itself is not signed. The list it names is, and so is every answer from the verify endpoint.
+
+### Add your products
+
+Agents on a product page see a product identifier and a seller, not your domain. Your catalog is how they find you. A UPC or EAN column is enough to start. If you sell on Amazon, add ASINs too: Amazon listings show ASINs more reliably than barcodes (spec section 3.1).
 
 ## Validate a pointer and a list
 
@@ -94,20 +98,23 @@ const answer = await fetch("https://authorizedretailers.ai/v0/verify", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    brand_domain: "brand.example",
     channel: { type: "amazon", domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" },
+    product: { asin: "B0EXAMPLE1" },  // or { gtin: "012345678905" } for a UPC or EAN, or both
     // Optional:
+    brand_domain: "brand.example",    // if you know it; otherwise the registry finds it from the product
     territory: "US",                  // defaults to the domain's country
-    product: { asin: "B0EXAMPLE1" },  // or { gtin: "00012345678905" } for UPC or EAN
     as_of: "2026-09-28",              // defaults to now
   }),
 }).then((r) => r.json());
 
 const verified = await verifyDocument(answer, jwks);
 // { valid: true, kid } or { valid: false, reason }
+// answer.brand and answer.resolved_by say which brand the answer is about and how it was found.
 ```
 
-Marketplace channels are identified by their domain and seller ID, and web stores by their domain. A marketplace domain sets the territory (amazon.com is US, amazon.ca is CA), and a request for a different territory is answered `unlisted`. Product is optional: ask with a GTIN or, on Amazon, an ASIN. Authorization is decided per seller first, then checked against the product lines or products the brand has authorized. Every answer that includes a product says whether it is in the brand's catalog. A product that isn't may be a duplicate listing.
+Without a `brand_domain`, the registry finds the brand from the product through registered brands' catalogs (spec section 9.5). If no registered brand has the product the answer is `product_not_found`. If more than one claims it, the answer is `brand_ambiguous` with the `candidates`, never `authorized`. If you give a `brand_domain` and the product belongs to other brands, the answer is `brand_mismatch`. An ASIN alone finds a brand only on an Amazon channel. To find the brand without asking about a seller, `POST /v0/resolve` with `{ "product": { "gtin": "012345678905" } }`.
+
+Marketplace channels are identified by their domain and seller ID, and web stores by their domain. A marketplace domain sets the territory (amazon.com is US, amazon.ca is CA), and a request for a different territory is answered `unlisted`. Ask with a GTIN or, on Amazon, an ASIN. Authorization is decided per seller first, then checked against the product lines or products the brand has authorized. Every answer that includes a product says whether it is in the brand's catalog. A product that isn't may be a duplicate listing.
 
 The verifier rejects keys no longer in the key set and answers past their `valid_until` (15 minutes). On `unknown_kid`, fetch the key set again once. Match sellers on the identifier you see, never on a retailer name: `channelKey()` normalizes identifiers so every reader agrees.
 

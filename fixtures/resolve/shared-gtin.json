@@ -1,0 +1,225 @@
+{
+  "lists": [
+    {
+      "spec": "authorized-retailers/0.3",
+      "brand": {
+        "name": "Example Brand",
+        "domains": [
+          "brand.example",
+          "brand.co.uk"
+        ]
+      },
+      "public": true,
+      "issued": "2026-09-28T14:00:00Z",
+      "valid_until": "2026-09-28T14:15:00Z",
+      "stale_until": "2026-09-29T14:00:00Z",
+      "authorizations": [
+        {
+          "id": "auth_01J9X2",
+          "revocation_id": "rv_Q2l8dX4bT0aN5kPw",
+          "retailer": {
+            "name": "Example Retail LLC",
+            "entity_id": "ent_7Q4M"
+          },
+          "channels": [
+            {
+              "type": "amazon",
+              "domain": "amazon.com",
+              "seller_id": "A1B2C3D4E5F6G7"
+            },
+            {
+              "type": "walmart",
+              "domain": "walmart.com",
+              "seller_id": "101234567"
+            },
+            {
+              "type": "web",
+              "domain": "retailer.example"
+            }
+          ],
+          "scope": {
+            "territories": [
+              "US"
+            ],
+            "product_lines": [
+              "Classic Tee"
+            ],
+            "exclude_products": [
+              "EB-TEE-WHT-M"
+            ]
+          },
+          "proposed_by": null
+        },
+        {
+          "id": "auth_02",
+          "revocation_id": "rv_A1b2C3d4E5f6G7h8",
+          "retailer": {
+            "name": "Global Shoes"
+          },
+          "channels": [
+            {
+              "type": "web",
+              "domain": "globalshoes.example"
+            }
+          ],
+          "scope": {
+            "territories": [
+              "*"
+            ],
+            "product_lines": [
+              "all"
+            ],
+            "exclude_product_lines": [
+              "Running"
+            ]
+          }
+        },
+        {
+          "id": "auth_03",
+          "revocation_id": "rv_J9k8L7m6N5o4P3q2",
+          "retailer": {
+            "name": "UK Runners"
+          },
+          "channels": [
+            {
+              "type": "web",
+              "domain": "ukrunners.co.uk"
+            }
+          ],
+          "scope": {
+            "products": [
+              "EB-RUN-V3"
+            ]
+          },
+          "expires": "2026-09-01T00:00:00Z"
+        },
+        {
+          "id": "auth_04",
+          "revocation_id": "rv_R1s2T3u4V5w6X7y8",
+          "retailer": {
+            "name": "Brit Retail"
+          },
+          "channels": [
+            {
+              "type": "amazon",
+              "domain": "amazon.co.uk",
+              "seller_id": "A9Z8Y7X6W5V4U3"
+            }
+          ],
+          "scope": {
+            "product_lines": [
+              "all"
+            ],
+            "products": [
+              "EB-DTC-1"
+            ]
+          }
+        }
+      ],
+      "signature": {
+        "kid": "ar-20260928-6e37",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
+      },
+      "catalog": [
+        {
+          "id": "EB-TEE-BLK-M",
+          "name": "Classic Tee, Black, M",
+          "product_line": "Classic Tee",
+          "attributes": {
+            "color": "Black",
+            "size": "M"
+          },
+          "gtin": "00012345678905",
+          "asins": [
+            "B0EXAMPLE1"
+          ]
+        },
+        {
+          "id": "EB-TEE-WHT-M",
+          "name": "Classic Tee, White, M",
+          "product_line": "Classic Tee",
+          "gtin": "4006381333931",
+          "asins": [
+            "B0EXAMPLE2"
+          ]
+        },
+        {
+          "id": "EB-RUN-V2",
+          "name": "Runner V2",
+          "product_line": "Running",
+          "gtin": "96385074"
+        },
+        {
+          "id": "EB-RUN-V3",
+          "name": "Runner V3",
+          "product_line": "Running",
+          "asins": [
+            "B0EXAMPLE3"
+          ]
+        },
+        {
+          "id": "EB-DTC-1",
+          "name": "Founders Edition",
+          "product_line": "Limited",
+          "gtin": "12345678901231"
+        }
+      ],
+      "exclusions": {
+        "products": [
+          "EB-DTC-1"
+        ]
+      }
+    },
+    {
+      "spec": "authorized-retailers/0.3",
+      "brand": {
+        "name": "Other Brand",
+        "domains": [
+          "other.example"
+        ],
+        "aliases": [
+          "Other"
+        ]
+      },
+      "public": true,
+      "issued": "2026-09-28T14:00:00Z",
+      "valid_until": "2026-09-28T14:15:00Z",
+      "stale_until": "2026-09-29T14:00:00Z",
+      "catalog": [
+        {
+          "id": "OB-HAT",
+          "name": "Other Hat",
+          "gtin": "4006381333931"
+        },
+        {
+          "id": "OB-CAP",
+          "name": "Other Cap",
+          "asins": [
+            "B0OTHER001"
+          ]
+        }
+      ],
+      "authorizations": [],
+      "signature": {
+        "kid": "ar-20260928-6e37",
+        "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
+      }
+    }
+  ],
+  "product": {
+    "gtin": "4006381333931"
+  },
+  "expect": {
+    "status": "brand_ambiguous",
+    "candidates": [
+      {
+        "domain": "brand.example",
+        "name": "Example Brand"
+      },
+      {
+        "domain": "other.example",
+        "name": "Other Brand"
+      }
+    ]
+  }
+}

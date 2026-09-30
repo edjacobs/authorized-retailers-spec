@@ -1,9 +1,18 @@
 # Changelog
 
-This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.2.md).
+This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.3.md).
 
-## Unreleased
+## 0.3.0 (breaking)
 
+- Spec v0.3: product-first verification. An agent on a product page sees a product and a seller, not the brand's domain, so verify requests MAY omit `brand_domain` when they give a `product`, and the registry finds the brand from registered brands' catalogs (spec section 9.5).
+- Verify requests: `brand_domain` or `product` is required (`brand_or_product_required`). `product` takes `gtin`, `asin` or both. An ASIN alone finds a brand only on an `amazon` channel (`asin_needs_amazon_channel`).
+- Verify answers carry `brand` (`domain`, `name`) and `resolved_by` (`brand_domain`, `gtin` or `asin`), except `product_not_found` and `brand_ambiguous`. New statuses `product_not_found`, `brand_ambiguous` and `brand_mismatch`, the last two with `candidates`. Breaking: 0.2 validators reject these fields.
+- Resolve: `validateResolveRequest`, `validateResolveResponse`, `normalizeResolveRequest`, and `schemas/0.3/resolve-request.json` and `resolve-response.json` for `POST /v0/resolve` and the MCP tool `resolve_brand`.
+- `resolveClaims` decides resolution from the brands claiming a product's GTIN and ASIN, and `resolveFromLists` runs it over public lists, so the registry and agents agree. `findProduct` takes a GTIN, an ASIN or both, GTIN first.
+- Lists MAY carry `brand.aliases`, for display and search only (spec section 4.2). `SPEC_VERSION` is `authorized-retailers/0.3`.
+- Schemas are served per version: `schemas/0.3/` (new), `0.2` and `0.1` kept. The `./spec.md` export is v0.3.
+- Fixtures: new `resolve-request`, `resolve-response` and `resolve` kinds; `resolve` fixtures pair registered brands' lists and a product with the resolution section 9.5 requires.
+- Release rule: only the major version is held 30 days apart; minor and patch releases can ship any time.
 - Editor and maintainer are now given as authorizedretailers.ai, in the spec and in GOVERNANCE.md.
 - Governance: one three-part version for the spec and the package. Before 1.0, breaking changes can come in a minor version. Changes are batched into releases, each listed here with its reason.
 - Spec: brand domain verification is by DNS TXT record only. The pointer is optional, offered after DNS verification, and never verifies a domain. Its `verify_token` stays so the registry can tell whether a pointer is current. Distributors and retailer web stores publish nothing: the registry confirms them by a sign-in with an email address at their domain. No schema or API changes (spec sections 3, 4, 5.1, 6, 14).

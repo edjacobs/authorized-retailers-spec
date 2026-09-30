@@ -105,14 +105,26 @@ export function normalizeVerifyRequest(input: unknown): unknown {
   if (typeof out.territory === "string") out.territory = normalizeCountry(out.territory);
   if (typeof out.product_line === "string") out.product_line = out.product_line.trim();
   if (typeof out.as_of === "string") out.as_of = out.as_of.trim();
-  if (isRecord(out.product)) {
-    const p: Record<string, unknown> = { ...out.product };
-    if (typeof p.gtin === "string") p.gtin = p.gtin.replace(/[\s-]/g, "");
-    if (typeof p.asin === "string") p.asin = p.asin.trim().toUpperCase();
-    out.product = p;
-  }
+  if (out.product !== undefined) out.product = normalizeProductRef(out.product);
   out.channel = normalizeChannel(out.channel);
   return out;
+}
+
+/** normalizeVerifyRequest for a resolve request (section 9.5). */
+export function normalizeResolveRequest(input: unknown): unknown {
+  if (!isRecord(input)) return input;
+  const out: Record<string, unknown> = { ...input };
+  if (typeof out.domain === "string") out.domain = normalizeDomain(out.domain);
+  if (out.product !== undefined) out.product = normalizeProductRef(out.product);
+  return out;
+}
+
+function normalizeProductRef(input: unknown): unknown {
+  if (!isRecord(input)) return input;
+  const p: Record<string, unknown> = { ...input };
+  if (typeof p.gtin === "string") p.gtin = p.gtin.replace(/[\s-]/g, "");
+  if (typeof p.asin === "string") p.asin = p.asin.trim().toUpperCase();
+  return p;
 }
 
 /**

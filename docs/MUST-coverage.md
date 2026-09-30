@@ -1,6 +1,6 @@
 # MUST rules and where they are tested
 
-Every MUST in [spec/spec-v0.2.md](../spec/spec-v0.2.md). Rules this package enforces are tested here. The rest are obligations on the registry or on agents, and each implementation has to test them itself. The `fixtures/` suite (including the `match` cases) and the reference verifier are meant to help with that.
+Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enforces are tested here. The rest are obligations on the registry or on agents, and each implementation has to test them itself. The `fixtures/` suite (including the `match` and `resolve` cases) and the reference verifier are meant to help with that.
 
 | § | Rule | Tested here |
 | --- | --- | --- |
@@ -32,6 +32,14 @@ Every MUST in [spec/spec-v0.2.md](../spec/spec-v0.2.md). Rules this package enfo
 | 9 | `reason` MUST NOT appear on `authorized`, `expired` or `disputed` | `test/must.test.ts`, fixture `authorized-with-reason` |
 | 9.3 | For a list that is not public, the verify API MUST NOT return the brand's other retailers or catalog | Schema side (not-public lists carry neither; unlisted answers name no authorization; products outside the catalog carry no ID): `test/must.test.ts`. Otherwise a registry obligation |
 | 10 | The verify API MUST reflect a revocation within 1 minute | Registry obligation |
+| 4.2 | A name or alias MUST NOT resolve a brand | `test/must.test.ts`, fixtures `resolve-request/invalid/brand-name` |
+| 9 | A verify request MUST name a `brand_domain`, a `product` or both | `test/must.test.ts`, fixture `no-brand-no-product` |
+| 9 | Finding a brand by ASIN alone MUST use an `amazon` channel | `test/must.test.ts`, fixture `asin-only-on-walmart` |
+| 9 | A GTIN with a bad check digit MUST be rejected | `test/must.test.ts`, fixtures `product-only-bad-gtin`, `resolve-request/invalid/bad-gtin` |
+| 9.5 | A catalog on a domain that is not registered MUST NOT resolve | Registry obligation |
+| 9.5 | More than one brand claiming a product MUST NOT answer `authorized` | `test/must.test.ts` (`resolveClaims`, verify-response schema), `resolve` fixtures `shared-gtin`, `gtin-and-asin-disagree` |
+| 9.5 | A product outside `brand_domain`'s catalog and claimed by other brands MUST answer `brand_mismatch` | Registry obligation; schema requires `candidates` (`test/must.test.ts`) |
+| 9.5 | Finding the brand MUST NOT reveal retailers, or catalog data of a list that isn't public | `test/must.test.ts` (resolve-response schema); rest is a registry obligation |
 | 10.1 | Agents MUST NOT rely on a cached list or answer past its `valid_until`, except as 10.2 allows | `test/jws.test.ts` (`answer_expired`, `list_expired`) |
 | 10.2 | Agents MUST NOT describe a seller as authorized without a current or allowed stale answer | Agent obligation. `verifyDocument` refuses stale documents unless `allowStale` is set and a feed is given |
 | 10.2 | Agents MUST mark a stale result as stale | `verifyDocument` returns `stale: true`; showing it is an agent obligation |

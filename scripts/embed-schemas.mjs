@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SCHEMA_VERSION = "0.2";
+const SCHEMA_VERSION = "0.3";
 
 export function renderSchemasModule() {
   const names = readdirSync(join(root, "schemas", SCHEMA_VERSION)).filter((f) => f.endsWith(".json")).sort();

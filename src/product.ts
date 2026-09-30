@@ -1,6 +1,6 @@
 // Section 3.1: product identifiers and catalog lookups.
 
-import type { Authorization, Exclusions, Product, ProductRef, PublicList } from "./types.js";
+import type { AnswerBrand, Authorization, Exclusions, Product, ProductRef, PublicList } from "./types.js";
 
 /** Whether a GTIN (8, 12, 13 or 14 digits) has a valid GS1 check digit. */
 export function isValidGtin(gtin: string): boolean {
@@ -23,16 +23,62 @@ export function isValidAsin(asin: string): boolean {
   return /^[A-Z0-9]{10}$/.test(asin);
 }
 
-/** The catalog product a GTIN or ASIN refers to, or undefined when it isn't in the catalog. */
+/**
+ * The catalog product a GTIN or ASIN refers to, or undefined when it isn't in the catalog. When the
+ * request gives both, the GTIN is looked up first (section 9.5).
+ */
 export function findProduct(catalog: Product[] | undefined, ref: ProductRef): Product | undefined {
   if (!catalog) return undefined;
-  if ("gtin" in ref) {
-    if (!isValidGtin(ref.gtin)) return undefined;
+  if (ref.gtin !== undefined && isValidGtin(ref.gtin)) {
     const want = toGtin14(ref.gtin);
-    return catalog.find((p) => p.gtin !== undefined && isValidGtin(p.gtin) && toGtin14(p.gtin) === want);
+    const hit = catalog.find((p) => p.gtin !== undefined && isValidGtin(p.gtin) && toGtin14(p.gtin) === want);
+    if (hit) return hit;
   }
-  const asin = ref.asin.toUpperCase();
-  return catalog.find((p) => p.asins?.includes(asin));
+  if (ref.asin !== undefined) {
+    const asin = ref.asin.toUpperCase();
+    return catalog.find((p) => p.asins?.includes(asin));
+  }
+  return undefined;
+}
+
+/** Section 9.5: the registered brands whose catalogs hold a product, by the identifier that matched. */
+export interface ProductClaims {
+  gtin?: AnswerBrand[];
+  asin?: AnswerBrand[];
+}
+
+export type Resolution =
+  | { status: "resolved"; brand: AnswerBrand; resolved_by: "gtin" | "asin" }
+  | { status: "product_not_found" }
+  | { status: "brand_ambiguous"; candidates: AnswerBrand[] };
+
+/**
+ * Section 9.5: the brand a product belongs to, from the registered brands claiming its GTIN and ASIN.
+ * One brand across every identifier given resolves; none is product_not_found; more than one,
+ * including a GTIN and an ASIN that point to different brands, is brand_ambiguous.
+ * Each brand is counted once: the caller passes one entry per brand, whatever its number of domains.
+ */
+export function resolveClaims(claims: ProductClaims): Resolution {
+  const byDomain = new Map<string, AnswerBrand>();
+  for (const b of [...(claims.gtin ?? []), ...(claims.asin ?? [])]) if (!byDomain.has(b.domain)) byDomain.set(b.domain, b);
+  const all = [...byDomain.values()].sort((a, b) => a.domain.localeCompare(b.domain));
+  if (all.length === 0) return { status: "product_not_found" };
+  if (all.length > 1) return { status: "brand_ambiguous", candidates: all };
+  return { status: "resolved", brand: all[0]!, resolved_by: claims.gtin?.length ? "gtin" : "asin" };
+}
+
+/**
+ * Section 9.5 over public lists an agent holds, e.g. from a mirror. The registry resolves across
+ * every registered brand, including those whose lists aren't public, so its answer is the one to use.
+ */
+export function resolveFromLists(lists: PublicList[], ref: ProductRef): Resolution {
+  const claims: Required<ProductClaims> = { gtin: [], asin: [] };
+  for (const l of lists) {
+    const brand = { domain: l.brand.domains[0]!, name: l.brand.name };
+    if (ref.gtin !== undefined && findProduct(l.catalog, { gtin: ref.gtin })) claims.gtin.push(brand);
+    if (ref.asin !== undefined && findProduct(l.catalog, { asin: ref.asin })) claims.asin.push(brand);
+  }
+  return resolveClaims(claims);
 }
 
 export type Coverage = "covered" | "excluded" | "not_in_scope";

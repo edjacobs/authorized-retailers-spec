@@ -1,6 +1,6 @@
-// Types mirror schemas/0.2/*.json. The schemas are canonical; if the two disagree, the schema wins.
+// Types mirror schemas/0.3/*.json. The schemas are canonical; if the two disagree, the schema wins.
 
-export const SPEC_VERSION = "authorized-retailers/0.2" as const;
+export const SPEC_VERSION = "authorized-retailers/0.3" as const;
 export type SpecVersion = typeof SPEC_VERSION;
 
 /** RFC 3339 UTC timestamp, e.g. "2026-09-28T00:00:00Z". */
@@ -84,13 +84,14 @@ export interface PointerFile {
   list: string;
 }
 
-/** The only file form in v0.2. */
+/** The only file form since v0.2. */
 export type AuthorizedRetailersFile = PointerFile;
 export type FileForm = PointerFile["form"];
 
 interface ListBase {
   spec: SpecVersion;
-  brand: { name: string; domains: string[] };
+  /** aliases: section 4.2, for display and search only. */
+  brand: { name: string; domains: string[]; aliases?: string[] };
   issued: Timestamp;
   /** At most 15 minutes after issued (section 10.1). */
   valid_until: Timestamp;
@@ -114,11 +115,12 @@ export interface NotPublicList extends ListBase {
 
 export type SignedList = PublicList | NotPublicList;
 
-/** Exactly one of gtin or asin. */
-export type ProductRef = { gtin: string } | { asin: string };
+/** A product by GTIN, ASIN or both (section 9). */
+export type ProductRef = { gtin: string; asin?: string } | { gtin?: string; asin: string };
 
+/** At least one of brand_domain or product (section 9). */
 export interface VerifyRequest {
-  brand_domain: string;
+  brand_domain?: string;
   channel: Channel;
   /** Defaults to the channel domain's country. Required for web stores on generic domains. */
   territory?: string;
@@ -128,7 +130,24 @@ export interface VerifyRequest {
   as_of?: string;
 }
 
-export type VerifyStatus = "authorized" | "unlisted" | "expired" | "brand_not_registered" | "disputed";
+export type VerifyStatus =
+  | "authorized"
+  | "unlisted"
+  | "expired"
+  | "brand_not_registered"
+  | "disputed"
+  | "product_not_found"
+  | "brand_ambiguous"
+  | "brand_mismatch";
+
+/** Section 9.5: the brand an answer is about. name is absent for a domain that is not registered. */
+export interface AnswerBrand {
+  domain: string;
+  name?: string;
+}
+
+/** Section 9.5: how the registry found the brand. */
+export type ResolvedBy = "brand_domain" | "gtin" | "asin";
 export type NotRegisteredReason = "not_registered" | "domain_unlinked" | "verification_lapsed";
 export type UnlistedReason = "territory_mismatch" | "product_excluded" | "product_not_in_scope" | "product_not_in_catalog";
 
@@ -151,6 +170,9 @@ export interface ProductResult {
 }
 
 interface VerifyResponseBase {
+  /** Absent only on product_not_found and brand_ambiguous. */
+  brand?: AnswerBrand;
+  resolved_by?: ResolvedBy;
   checked: Timestamp;
   as_of?: Timestamp;
   /** At most 15 minutes after `checked` (section 9). */
@@ -193,12 +215,32 @@ export interface VerifyResponseNotRegistered extends VerifyResponseBase {
   reason?: NotRegisteredReason;
 }
 
+/** Section 9.5: no registered brand's catalog holds the product. */
+export interface VerifyResponseProductNotFound extends VerifyResponseBase {
+  status: "product_not_found";
+}
+
+/** Section 9.5: more than one registered brand claims the product. Never authorized. */
+export interface VerifyResponseAmbiguous extends VerifyResponseBase {
+  status: "brand_ambiguous";
+  candidates: AnswerBrand[];
+}
+
+/** Section 9.5: the product belongs to other brands, not to brand_domain. Never authorized. */
+export interface VerifyResponseMismatch extends VerifyResponseBase {
+  status: "brand_mismatch";
+  candidates: AnswerBrand[];
+}
+
 export type VerifyResponse =
   | VerifyResponseAuthorized
   | VerifyResponseExpired
   | VerifyResponseDisputed
   | VerifyResponseUnlisted
-  | VerifyResponseNotRegistered;
+  | VerifyResponseNotRegistered
+  | VerifyResponseProductNotFound
+  | VerifyResponseAmbiguous
+  | VerifyResponseMismatch;
 
 /** A verify response before the registry attaches its signature. */
 export type UnsignedVerifyResponse = VerifyResponse extends infer R
@@ -217,3 +259,27 @@ export interface RevocationFeed {
   entries: { revocation_id: string; revoked: Timestamp }[];
   signature: Signature;
 }
+
+/** Section 9.5: which registered brand a product belongs to. */
+export interface ResolveRequest {
+  product: ProductRef;
+  /** The Amazon marketplace domain the ASIN was seen on. */
+  domain?: string;
+}
+
+export type ResolveStatus = "resolved" | "product_not_found" | "brand_ambiguous";
+
+export interface ResolveResponse {
+  status: ResolveStatus;
+  /** Only on resolved. */
+  brand?: AnswerBrand;
+  resolved_by?: "gtin" | "asin";
+  /** Only on brand_ambiguous: two or more brands. */
+  candidates?: AnswerBrand[];
+  checked: Timestamp;
+  valid_until: Timestamp;
+  stale_until: Timestamp;
+  signature: Signature;
+}
+
+export type UnsignedResolveResponse = Omit<ResolveResponse, "signature">;
