@@ -129,7 +129,7 @@ Each product MUST have a `gtin` or at least one ASIN. A GTIN or ASIN MUST NOT ap
 | --- | --- |
 | `EU` | The 27 member states of the European Union. The United Kingdom (`GB`) is not included. |
 
-Regions work only when each market's product has its own GTIN or ASIN. A product sold in two formulas under one identifier can't be told apart (section 13).
+Each market's version of a product has its own GTIN, as GS1 rules require when a product's formula changes, so the registry can tell them apart.
 
 An authorization's scope can be narrowed with exclusions, and a brand can exclude products from every authorization:
 
@@ -580,7 +580,6 @@ The registry's liability position, dispute timelines and data handling are set o
 - [ ] Channel audience: whether a channel needs an `audience` field (consumer, trade, practitioner) or whether consumer-only scope is enough.
 - [ ] Cross-border purchases: buying on one country's marketplace for delivery to another.
 - [ ] Per-marketplace ASINs: products whose ASIN differs between Amazon marketplaces.
-- [ ] One identifier, two products: a GTIN or ASIN used for different formulas in different markets. Regions (section 3.1) need a separate identifier per market.
 - [ ] GS1 company prefix: finding a brand without a catalog from the company prefix in its GTINs, when the registry can confirm the brand owns that prefix.
 
 ## 14. Changelog
