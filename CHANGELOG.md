@@ -2,7 +2,7 @@
 
 This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.3.md).
 
-## 0.3.0 (breaking)
+## Unreleased (0.3.0, breaking)
 
 - Spec v0.3: product-first verification. An agent on a product page sees a product and a seller, not the brand's domain, so verify requests MAY omit `brand_domain` when they give a `product`, and the registry finds the brand from registered brands' catalogs (spec section 9.5).
 - Verify requests: `brand_domain` or `product` is required (`brand_or_product_required`). `product` takes `gtin`, `asin` or both. An ASIN alone finds a brand only on an `amazon` channel (`asin_needs_amazon_channel`).
