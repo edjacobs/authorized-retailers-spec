@@ -1,0 +1,25 @@
+{
+  "status": "authorized",
+  "brand": {
+    "domain": "brand.example",
+    "name": "Example Brand"
+  },
+  "resolved_by": "brand_domain",
+  "authorization_id": "auth_01J9X2",
+  "revocation_id": "rv_Q2l8dX4bT0aN5kPw",
+  "checked": "2026-09-28T14:02:11Z",
+  "valid_until": "2026-09-28T14:17:11Z",
+  "stale_until": "2026-09-29T14:02:11Z",
+  "product": {
+    "in_catalog": true,
+    "status": "recalled",
+    "status_since": "2026-09-01",
+    "recall_url": "https://www.cpsc.gov/Recalls/2026/example"
+  },
+  "observed": null,
+  "signals": [],
+  "signature": {
+    "kid": "ar-20260928-6e37",
+    "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy"
+  }
+}

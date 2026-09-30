@@ -131,7 +131,11 @@
         "gtin": "00012345678905",
         "asins": [
           "B0EXAMPLE1"
-        ]
+        ],
+        "mpns": [
+          "EB-100-BLK"
+        ],
+        "style_code": "EB-TEE"
       },
       {
         "id": "EB-TEE-WHT-M",
@@ -161,6 +165,33 @@
         "name": "Founders Edition",
         "product_line": "Limited",
         "gtin": "12345678901231"
+      },
+      {
+        "id": "EB-TEE-US",
+        "name": "Classic Tee, US formula dye",
+        "product_line": "Classic Tee",
+        "gtin": "012345678912",
+        "regions": [
+          "US"
+        ]
+      },
+      {
+        "id": "EB-TEE-EU",
+        "name": "Classic Tee, EU formula dye",
+        "product_line": "Classic Tee",
+        "gtin": "4012345678901",
+        "regions": [
+          "EU"
+        ]
+      },
+      {
+        "id": "EB-TEE-OLD",
+        "name": "Classic Tee, 2019 dye",
+        "product_line": "Classic Tee",
+        "gtin": "012345678929",
+        "status": "recalled",
+        "status_since": "2026-09-01",
+        "recall_url": "https://www.cpsc.gov/Recalls/2026/example"
       }
     ],
     "exclusions": {

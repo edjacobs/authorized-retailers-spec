@@ -545,7 +545,7 @@
       "pattern": "^[A-Z0-9]{10}$"
     },
     "product": {
-      "description": "Section 3.1. At least one of gtin or asins.",
+      "description": "Section 3.1. At least one of gtin or asins. A recalled product names its recall_url.",
       "type": "object",
       "required": [
         "id",
@@ -584,6 +584,35 @@
           "items": {
             "$ref": "#/$defs/asin"
           }
+        },
+        "mpns": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/mpn"
+          }
+        },
+        "style_code": {
+          "$ref": "#/$defs/styleCode"
+        },
+        "status": {
+          "$ref": "#/$defs/productStatus"
+        },
+        "status_since": {
+          "$ref": "#/$defs/date"
+        },
+        "recall_url": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/region"
+          }
         }
       },
       "anyOf": [
@@ -596,6 +625,25 @@
           "required": [
             "asins"
           ]
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "recalled"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "recall_url"
+            ]
+          }
         }
       ]
     },
@@ -767,9 +815,8 @@
       }
     },
     "productRef": {
-      "description": "Section 9: a product by GTIN, ASIN or both.",
+      "description": "Section 9: a product by GTIN, ASIN or both. mpn and style_code only confirm a match.",
       "type": "object",
-      "minProperties": 1,
       "additionalProperties": false,
       "properties": {
         "gtin": {
@@ -777,8 +824,26 @@
         },
         "asin": {
           "$ref": "#/$defs/asin"
+        },
+        "mpn": {
+          "$ref": "#/$defs/mpn"
+        },
+        "style_code": {
+          "$ref": "#/$defs/styleCode"
         }
-      }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "gtin"
+          ]
+        },
+        {
+          "required": [
+            "asin"
+          ]
+        }
+      ]
     },
     "answerBrand": {
       "description": "Section 9.5: the brand an answer is about. name is absent for a domain that is not registered.",
@@ -819,6 +884,39 @@
         "authorized-retailers/0.2",
         "authorized-retailers/0.3"
       ]
+    },
+    "region": {
+      "description": "Section 3.1: an ISO 3166-1 alpha-2 country, or a named group (REGION_GROUPS): EU.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/countryCode"
+        },
+        {
+          "const": "EU"
+        }
+      ]
+    },
+    "productStatus": {
+      "description": "Section 3.1: active (the default), discontinued or recalled.",
+      "enum": [
+        "active",
+        "discontinued",
+        "recalled"
+      ]
+    },
+    "mpn": {
+      "description": "Section 3.1: a manufacturer part or model number. Unique only within the brand.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^\\S(.*\\S)?$"
+    },
+    "styleCode": {
+      "description": "Section 3.1: the brand's style code. Unique only within the brand.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^\\S(.*\\S)?$"
     }
   }
 }

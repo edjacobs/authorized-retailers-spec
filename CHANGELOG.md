@@ -13,6 +13,9 @@ This file covers the package. Changes to the specification text are also listed 
 - Lists MAY carry `brand.aliases`, for display and search only (spec section 4.2). `SPEC_VERSION` is `authorized-retailers/0.3`.
 - Schemas are served per version: `schemas/0.3/` (new), `0.2` and `0.1` kept. The `./spec.md` export is v0.3.
 - Fixtures: new `resolve-request`, `resolve-response` and `resolve` kinds; `resolve` fixtures pair registered brands' lists and a product with the resolution section 9.5 requires.
+- Products: `status`, `status_since`, `recall_url` (required when recalled), `regions` (country codes or `REGION_GROUPS`, e.g. `EU`), `mpns` and `style_code`. Validator codes `recall_url_required`, `invalid_region`, `product_identifier_required`.
+- `matchRequest` applies regions (`product_not_for_region`) and returns the product's status, regions and details; `productResult`, `privateProductResult`, `expandRegions` and `productInRegion` are exported. A sent `mpn` or `style_code` is `confirmed` or `mismatched`, with the signal `product_details_mismatch`.
+- `normalizeVerifyRequest` fills in `channel.type` from the domain when it's missing.
 - Release rule: only the major version is held 30 days apart; minor and patch releases can ship any time.
 - Editor and maintainer are now given as authorizedretailers.ai, in the spec and in GOVERNANCE.md.
 - Governance: one three-part version for the spec and the package. Before 1.0, breaking changes can come in a minor version. Changes are batched into releases, each listed here with its reason.

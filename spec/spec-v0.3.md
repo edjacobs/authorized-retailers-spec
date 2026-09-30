@@ -95,7 +95,10 @@ The catalog is not a general product database. It holds only what the brand choo
   "product_line": "Classic Tee",
   "attributes": { "color": "Black", "size": "M" },
   "gtin": "00012345678905",
-  "asins": ["B0EXAMPLE1"]
+  "asins": ["B0EXAMPLE1"],
+  "mpns": ["EB-100-BLK"],
+  "style_code": "EB-TEE",
+  "regions": ["US", "CA"]
 }
 ```
 
@@ -107,8 +110,26 @@ The catalog is not a general product database. It holds only what the brand choo
 | `attributes` | Optional flat string key/value pairs, for display and filtering. Never used for matching. |
 | `gtin` | Optional. 8, 12, 13 or 14 digits with a valid GS1 check digit (a UPC, EAN or GTIN). Compared as GTIN-14: left-padded with zeros to 14 digits. |
 | `asins` | Optional. Amazon ASINs: 10 uppercase letters or digits. An ASIN applies on every Amazon marketplace domain. |
+| `mpns` | Optional. Up to 10 manufacturer part or model numbers, such as regional variants of one model. |
+| `style_code` | Optional. The brand's style code, often shared by every size of a style or colorway. |
+| `status` | Optional. `active` (the default), `discontinued` or `recalled`. |
+| `status_since` | Optional. The ISO 8601 date the status took effect. |
+| `recall_url` | Required when `status` is `recalled`: the official or brand recall notice, over HTTPS. |
+| `regions` | Optional. Where the product is made to be sold: ISO 3166-1 alpha-2 codes or named groups. Without it, the product is made for every territory. |
 
 Each product MUST have a `gtin` or at least one ASIN. A GTIN or ASIN MUST NOT appear on two products in the same catalog.
+
+**Model numbers and style codes** are unique only within a brand: many brands use "X100". They MUST NOT find a brand or a product on their own (section 4.2). An agent MAY send them with a GTIN or ASIN, and the answer says whether they match (section 9).
+
+**Status.** A recall is a fact about the product, not the seller, so it doesn't change whether a seller is authorized. It is carried on every answer about the product (section 9). A discontinued product can be legitimate clearance stock. Counterfeits of discontinued products are also common, so brands see how often agents ask about them.
+
+**Regions** let one catalog hold products made for different markets, such as a US and an EU formula with different GTINs. A product is covered only in the territories its `regions` include, whatever an authorization says, as with exclusions. A region is a country code or one of these groups:
+
+| Group | Countries |
+| --- | --- |
+| `EU` | The 27 member states of the European Union. The United Kingdom (`GB`) is not included. |
+
+Regions work only when each market's product has its own GTIN or ASIN. A product sold in two formulas under one identifier can't be told apart (section 13).
 
 An authorization's scope can be narrowed with exclusions, and a brand can exclude products from every authorization:
 
@@ -149,7 +170,7 @@ A domain is identity, not territory: a brand whose domain is brand.co.uk can aut
 
 ### 4.2 Brand names and aliases
 
-A brand's name, and any aliases it adds (such as a former name or a common short form), are for display and search. A list MAY carry them as `brand.name` and `brand.aliases`. A name or alias MUST NOT resolve a brand for a verify answer: names are not unique and anyone can type one. Only a verified domain or a product in a registered brand's catalog finds a brand (section 9.5).
+A brand's name, and any aliases it adds (such as a former name or a common short form), are for display and search. A list MAY carry them as `brand.name` and `brand.aliases`. A name or alias MUST NOT resolve a brand for a verify answer: names are not unique and anyone can type one. The same holds for model numbers and style codes: they confirm a product found by its GTIN or ASIN, and never find a brand or product alone. Only a verified domain or a product in a registered brand's catalog finds a brand (section 9.5).
 
 ## 5. The pointer file and the signed list
 
@@ -292,6 +313,8 @@ Each channel's territory comes from its domain:
 - **Web store on a country-code domain** (`.ca`, `.co.uk`, `.de` and so on): that country by default. An authorization MAY list other territories. The validator warns (`territory_differs_from_domain`) when they leave out the domain's country.
 - **Web store on a generic domain** (`.com`, `.net`, `.shop` and so on): no default. The authorization MUST list `scope.territories`, which MAY be `["*"]` for worldwide.
 
+In a verify request, the territory is where the sale happens. A marketplace's domain gives it, so the agent doesn't need to. For a web store on a generic domain, the agent sends the buyer's country, which it knows from the order. The registry never infers a territory from the seller's authorization: a store authorized only for the US would then look authorized to a buyer anywhere.
+
 A channel's effective territories are its domain's country for a marketplace, and `scope.territories` when given, otherwise the domain's country, for a web store.
 
 A country-code domain is one whose last label is a two-letter ISO 3166-1 code, with `uk` read as `GB`. These two-letter endings are widely used as generic domains and are treated as generic: `ac`, `ai`, `cc`, `co`, `fm`, `gg`, `io`, `la`, `ly`, `me`, `sh`, `so`, `to`, `tv`, `vc` and `ws`. Adding to this list is a registry change published in the changelog.
@@ -354,10 +377,10 @@ The same request with the brand's domain, a territory and a date:
 | Field | Rules |
 | --- | --- |
 | `brand_domain` | Optional when `product` is given. Any registered domain of the brand. The answer uses that domain's list. |
-| `channel` | Required. A channel identifier (section 6). |
+| `channel` | Required. A channel identifier (section 6). `type` is optional in a request: a marketplace domain implies its type (`amazon.com` is `amazon`), and any other domain is `web`. A `type` that is sent MUST agree with the domain. |
 | `territory` | Optional. Defaults to the channel domain's country. Required for a web store on a generic domain. |
 | `product_line` | Optional. Asks about a whole product line. |
-| `product` | Optional when `brand_domain` is given. `gtin`, `asin` or both. A GTIN is a UPC-A (12 digits), EAN-13, GTIN-8 or GTIN-14 with a valid check digit, compared as GTIN-14. An ASIN is read on the channel's Amazon marketplace. |
+| `product` | Optional when `brand_domain` is given. `gtin`, `asin` or both. A GTIN is a UPC-A (12 digits), EAN-13, GTIN-8 or GTIN-14 with a valid check digit, compared as GTIN-14. An ASIN is read on the channel's Amazon marketplace. `mpn` and `style_code` MAY be added to a GTIN or ASIN to confirm the match, never on their own. |
 | `as_of` | Optional. An ISO 8601 date or UTC date-time. The answer reflects status at that time. Defaults to now. |
 
 A request MUST name a `brand_domain`, a `product` or both. A request that finds the brand by ASIN alone MUST use an `amazon` channel. The registry MUST reject a GTIN with a bad check digit rather than resolve it.
@@ -398,7 +421,11 @@ Response:
 - `revocation_id` appears only on `authorized` (section 10.3).
 - `as_of` appears when the request gave one.
 - Every signed answer MUST carry `valid_until`, no later than 15 minutes after `checked`, and `stale_until`, no later than 24 hours after `checked` (section 10).
-- `product` appears when the request gave one: `in_catalog` always, and `id` and `product_line` only for a brand whose list is public.
+- `product` appears when the request gave one. It always has `in_catalog`. For a product in the catalog it also has:
+  - `status` (when not `active`), `status_since`, `recall_url` (when recalled) and `regions`, for every brand;
+  - `confirmed` and `mismatched`: which of a sent `mpn` and `style_code` match the catalog. A mismatch adds the signal `product_details_mismatch`, for example an ASIN whose listing shows another model, and never changes the status;
+  - `id`, `product_line`, `name`, `mpns` and `style_code`, only for a brand whose list is public.
+- When `product.status` is `recalled`, an agent MUST tell its user and SHOULD NOT complete the purchase, whatever the seller's status. `discontinued` is information for the user.
 
 `reason` is optional on `brand_not_registered` (section 4) and `unlisted`, and MUST NOT appear on any other status:
 
@@ -408,6 +435,7 @@ Response:
 | `product_excluded` | The product is in the catalog and excluded, by the authorization or by the brand |
 | `product_not_in_scope` | The product is in the catalog but the authorization doesn't include it |
 | `product_not_in_catalog` | The product is not in the catalog and the authorization is limited to named lines or products |
+| `product_not_for_region` | The product is in the catalog, and its `regions` don't include the territory (section 3.1) |
 
 ### 9.1 Seller first
 
@@ -417,11 +445,12 @@ Authorization is decided for the seller first: channel, seller ID, territory and
 
 When a request names a product, the registry looks it up in the catalog by GTIN-14 or ASIN, and for the authorizations that cover the seller:
 
-1. Product in the catalog and covered by an authorization: `authorized`.
-2. Product in the catalog, covered by none of them, and excluded by the brand or by at least one of them: `unlisted`, reason `product_excluded`.
-3. Product in the catalog and not included by any of them: `unlisted`, reason `product_not_in_scope`.
-4. Product not in the catalog, and every covering authorization is limited to named lines or products: `unlisted`, reason `product_not_in_catalog`.
-5. Product not in the catalog, and a covering authorization has `product_lines: ["all"]`: `authorized`, with the signal `product_not_in_catalog`.
+1. Product in the catalog, and the territory is outside its `regions`: `unlisted`, reason `product_not_for_region`.
+2. Product in the catalog and covered by an authorization: `authorized`.
+3. Product in the catalog, covered by none of them, and excluded by the brand or by at least one of them: `unlisted`, reason `product_excluded`.
+4. Product in the catalog and not included by any of them: `unlisted`, reason `product_not_in_scope`.
+5. Product not in the catalog, and every covering authorization is limited to named lines or products: `unlisted`, reason `product_not_in_catalog`.
+6. Product not in the catalog, and a covering authorization has `product_lines: ["all"]`: `authorized`, with the signal `product_not_in_catalog`.
 
 A product that isn't in the catalog may be a duplicate listing, which is why every answer about a product says whether it is `in_catalog`.
 
@@ -429,7 +458,7 @@ A request with `product_line` is covered when an authorization's `product_lines`
 
 ### 9.3 Lists that are not public
 
-For a brand whose list is not public, the verify API answers only the question asked. It MUST NOT return the brand's other retailers or catalog, and SHOULD rate-limit queries per caller so the list can't be reconstructed by enumeration.
+For a brand whose list is not public, the verify API answers only the question asked. It MUST NOT return the brand's other retailers or catalog, beyond the asked product's status fields and whether sent details match (section 9). Status is safety information, so it shows whether or not the list is public. The API SHOULD rate-limit queries per caller so the list can't be reconstructed by enumeration.
 
 ### 9.4 MCP
 
@@ -551,6 +580,7 @@ The registry's liability position, dispute timelines and data handling are set o
 - [ ] Channel audience: whether a channel needs an `audience` field (consumer, trade, practitioner) or whether consumer-only scope is enough.
 - [ ] Cross-border purchases: buying on one country's marketplace for delivery to another.
 - [ ] Per-marketplace ASINs: products whose ASIN differs between Amazon marketplaces.
+- [ ] One identifier, two products: a GTIN or ASIN used for different formulas in different markets. Regions (section 3.1) need a separate identifier per market.
 - [ ] GS1 company prefix: finding a brand without a catalog from the company prefix in its GTINs, when the registry can confirm the brand owns that prefix.
 
 ## 14. Changelog
@@ -607,3 +637,10 @@ The registry's liability position, dispute timelines and data handling are set o
   - Brand names and aliases are for display and search, and never resolve a brand (section 4.2).
   - Finding the brand is removed from the open questions. GS1 company prefix is added (section 13).
   - A pointer MAY name v0.2 or v0.3: its format is unchanged, so brands don't need to replace it (section 5.1).
+  - Why product status and regions: a recall is the most important thing an agent can learn about a product, and brands selling different formulas per market shouldn't need a list per domain.
+  - Products MAY carry `status` (`active`, `discontinued`, `recalled`), `status_since` and `recall_url`. Answers show them for every brand, public list or not. Agents MUST tell the user about a recall and SHOULD NOT complete the purchase (sections 3.1, 9, 9.3).
+  - Products MAY carry `regions`. A product asked about outside them is `unlisted`, reason `product_not_for_region`. Region group `EU` (sections 3.1, 9.2).
+  - Products MAY carry `mpns` and `style_code`. Requests MAY add `mpn` and `style_code` to a GTIN or ASIN; answers say which are `confirmed` or `mismatched`, and a mismatch adds the signal `product_details_mismatch`. They never find a brand or product alone (sections 3.1, 4.2, 9).
+  - Public lists' answers also give the product's `name`, `mpns` and `style_code` (section 9).
+  - `channel.type` is optional in a request: the domain implies it (section 9).
+  - For a web store on a generic domain, the territory is the buyer's country, sent by the agent; the registry never infers it from an authorization (section 6.2).

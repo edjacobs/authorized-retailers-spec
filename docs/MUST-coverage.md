@@ -11,6 +11,12 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 | 3.1 | Each product MUST have a `gtin` or at least one ASIN | `test/must.test.ts`, fixture `list-product-no-identifier` |
 | 3.1 | A GTIN or ASIN MUST NOT appear on two products | `test/must.test.ts`, fixtures `list-duplicate-asin`, `list-duplicate-gtin` |
 | 3.1 | Named and excluded product lines and products MUST exist in the catalog | `test/must.test.ts`, fixtures `list-unknown-line`, `list-unknown-product`, `list-exclude-unknown-product`, `list-brand-exclusion-no-catalog` |
+| 3.1 | A recalled product MUST name its `recall_url` | `test/must.test.ts`, fixtures `list-recalled-no-url`, `recalled-without-url` |
+| 3.1 | Model numbers and style codes MUST NOT find a brand or product alone | `test/must.test.ts`, fixture `mpn-only` |
+| 3.1 | A product is covered only in its `regions` | `test/must.test.ts`, match fixtures `product-not-for-region`, `eu-group-excludes-gb` |
+| 9 | A sent `channel.type` MUST agree with the domain | `test/must.test.ts` (`marketplace_domain_mismatch`) |
+| 9 | Agents MUST tell the user about a recalled product | Agent obligation. The answer carries `product.status` and `recall_url` (match fixture `recalled-authorized`) |
+| 9.3 | Status shows on lists that aren't public; nothing else about the catalog does | `test/must.test.ts` (`privateProductResult`) |
 | 4 | The registry MUST verify control of a domain before accepting authorizations for it | Registry obligation |
 | 4 | The registry MUST link the domain to the brand through an independent source | Registry obligation |
 | 4 | On lapse, the registry MUST treat the domain as `verification_lapsed`, notify the brand, and MUST NOT keep returning `authorized` | Registry obligation |

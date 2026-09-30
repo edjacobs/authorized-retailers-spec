@@ -289,6 +289,20 @@
     "note": "Section 3.1: GTIN check digit"
   },
   {
+    "path": "list/invalid/list-bad-region.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "invalid_region",
+    "note": "Section 3.1: the United Kingdom is GB"
+  },
+  {
+    "path": "list/invalid/list-recalled-no-url.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "recall_url_required",
+    "note": "Section 3.1: a recall names its notice"
+  },
+  {
     "path": "list/invalid/list-bad-asin.json",
     "kind": "list",
     "valid": false,
@@ -524,6 +538,13 @@
     "note": "Section 6: marketplace was replaced by domain"
   },
   {
+    "path": "verify-request/invalid/mpn-only.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "product_identifier_required",
+    "note": "Section 9: an mpn only confirms a GTIN or ASIN"
+  },
+  {
     "path": "verify-request/invalid/no-brand-no-product.json",
     "kind": "verify-request",
     "valid": false,
@@ -642,7 +663,7 @@
     "path": "verify-response/valid/authorized-not-in-catalog.json",
     "kind": "verify-response",
     "valid": true,
-    "note": "Section 9.2 rule 5"
+    "note": "Section 9.2 rule 6"
   },
   {
     "path": "verify-response/valid/authorized-private-product.json",
@@ -675,13 +696,13 @@
     "path": "verify-response/valid/unlisted-product-excluded.json",
     "kind": "verify-response",
     "valid": true,
-    "note": "Section 9.2 rule 2"
+    "note": "Section 9.2 rule 3"
   },
   {
     "path": "verify-response/valid/unlisted-product-not-in-catalog.json",
     "kind": "verify-response",
     "valid": true,
-    "note": "Section 9.2 rule 4"
+    "note": "Section 9.2 rule 5"
   },
   {
     "path": "verify-response/valid/not-registered-reason.json",
@@ -714,6 +735,18 @@
     "note": "Section 9.5: brand found from the ASIN"
   },
   {
+    "path": "verify-response/valid/recalled-product.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.3: status shows on every list"
+  },
+  {
+    "path": "verify-response/valid/not-for-region.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.2"
+  },
+  {
     "path": "verify-response/valid/product-not-found.json",
     "kind": "verify-response",
     "valid": true,
@@ -730,6 +763,20 @@
     "kind": "verify-response",
     "valid": true,
     "note": "Section 9.5: the product belongs to another brand"
+  },
+  {
+    "path": "verify-response/invalid/recalled-without-url.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "A recalled product names its recall notice"
+  },
+  {
+    "path": "verify-response/invalid/not-in-catalog-with-status.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "A product not in the catalog has no status"
   },
   {
     "path": "verify-response/invalid/authorized-missing-brand.json",
@@ -1023,7 +1070,7 @@
   {
     "path": "match/seller-authorized-for-line.json",
     "kind": "match",
-    "note": "Rule 1: in the catalog and covered"
+    "note": "Rule 2: in the catalog and covered"
   },
   {
     "path": "match/seller-authorized-by-gtin.json",
@@ -1033,17 +1080,17 @@
   {
     "path": "match/product-excluded-by-authorization.json",
     "kind": "match",
-    "note": "Rule 2: authorization excludes the product"
+    "note": "Rule 3: authorization excludes the product"
   },
   {
     "path": "match/product-not-in-scope.json",
     "kind": "match",
-    "note": "Rule 3: in the catalog, not included"
+    "note": "Rule 4: in the catalog, not included"
   },
   {
     "path": "match/duplicate-asin-authorized-seller.json",
     "kind": "match",
-    "note": "Rule 4: line-scoped seller, ASIN not in the catalog"
+    "note": "Rule 5: line-scoped seller, ASIN not in the catalog"
   },
   {
     "path": "match/duplicate-asin-unauthorized-seller.json",
@@ -1053,7 +1100,7 @@
   {
     "path": "match/all-scope-not-in-catalog.json",
     "kind": "match",
-    "note": "Rule 5: [\"all\"] covers it, with a signal"
+    "note": "Rule 6: [\"all\"] covers it, with a signal"
   },
   {
     "path": "match/all-scope-excluded-line.json",
@@ -1138,5 +1185,45 @@
     "path": "resolve/unknown-gtin.json",
     "kind": "resolve",
     "note": "No catalog has it"
+  },
+  {
+    "path": "match/recalled-authorized.json",
+    "kind": "match",
+    "note": "A recall doesn't change the seller's status; the answer says the product is recalled"
+  },
+  {
+    "path": "match/region-us-product-on-us-marketplace.json",
+    "kind": "match",
+    "note": "Made for the US, sold on amazon.com"
+  },
+  {
+    "path": "match/product-not-for-region.json",
+    "kind": "match",
+    "note": "Section 3.1: a US product on amazon.co.uk isn't authorized, even for a seller authorized for everything"
+  },
+  {
+    "path": "match/eu-group-covers-france.json",
+    "kind": "match",
+    "note": "The EU group includes France"
+  },
+  {
+    "path": "match/eu-group-excludes-gb.json",
+    "kind": "match",
+    "note": "The United Kingdom is not in the EU group"
+  },
+  {
+    "path": "match/mpn-confirmed.json",
+    "kind": "match",
+    "note": "The listing's model number and style code match (case doesn't matter)"
+  },
+  {
+    "path": "match/mpn-mismatched.json",
+    "kind": "match",
+    "note": "A different model number on the listing: a warning, the status is unchanged"
+  },
+  {
+    "path": "match/channel-type-inferred.json",
+    "kind": "match",
+    "note": "Section 9: type is optional; amazon.com implies amazon"
   }
 ]

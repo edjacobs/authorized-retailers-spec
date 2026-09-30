@@ -95,8 +95,8 @@ export function authorizationsForChannel(authorizations: Authorization[], channe
 
 /**
  * Brings raw agent input into the canonical form validateVerifyRequest expects: trims strings,
- * lowercases domains (dropping "www."), uppercases country codes and ASINs, maps "UK" to "GB" and
- * strips spaces and dashes from GTINs. Leaves unexpected shapes alone so the validator reports them.
+ * lowercases domains (dropping "www."), uppercases country codes and ASINs, maps "UK" to "GB",
+ * strips spaces and dashes from GTINs and fills in channel.type from the domain when it's missing. Leaves unexpected shapes alone so the validator reports them.
  */
 export function normalizeVerifyRequest(input: unknown): unknown {
   if (!isRecord(input)) return input;
@@ -107,6 +107,10 @@ export function normalizeVerifyRequest(input: unknown): unknown {
   if (typeof out.as_of === "string") out.as_of = out.as_of.trim();
   if (out.product !== undefined) out.product = normalizeProductRef(out.product);
   out.channel = normalizeChannel(out.channel);
+  // Section 9: type is optional in a request. A marketplace domain implies its type; any other domain is a web store.
+  if (isRecord(out.channel) && out.channel.type === undefined && typeof out.channel.domain === "string") {
+    out.channel = { type: marketplaceTypeForDomain(out.channel.domain) ?? "web", ...out.channel };
+  }
   return out;
 }
 
@@ -124,6 +128,8 @@ function normalizeProductRef(input: unknown): unknown {
   const p: Record<string, unknown> = { ...input };
   if (typeof p.gtin === "string") p.gtin = p.gtin.replace(/[\s-]/g, "");
   if (typeof p.asin === "string") p.asin = p.asin.trim().toUpperCase();
+  if (typeof p.mpn === "string") p.mpn = p.mpn.trim();
+  if (typeof p.style_code === "string") p.style_code = p.style_code.trim();
   return p;
 }
 

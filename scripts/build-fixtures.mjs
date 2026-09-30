@@ -30,11 +30,14 @@ const pointer = {
 // ---- signed list (section 5.2)
 const times = { issued: "2026-09-28T14:00:00Z", valid_until: "2026-09-28T14:15:00Z", stale_until: "2026-09-29T14:00:00Z" };
 const catalog = [
-  { id: "EB-TEE-BLK-M", name: "Classic Tee, Black, M", product_line: "Classic Tee", attributes: { color: "Black", size: "M" }, gtin: "00012345678905", asins: ["B0EXAMPLE1"] },
+  { id: "EB-TEE-BLK-M", name: "Classic Tee, Black, M", product_line: "Classic Tee", attributes: { color: "Black", size: "M" }, gtin: "00012345678905", asins: ["B0EXAMPLE1"], mpns: ["EB-100-BLK"], style_code: "EB-TEE" },
   { id: "EB-TEE-WHT-M", name: "Classic Tee, White, M", product_line: "Classic Tee", gtin: "4006381333931", asins: ["B0EXAMPLE2"] },
   { id: "EB-RUN-V2", name: "Runner V2", product_line: "Running", gtin: "96385074" },
   { id: "EB-RUN-V3", name: "Runner V3", product_line: "Running", asins: ["B0EXAMPLE3"] },
   { id: "EB-DTC-1", name: "Founders Edition", product_line: "Limited", gtin: "12345678901231" },
+  { id: "EB-TEE-US", name: "Classic Tee, US formula dye", product_line: "Classic Tee", gtin: "012345678912", regions: ["US"] },
+  { id: "EB-TEE-EU", name: "Classic Tee, EU formula dye", product_line: "Classic Tee", gtin: "4012345678901", regions: ["EU"] },
+  { id: "EB-TEE-OLD", name: "Classic Tee, 2019 dye", product_line: "Classic Tee", gtin: "012345678929", status: "recalled", status_since: "2026-09-01", recall_url: "https://www.cpsc.gov/Recalls/2026/example" },
 ];
 const retailer = {
   id: "auth_01J9X2",
@@ -213,6 +216,8 @@ const cases = [
   ["list", "list-scope-no-products", noCatalog((a) => (a.scope = { territories: ["US"] })), "schema", "Section 3: product_lines, products or both"],
   ["list", "list-all-mixed", noCatalog((a) => (a.scope.product_lines = ["all", "Running"])), "schema", "'all' must stand alone"],
   ["list", "list-bad-gtin", edit(listWithCatalog, (l) => (l.catalog[0].gtin = "00012345678906")), "invalid_gtin", "Section 3.1: GTIN check digit"],
+  ["list", "list-bad-region", edit(listWithCatalog, (l) => (l.catalog[0].regions = ["UK"])), "invalid_region", "Section 3.1: the United Kingdom is GB"],
+  ["list", "list-recalled-no-url", edit(listWithCatalog, (l) => { l.catalog[0].status = "recalled"; }), "recall_url_required", "Section 3.1: a recall names its notice"],
   ["list", "list-bad-asin", edit(listWithCatalog, (l) => (l.catalog[0].asins = ["b0example1"])), "invalid_asin", "Section 3.1: ASINs are 10 uppercase letters or digits"],
   ["list", "list-product-no-identifier", edit(listWithCatalog, (l) => { delete l.catalog[0].gtin; delete l.catalog[0].asins; }), "product_without_identifier", "Section 3.1: gtin or asins"],
   ["list", "list-duplicate-asin", edit(listWithCatalog, (l) => (l.catalog[1].asins = ["B0EXAMPLE1"])), "duplicate_identifier", "Section 3.1: one ASIN on two products"],
@@ -254,6 +259,7 @@ const cases = [
 
   // ---- verify request: invalid
   ["verify-request", "marketplace-field", req({ type: "amazon", marketplace: "US", seller_id: "A1B2C3D4E5F6G7" }), "marketplace_field_removed", "Section 6: marketplace was replaced by domain"],
+  ["verify-request", "mpn-only", req(amazonUS, { product: { mpn: "EB-100-BLK" } }), "product_identifier_required", "Section 9: an mpn only confirms a GTIN or ASIN"],
   ["verify-request", "no-brand-no-product", { channel: amazonUS }, "brand_or_product_required", "Section 9: brand_domain, product or both"],
   ["verify-request", "asin-only-on-walmart", { channel: { type: "walmart", domain: "walmart.com", seller_id: "900000001" }, product: { asin: "B0EXAMPLE1" } }, "asin_needs_amazon_channel", "Section 9.5: an ASIN alone finds a brand only on Amazon"],
   ["verify-request", "empty-product", req(amazonUS, { product: {} }), "schema", "A product names a gtin, an asin or both"],
@@ -273,25 +279,29 @@ const cases = [
   ["verify-response", "authorized-no-product", edit(authorized, (r) => delete r.product), null, "No product asked"],
   ["verify-response", "authorized-with-end-date", edit(authorized, (r) => (r.expires = "2027-09-28T00:00:00Z")), null, "Brand-set end date"],
   ["verify-response", "authorized-observed", edit(authorized, (r) => (r.observed = { last_seen: "2026-09-20T00:00:00Z" })), null, "Section 7: seen selling within 30 days"],
-  ["verify-response", "authorized-not-in-catalog", edit(authorized, (r) => { r.product = { in_catalog: false }; r.signals = [{ type: "product_not_in_catalog", observed: "2026-09-28T14:02:11Z" }]; }), null, "Section 9.2 rule 5"],
+  ["verify-response", "authorized-not-in-catalog", edit(authorized, (r) => { r.product = { in_catalog: false }; r.signals = [{ type: "product_not_in_catalog", observed: "2026-09-28T14:02:11Z" }]; }), null, "Section 9.2 rule 6"],
   ["verify-response", "authorized-private-product", edit(authorized, (r) => (r.product = { in_catalog: true })), null, "Section 9: private lists show only in_catalog"],
   ["verify-response", "expired", edit(authorized, (r) => { r.status = "expired"; r.expires = "2026-09-01T00:00:00Z"; delete r.revocation_id; }), null, ""],
   ["verify-response", "disputed", edit(authorized, (r) => { r.status = "disputed"; delete r.revocation_id; }), null, ""],
   ["verify-response", "unlisted", unlisted, null, ""],
   ["verify-response", "unlisted-territory-mismatch", { ...unlisted, reason: "territory_mismatch" }, null, "Section 6.2"],
-  ["verify-response", "unlisted-product-excluded", { ...unlisted, reason: "product_excluded", product: { in_catalog: true, id: "EB-DTC-1", product_line: "Limited" } }, null, "Section 9.2 rule 2"],
-  ["verify-response", "unlisted-product-not-in-catalog", { ...unlisted, reason: "product_not_in_catalog", product: { in_catalog: false } }, null, "Section 9.2 rule 4"],
+  ["verify-response", "unlisted-product-excluded", { ...unlisted, reason: "product_excluded", product: { in_catalog: true, id: "EB-DTC-1", product_line: "Limited" } }, null, "Section 9.2 rule 3"],
+  ["verify-response", "unlisted-product-not-in-catalog", { ...unlisted, reason: "product_not_in_catalog", product: { in_catalog: false } }, null, "Section 9.2 rule 5"],
   ["verify-response", "not-registered-reason", notRegistered, null, "Section 4 reason"],
   ["verify-response", "not-registered-no-reason", edit(notRegistered, (r) => delete r.reason), null, "reason is optional"],
   ["verify-response", "with-as-of", edit(authorized, (r) => (r.as_of = "2026-09-28T00:00:00Z")), null, "Section 9: as_of echoed"],
   ["verify-response", "with-signal", edit(authorized, (r) => r.signals.push({ type: "account_name_changed", observed: "2026-09-20T00:00:00Z", detail: "Storefront name changed" })), null, "Section 7 signals"],
 
   ["verify-response", "authorized-resolved-by-asin", { ...authorized, resolved_by: "asin" }, null, "Section 9.5: brand found from the ASIN"],
+  ["verify-response", "recalled-product", edit(authorized, (r) => (r.product = { in_catalog: true, status: "recalled", status_since: "2026-09-01", recall_url: "https://www.cpsc.gov/Recalls/2026/example" })), null, "Section 9.3: status shows on every list"],
+  ["verify-response", "not-for-region", { ...unlisted, reason: "product_not_for_region", product: { in_catalog: true, regions: ["US"] } }, null, "Section 9.2"],
   ["verify-response", "product-not-found", productNotFound, null, "Section 9.5: no registered brand's catalog has it"],
   ["verify-response", "brand-ambiguous", ambiguous, null, "Section 9.5: two brands claim the product"],
   ["verify-response", "brand-mismatch", mismatch, null, "Section 9.5: the product belongs to another brand"],
 
   // ---- verify response: invalid
+  ["verify-response", "recalled-without-url", edit(authorized, (r) => (r.product = { in_catalog: true, status: "recalled" })), "schema", "A recalled product names its recall notice"],
+  ["verify-response", "not-in-catalog-with-status", edit(authorized, (r) => (r.product = { in_catalog: false, status: "active" })), "schema", "A product not in the catalog has no status"],
   ["verify-response", "authorized-missing-brand", edit(authorized, (r) => delete r.brand), "schema", "Section 9.5: every answer about a brand names it"],
   ["verify-response", "authorized-missing-resolved-by", edit(authorized, (r) => delete r.resolved_by), "schema", "Section 9.5: and says how it was found"],
   ["verify-response", "ambiguous-one-candidate", { ...ambiguous, candidates: [exampleBrand] }, "schema", "Section 9.5: ambiguous means two or more brands"],
@@ -341,21 +351,21 @@ const cases = [
   ["revocation-feed", "feed-valid-over-15-minutes", edit(feed, (f) => (f.valid_until = "2026-09-28T14:17:01Z")), "valid_until_exceeds_max", "Section 10.1"],
 
   // ---- matching (section 9)
-  ["match", "seller-authorized-for-line", match(req(amazonUS, { product: { asin: "B0EXAMPLE1" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee" }, signals: [] }), null, "Rule 1: in the catalog and covered"],
-  ["match", "seller-authorized-by-gtin", match(req(amazonUS, { product: { gtin: "012345678905" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee" }, signals: [] }), null, "GTIN-12 matches the catalog's GTIN-14"],
-  ["match", "product-excluded-by-authorization", match(req(amazonUS, { product: { asin: "B0EXAMPLE2" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-TEE-WHT-M", product_line: "Classic Tee" }, signals: [] }), null, "Rule 2: authorization excludes the product"],
-  ["match", "product-not-in-scope", match(req(amazonUS, { product: { gtin: "96385074" } }), { status: "unlisted", reason: "product_not_in_scope", product: { in_catalog: true, id: "EB-RUN-V2", product_line: "Running" }, signals: [] }), null, "Rule 3: in the catalog, not included"],
-  ["match", "duplicate-asin-authorized-seller", match(req(amazonUS, { product: { asin: "B0DUPL1CAT" } }), { status: "unlisted", reason: "product_not_in_catalog", product: { in_catalog: false }, signals: [] }), null, "Rule 4: line-scoped seller, ASIN not in the catalog"],
+  ["match", "seller-authorized-for-line", match(req(amazonUS, { product: { asin: "B0EXAMPLE1" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee", name: "Classic Tee, Black, M", mpns: ["EB-100-BLK"], style_code: "EB-TEE" }, signals: [] }), null, "Rule 2: in the catalog and covered"],
+  ["match", "seller-authorized-by-gtin", match(req(amazonUS, { product: { gtin: "012345678905" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee", name: "Classic Tee, Black, M", mpns: ["EB-100-BLK"], style_code: "EB-TEE" }, signals: [] }), null, "GTIN-12 matches the catalog's GTIN-14"],
+  ["match", "product-excluded-by-authorization", match(req(amazonUS, { product: { asin: "B0EXAMPLE2" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-TEE-WHT-M", product_line: "Classic Tee", name: "Classic Tee, White, M" }, signals: [] }), null, "Rule 3: authorization excludes the product"],
+  ["match", "product-not-in-scope", match(req(amazonUS, { product: { gtin: "96385074" } }), { status: "unlisted", reason: "product_not_in_scope", product: { in_catalog: true, id: "EB-RUN-V2", product_line: "Running", name: "Runner V2" }, signals: [] }), null, "Rule 4: in the catalog, not included"],
+  ["match", "duplicate-asin-authorized-seller", match(req(amazonUS, { product: { asin: "B0DUPL1CAT" } }), { status: "unlisted", reason: "product_not_in_catalog", product: { in_catalog: false }, signals: [] }), null, "Rule 5: line-scoped seller, ASIN not in the catalog"],
   ["match", "duplicate-asin-unauthorized-seller", match(req({ type: "amazon", domain: "amazon.com", seller_id: "AUNKNOWNSELLER" }, { product: { asin: "B0DUPL1CAT" } }), { status: "unlisted", product: { in_catalog: false }, signals: [] }), null, "Section 9.1: an unauthorized seller's duplicate ASIN never authorizes"],
-  ["match", "all-scope-not-in-catalog", match(req(global, { territory: "US", product: { asin: "B0DUPL1CAT" } }), { status: "authorized", authorization_id: "auth_02", product: { in_catalog: false }, signals: ["product_not_in_catalog"] }), null, "Rule 5: [\"all\"] covers it, with a signal"],
-  ["match", "all-scope-excluded-line", match(req(global, { territory: "FR", product: { asin: "B0EXAMPLE3" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running" }, signals: [] }), null, "[\"all\"] with one excluded line"],
-  ["match", "brand-exclusion-beats-named-product", match(req(amazonUK, { product: { gtin: "12345678901231" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-DTC-1", product_line: "Limited" }, signals: [] }), null, "Brand-level exclusion overrides an authorization naming the product"],
+  ["match", "all-scope-not-in-catalog", match(req(global, { territory: "US", product: { asin: "B0DUPL1CAT" } }), { status: "authorized", authorization_id: "auth_02", product: { in_catalog: false }, signals: ["product_not_in_catalog"] }), null, "Rule 6: [\"all\"] covers it, with a signal"],
+  ["match", "all-scope-excluded-line", match(req(global, { territory: "FR", product: { asin: "B0EXAMPLE3" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running", name: "Runner V3" }, signals: [] }), null, "[\"all\"] with one excluded line"],
+  ["match", "brand-exclusion-beats-named-product", match(req(amazonUK, { product: { gtin: "12345678901231" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-DTC-1", product_line: "Limited", name: "Founders Edition" }, signals: [] }), null, "Brand-level exclusion overrides an authorization naming the product"],
   ["match", "marketplace-territory-default", match(req(amazonUK), { status: "authorized", authorization_id: "auth_04", signals: [] }), null, "Territory defaults to amazon.co.uk's GB"],
   ["match", "marketplace-territory-mismatch", match(req(amazonUK, { territory: "US" }), { status: "unlisted", reason: "territory_mismatch", signals: [] }), null, "Section 6.2: amazon.co.uk is GB"],
   ["match", "worldwide-web", match(req(global, { territory: "JP" }), { status: "authorized", authorization_id: "auth_02", signals: [] }), null, "Worldwide web store"],
   ["match", "product-line-request", match(req(global, { territory: "US", product_line: "Running" }), { status: "unlisted", signals: [] }), null, "Excluded line asked by product_line"],
-  ["match", "expired-end-date", match(req({ type: "web", domain: "ukrunners.co.uk" }, { product: { asin: "B0EXAMPLE3" } }), { status: "expired", authorization_id: "auth_03", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running" }, signals: [] }), null, "Section 10: past the brand's end date"],
-  ["match", "as-of-before-end-date", match(req({ type: "web", domain: "ukrunners.co.uk" }, { product: { asin: "B0EXAMPLE3" }, as_of: "2026-08-15" }), { status: "authorized", authorization_id: "auth_03", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running" }, signals: [] }), null, "Section 9: as_of before the end date"],
+  ["match", "expired-end-date", match(req({ type: "web", domain: "ukrunners.co.uk" }, { product: { asin: "B0EXAMPLE3" } }), { status: "expired", authorization_id: "auth_03", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running", name: "Runner V3" }, signals: [] }), null, "Section 10: past the brand's end date"],
+  ["match", "as-of-before-end-date", match(req({ type: "web", domain: "ukrunners.co.uk" }, { product: { asin: "B0EXAMPLE3" }, as_of: "2026-08-15" }), { status: "authorized", authorization_id: "auth_03", product: { in_catalog: true, id: "EB-RUN-V3", product_line: "Running", name: "Runner V3" }, signals: [] }), null, "Section 9: as_of before the end date"],
   ["match", "match-by-channel-key", match(req({ type: "amazon", domain: "amazon.com", seller_id: " a1b2c3d4e5f6g7 " }), { status: "authorized", authorization_id: "auth_01J9X2", signals: [] }), null, "Section 6.1: Amazon seller IDs compare uppercased"],
 
   // ---- resolution (section 9.5)
@@ -367,6 +377,16 @@ const cases = [
   ["resolve", "shared-gtin", resolveCase({ gtin: "4006381333931" }, { status: "brand_ambiguous", candidates: [exampleBrand, otherBrand] }), null, "Two brands claim one GTIN: never pick one"],
   ["resolve", "gtin-and-asin-disagree", resolveCase({ gtin: "012345678905", asin: "B0OTHER001" }, { status: "brand_ambiguous", candidates: [exampleBrand, otherBrand] }), null, "GTIN and ASIN point to different brands"],
   ["resolve", "unknown-gtin", resolveCase({ gtin: "5012345678900" }, { status: "product_not_found" }), null, "No catalog has it"],
+
+  // ---- product status, regions and details (sections 3.1, 9.2)
+  ["match", "recalled-authorized", match(req(amazonUS, { product: { gtin: "012345678929" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-OLD", product_line: "Classic Tee", name: "Classic Tee, 2019 dye", status: "recalled", status_since: "2026-09-01", recall_url: "https://www.cpsc.gov/Recalls/2026/example" }, signals: [] }), null, "A recall doesn't change the seller's status; the answer says the product is recalled"],
+  ["match", "region-us-product-on-us-marketplace", match(req(amazonUS, { product: { gtin: "012345678912" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-US", product_line: "Classic Tee", name: "Classic Tee, US formula dye", regions: ["US"] }, signals: [] }), null, "Made for the US, sold on amazon.com"],
+  ["match", "product-not-for-region", match(req(amazonUK, { product: { gtin: "012345678912" } }), { status: "unlisted", reason: "product_not_for_region", product: { in_catalog: true, id: "EB-TEE-US", product_line: "Classic Tee", name: "Classic Tee, US formula dye", regions: ["US"] }, signals: [] }), null, "Section 3.1: a US product on amazon.co.uk isn't authorized, even for a seller authorized for everything"],
+  ["match", "eu-group-covers-france", match(req(global, { territory: "FR", product: { gtin: "4012345678901" } }), { status: "authorized", authorization_id: "auth_02", product: { in_catalog: true, id: "EB-TEE-EU", product_line: "Classic Tee", name: "Classic Tee, EU formula dye", regions: ["EU"] }, signals: [] }), null, "The EU group includes France"],
+  ["match", "eu-group-excludes-gb", match(req(global, { territory: "GB", product: { gtin: "4012345678901" } }), { status: "unlisted", reason: "product_not_for_region", product: { in_catalog: true, id: "EB-TEE-EU", product_line: "Classic Tee", name: "Classic Tee, EU formula dye", regions: ["EU"] }, signals: [] }), null, "The United Kingdom is not in the EU group"],
+  ["match", "mpn-confirmed", match(req(amazonUS, { product: { asin: "B0EXAMPLE1", mpn: "eb-100-blk", style_code: "EB-TEE" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee", name: "Classic Tee, Black, M", mpns: ["EB-100-BLK"], style_code: "EB-TEE", confirmed: ["mpn", "style_code"] }, signals: [] }), null, "The listing's model number and style code match (case doesn't matter)"],
+  ["match", "mpn-mismatched", match(req(amazonUS, { product: { asin: "B0EXAMPLE1", mpn: "OTHER-9" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee", name: "Classic Tee, Black, M", mpns: ["EB-100-BLK"], style_code: "EB-TEE", mismatched: ["mpn"] }, signals: ["product_details_mismatch"] }), null, "A different model number on the listing: a warning, the status is unchanged"],
+  ["match", "channel-type-inferred", match({ brand_domain: "brand.example", channel: { domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" } }, { status: "authorized", authorization_id: "auth_01J9X2", signals: [] }), null, "Section 9: type is optional; amazon.com implies amazon"],
 ];
 
 rmSync(root, { recursive: true, force: true });

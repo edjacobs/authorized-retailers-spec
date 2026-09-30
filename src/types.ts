@@ -30,6 +30,9 @@ export interface Party {
   entity_id?: string;
 }
 
+/** Section 3.1: active (the default), discontinued or recalled. */
+export type ProductStatus = "active" | "discontinued" | "recalled";
+
 /** Section 3.1: one product in a brand's catalog. Has a gtin, asins or both. */
 export interface Product {
   id: string;
@@ -38,6 +41,17 @@ export interface Product {
   attributes?: Record<string, string>;
   gtin?: string;
   asins?: string[];
+  /** Manufacturer part or model numbers. Unique only within the brand: they confirm a match, never find one. */
+  mpns?: string[];
+  /** The brand's style code. Unique only within the brand. */
+  style_code?: string;
+  status?: ProductStatus;
+  /** ISO date the status took effect. */
+  status_since?: string;
+  /** Required when recalled: the official or brand recall notice. */
+  recall_url?: string;
+  /** Countries (ISO 3166-1 alpha-2) or groups (REGION_GROUPS) the product is made for. Absent: everywhere. */
+  regions?: string[];
 }
 
 export interface Scope {
@@ -119,8 +133,8 @@ export interface NotPublicList extends ListBase {
 
 export type SignedList = PublicList | NotPublicList;
 
-/** A product by GTIN, ASIN or both (section 9). */
-export type ProductRef = { gtin: string; asin?: string } | { gtin?: string; asin: string };
+/** A product by GTIN, ASIN or both (section 9). mpn and style_code only confirm the match. */
+export type ProductRef = ({ gtin: string; asin?: string } | { gtin?: string; asin: string }) & { mpn?: string; style_code?: string };
 
 /** At least one of brand_domain or product (section 9). */
 export interface VerifyRequest {
@@ -153,7 +167,7 @@ export interface AnswerBrand {
 /** Section 9.5: how the registry found the brand. */
 export type ResolvedBy = "brand_domain" | "gtin" | "asin";
 export type NotRegisteredReason = "not_registered" | "domain_unlinked" | "verification_lapsed";
-export type UnlistedReason = "territory_mismatch" | "product_excluded" | "product_not_in_scope" | "product_not_in_catalog";
+export type UnlistedReason = "territory_mismatch" | "product_excluded" | "product_not_in_scope" | "product_not_in_catalog" | "product_not_for_region";
 
 export interface Signal {
   type: string;
@@ -166,11 +180,26 @@ export interface Observation {
   last_seen: Timestamp;
 }
 
-/** Section 9: present when the request named a product. id and product_line only for public lists. */
+/** Details a request's mpn or style_code can confirm (section 9). */
+export type ProductDetail = "mpn" | "style_code";
+
+/**
+ * Section 9: present when the request named a product. Status fields and confirmed/mismatched show
+ * for every list; id, product_line, name, mpns and style_code only for public lists.
+ */
 export interface ProductResult {
   in_catalog: boolean;
   id?: string;
   product_line?: string;
+  name?: string;
+  mpns?: string[];
+  style_code?: string;
+  status?: ProductStatus;
+  status_since?: string;
+  recall_url?: string;
+  regions?: string[];
+  confirmed?: ProductDetail[];
+  mismatched?: ProductDetail[];
 }
 
 interface VerifyResponseBase {

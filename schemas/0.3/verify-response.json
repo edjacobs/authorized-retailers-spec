@@ -34,7 +34,8 @@
         "territory_mismatch",
         "product_excluded",
         "product_not_in_scope",
-        "product_not_in_catalog"
+        "product_not_in_catalog",
+        "product_not_for_region"
       ]
     },
     "authorization_id": {
@@ -73,6 +74,57 @@
         },
         "product_line": {
           "$ref": "common.json#/$defs/productLine"
+        },
+        "name": {
+          "$ref": "common.json#/$defs/nonEmptyString"
+        },
+        "mpns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.json#/$defs/mpn"
+          }
+        },
+        "style_code": {
+          "$ref": "common.json#/$defs/styleCode"
+        },
+        "status": {
+          "$ref": "common.json#/$defs/productStatus"
+        },
+        "status_since": {
+          "$ref": "common.json#/$defs/date"
+        },
+        "recall_url": {
+          "$ref": "common.json#/$defs/httpsUrl"
+        },
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.json#/$defs/region"
+          }
+        },
+        "confirmed": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "mpn",
+              "style_code"
+            ]
+          }
+        },
+        "mismatched": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "mpn",
+              "style_code"
+            ]
+          }
         }
       },
       "if": {
@@ -94,10 +146,74 @@
               "required": [
                 "product_line"
               ]
+            },
+            {
+              "required": [
+                "name"
+              ]
+            },
+            {
+              "required": [
+                "mpns"
+              ]
+            },
+            {
+              "required": [
+                "style_code"
+              ]
+            },
+            {
+              "required": [
+                "status"
+              ]
+            },
+            {
+              "required": [
+                "status_since"
+              ]
+            },
+            {
+              "required": [
+                "recall_url"
+              ]
+            },
+            {
+              "required": [
+                "regions"
+              ]
+            },
+            {
+              "required": [
+                "confirmed"
+              ]
+            },
+            {
+              "required": [
+                "mismatched"
+              ]
             }
           ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "recalled"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "recall_url"
+            ]
+          }
+        }
+      ]
     },
     "observed": {
       "description": "Section 7: when the registry last saw this seller selling on the channel, within 30 days; otherwise null",
@@ -266,7 +382,8 @@
               "territory_mismatch",
               "product_excluded",
               "product_not_in_scope",
-              "product_not_in_catalog"
+              "product_not_in_catalog",
+              "product_not_for_region"
             ]
           }
         }

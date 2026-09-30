@@ -1,6 +1,6 @@
 import { Validator, type OutputUnit } from "@cfworker/json-schema";
 import { common, list, pointer, resolveRequest, resolveResponse, revocationFeed, verifyRequest, verifyResponse } from "./schemas.js";
-import { MAX_STALE_MS, MAX_VALIDITY_MS, MARKETPLACE_DOMAINS } from "./constants.js";
+import { MAX_STALE_MS, MAX_VALIDITY_MS, MARKETPLACE_DOMAINS, REGION_GROUPS } from "./constants.js";
 import { isCountryCode, isMarketplaceDomain, isRecord, normalizeDomain, territoryForDomain } from "./identity.js";
 import { isValidAsin, isValidGtin, toGtin14 } from "./product.js";
 import { parseTimestamp } from "./timestamp.js";
@@ -30,6 +30,9 @@ export type ErrorCode =
   | "territories_required"
   | "territory_required"
   | "brand_or_product_required"
+  | "product_identifier_required"
+  | "invalid_region"
+  | "recall_url_required"
   | "asin_needs_amazon_channel"
   | "invalid_gtin"
   | "invalid_asin"
@@ -253,6 +256,16 @@ function productIdentifierRules(r: Report, input: unknown) {
         if (typeof a === "string" && !isValidAsin(a)) r.error("invalid_asin", `/catalog/${i}/asins/${j}`, `${a} is not an ASIN (10 uppercase letters or digits)`);
       });
     }
+    if (isRecord(p) && Array.isArray(p.regions)) {
+      p.regions.forEach((g, j) => {
+        if (typeof g === "string" && !(g in REGION_GROUPS) && !isCountryCode(g)) {
+          r.error("invalid_region", `/catalog/${i}/regions/${j}`, `${g} is not a country code (ISO 3166-1 alpha-2, the UK is GB) or a region group (${Object.keys(REGION_GROUPS).join(", ")})`);
+        }
+      });
+    }
+    if (isRecord(p) && p.status === "recalled" && typeof p.recall_url !== "string") {
+      r.error("recall_url_required", `/catalog/${i}/recall_url`, "a recalled product names its recall notice in recall_url (section 3.1)");
+    }
   });
 }
 
@@ -364,6 +377,9 @@ export function validateVerifyRequest(input: unknown): ValidationResult<VerifyRe
 
 function productRefRules(r: Report, input: unknown) {
   const product = isRecord(input) && isRecord(input.product) ? input.product : undefined;
+  if (product && product.gtin === undefined && product.asin === undefined && (product.mpn !== undefined || product.style_code !== undefined)) {
+    r.error("product_identifier_required", "/product", "an mpn or style_code only confirms a match: send it with a gtin or asin (section 9)");
+  }
   if (typeof product?.gtin === "string" && /^(\d{8}|\d{12,14})$/.test(product.gtin) && !isValidGtin(product.gtin)) {
     r.error("invalid_gtin", "/product/gtin", `${product.gtin} has a bad check digit`);
   }

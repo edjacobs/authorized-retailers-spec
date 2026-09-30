@@ -547,7 +547,7 @@ export const common = {
       "pattern": "^[A-Z0-9]{10}$"
     },
     "product": {
-      "description": "Section 3.1. At least one of gtin or asins.",
+      "description": "Section 3.1. At least one of gtin or asins. A recalled product names its recall_url.",
       "type": "object",
       "required": [
         "id",
@@ -586,6 +586,35 @@ export const common = {
           "items": {
             "$ref": "#/$defs/asin"
           }
+        },
+        "mpns": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/mpn"
+          }
+        },
+        "style_code": {
+          "$ref": "#/$defs/styleCode"
+        },
+        "status": {
+          "$ref": "#/$defs/productStatus"
+        },
+        "status_since": {
+          "$ref": "#/$defs/date"
+        },
+        "recall_url": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/region"
+          }
         }
       },
       "anyOf": [
@@ -598,6 +627,25 @@ export const common = {
           "required": [
             "asins"
           ]
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "recalled"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "recall_url"
+            ]
+          }
         }
       ]
     },
@@ -769,9 +817,8 @@ export const common = {
       }
     },
     "productRef": {
-      "description": "Section 9: a product by GTIN, ASIN or both.",
+      "description": "Section 9: a product by GTIN, ASIN or both. mpn and style_code only confirm a match.",
       "type": "object",
-      "minProperties": 1,
       "additionalProperties": false,
       "properties": {
         "gtin": {
@@ -779,8 +826,26 @@ export const common = {
         },
         "asin": {
           "$ref": "#/$defs/asin"
+        },
+        "mpn": {
+          "$ref": "#/$defs/mpn"
+        },
+        "style_code": {
+          "$ref": "#/$defs/styleCode"
         }
-      }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "gtin"
+          ]
+        },
+        {
+          "required": [
+            "asin"
+          ]
+        }
+      ]
     },
     "answerBrand": {
       "description": "Section 9.5: the brand an answer is about. name is absent for a domain that is not registered.",
@@ -821,6 +886,39 @@ export const common = {
         "authorized-retailers/0.2",
         "authorized-retailers/0.3"
       ]
+    },
+    "region": {
+      "description": "Section 3.1: an ISO 3166-1 alpha-2 country, or a named group (REGION_GROUPS): EU.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/countryCode"
+        },
+        {
+          "const": "EU"
+        }
+      ]
+    },
+    "productStatus": {
+      "description": "Section 3.1: active (the default), discontinued or recalled.",
+      "enum": [
+        "active",
+        "discontinued",
+        "recalled"
+      ]
+    },
+    "mpn": {
+      "description": "Section 3.1: a manufacturer part or model number. Unique only within the brand.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^\\S(.*\\S)?$"
+    },
+    "styleCode": {
+      "description": "Section 3.1: the brand's style code. Unique only within the brand.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^\\S(.*\\S)?$"
     }
   }
 };
@@ -1223,7 +1321,8 @@ export const verifyResponse = {
         "territory_mismatch",
         "product_excluded",
         "product_not_in_scope",
-        "product_not_in_catalog"
+        "product_not_in_catalog",
+        "product_not_for_region"
       ]
     },
     "authorization_id": {
@@ -1262,6 +1361,57 @@ export const verifyResponse = {
         },
         "product_line": {
           "$ref": "common.json#/$defs/productLine"
+        },
+        "name": {
+          "$ref": "common.json#/$defs/nonEmptyString"
+        },
+        "mpns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.json#/$defs/mpn"
+          }
+        },
+        "style_code": {
+          "$ref": "common.json#/$defs/styleCode"
+        },
+        "status": {
+          "$ref": "common.json#/$defs/productStatus"
+        },
+        "status_since": {
+          "$ref": "common.json#/$defs/date"
+        },
+        "recall_url": {
+          "$ref": "common.json#/$defs/httpsUrl"
+        },
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.json#/$defs/region"
+          }
+        },
+        "confirmed": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "mpn",
+              "style_code"
+            ]
+          }
+        },
+        "mismatched": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "mpn",
+              "style_code"
+            ]
+          }
         }
       },
       "if": {
@@ -1283,10 +1433,74 @@ export const verifyResponse = {
               "required": [
                 "product_line"
               ]
+            },
+            {
+              "required": [
+                "name"
+              ]
+            },
+            {
+              "required": [
+                "mpns"
+              ]
+            },
+            {
+              "required": [
+                "style_code"
+              ]
+            },
+            {
+              "required": [
+                "status"
+              ]
+            },
+            {
+              "required": [
+                "status_since"
+              ]
+            },
+            {
+              "required": [
+                "recall_url"
+              ]
+            },
+            {
+              "required": [
+                "regions"
+              ]
+            },
+            {
+              "required": [
+                "confirmed"
+              ]
+            },
+            {
+              "required": [
+                "mismatched"
+              ]
             }
           ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "recalled"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "recall_url"
+            ]
+          }
+        }
+      ]
     },
     "observed": {
       "description": "Section 7: when the registry last saw this seller selling on the channel, within 30 days; otherwise null",
@@ -1455,7 +1669,8 @@ export const verifyResponse = {
               "territory_mismatch",
               "product_excluded",
               "product_not_in_scope",
-              "product_not_in_catalog"
+              "product_not_in_catalog",
+              "product_not_for_region"
             ]
           }
         }

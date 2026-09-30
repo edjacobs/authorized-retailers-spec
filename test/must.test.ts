@@ -5,8 +5,13 @@ import { describe, expect, it } from "vitest";
 import {
   authorizationsForChannel,
   channelKey,
+  expandRegions,
   findProduct,
   matchRequest,
+  normalizeVerifyRequest,
+  privateProductResult,
+  productInRegion,
+  productResult,
   resolveClaims,
   validAuthorizations,
   validateFile,
@@ -298,5 +303,48 @@ describe("§9.5 finding the brand from a product", () => {
     expect(validateVerifyResponse(mismatch).valid).toBe(true);
     delete mismatch.candidates;
     expect(validateVerifyResponse(mismatch).valid).toBe(false);
+  });
+});
+
+describe("§3.1 product status, regions and details", () => {
+  const amazon = { type: "amazon", domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" };
+
+  it("a recalled product MUST name its recall notice", () => {
+    const l = withCatalog();
+    l.catalog![0]!.status = "recalled";
+    expect(codes(validateList(l))).toContain("recall_url_required");
+    l.catalog![0]!.recall_url = "https://www.cpsc.gov/Recalls/2026/example";
+    expect(validateList(l).valid).toBe(true);
+  });
+
+  it("regions are country codes or named groups; EU has the 27 member states and not GB", () => {
+    const l = withCatalog();
+    l.catalog![0]!.regions = ["UK"];
+    expect(codes(validateList(l))).toContain("invalid_region");
+    l.catalog![0]!.regions = ["EU", "GB"];
+    expect(validateList(l).valid).toBe(true);
+    const eu = expandRegions(["EU"]);
+    expect(eu.size).toBe(27);
+    expect(eu.has("FR")).toBe(true);
+    expect(eu.has("GB")).toBe(false);
+    expect(productInRegion({ id: "x", name: "x", gtin: "96385074" }, "JP")).toBe(true);
+  });
+
+  it("an mpn or style_code MUST NOT find a product on its own", () => {
+    expect(codes(validateVerifyRequest({ brand_domain: "brand.example", channel: amazon, product: { mpn: "EB-100" } }))).toContain("product_identifier_required");
+    expect(validateVerifyRequest({ brand_domain: "brand.example", channel: amazon, product: { asin: "B0EXAMPLE1", mpn: "EB-100" } }).valid).toBe(true);
+  });
+
+  it("§9.3 a list that isn't public still shows the product's status, and nothing that identifies it", () => {
+    const full = productResult(
+      { id: "EB-1", name: "Tee", product_line: "Tees", gtin: "96385074", mpns: ["M-1"], status: "recalled", status_since: "2026-09-01", recall_url: "https://example.org/recall" },
+      { gtin: "96385074", mpn: "M-2" },
+    );
+    expect(privateProductResult(full)).toEqual({ in_catalog: true, status: "recalled", status_since: "2026-09-01", recall_url: "https://example.org/recall", mismatched: ["mpn"] });
+  });
+
+  it("§9 channel.type can be left out: the domain implies it", () => {
+    expect(normalizeVerifyRequest({ brand_domain: "brand.example", channel: { domain: "Walmart.com", seller_id: "1" } })).toMatchObject({ channel: { type: "walmart", domain: "walmart.com" } });
+    expect(normalizeVerifyRequest({ brand_domain: "brand.example", channel: { domain: "shop.example" }, territory: "US" })).toMatchObject({ channel: { type: "web" } });
   });
 });

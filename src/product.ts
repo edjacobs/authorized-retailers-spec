@@ -1,6 +1,7 @@
 // Section 3.1: product identifiers and catalog lookups.
 
-import type { AnswerBrand, Authorization, Exclusions, Product, ProductRef, PublicList } from "./types.js";
+import { REGION_GROUPS } from "./constants.js";
+import type { AnswerBrand, Authorization, Exclusions, Product, ProductDetail, ProductRef, ProductResult, PublicList } from "./types.js";
 
 /** Whether a GTIN (8, 12, 13 or 14 digits) has a valid GS1 check digit. */
 export function isValidGtin(gtin: string): boolean {
@@ -131,4 +132,64 @@ export function productCovered(
   const found = findProduct(list.catalog, product);
   if (found) return { in_catalog: true, product: found, coverage: productCoverage(authorization, found, list.exclusions) };
   return { in_catalog: false, coverage: coversAllProducts(authorization) ? "covered" : "not_in_catalog" };
+}
+
+/** Section 3.1: the countries a product's regions stand for, with named groups expanded. */
+export function expandRegions(regions: readonly string[]): Set<string> {
+  return new Set(regions.flatMap((r) => REGION_GROUPS[r] ?? [r]));
+}
+
+/** Section 3.1: whether a product is made for a territory. A product with no regions is made for every one. */
+export function productInRegion(product: Product, territory: string): boolean {
+  return product.regions === undefined || expandRegions(product.regions).has(territory);
+}
+
+const sameDetail = (a: string, b: string) => a.trim().toUpperCase() === b.trim().toUpperCase();
+
+/**
+ * Section 9: what an answer says about a catalog product. Status fields always; identifying detail
+ * (id, line, name, MPNs, style code) too, which the registry drops for a list that isn't public
+ * (see privateProductResult). A request's mpn or style_code is confirmed or mismatched against it.
+ */
+export function productResult(product: Product, ref: ProductRef): ProductResult {
+  const confirmed: ProductDetail[] = [];
+  const mismatched: ProductDetail[] = [];
+  if (ref.mpn !== undefined && product.mpns?.length) (product.mpns.some((m) => sameDetail(m, ref.mpn!)) ? confirmed : mismatched).push("mpn");
+  if (ref.style_code !== undefined && product.style_code !== undefined) (sameDetail(product.style_code, ref.style_code) ? confirmed : mismatched).push("style_code");
+  return {
+    in_catalog: true,
+    id: product.id,
+    ...(product.product_line ? { product_line: product.product_line } : {}),
+    name: product.name,
+    ...(product.mpns?.length ? { mpns: product.mpns } : {}),
+    ...(product.style_code ? { style_code: product.style_code } : {}),
+    ...statusFields(product),
+    ...(confirmed.length ? { confirmed } : {}),
+    ...(mismatched.length ? { mismatched } : {}),
+  };
+}
+
+/** Section 9.3: the product part of an answer for a list that isn't public. Status is safety information and always shows. */
+export function privateProductResult(result: ProductResult): ProductResult {
+  if (!result.in_catalog) return { in_catalog: false };
+  const { in_catalog, status, status_since, recall_url, regions, confirmed, mismatched } = result;
+  return {
+    in_catalog,
+    ...(status ? { status } : {}),
+    ...(status_since ? { status_since } : {}),
+    ...(recall_url ? { recall_url } : {}),
+    ...(regions ? { regions } : {}),
+    ...(confirmed ? { confirmed } : {}),
+    ...(mismatched ? { mismatched } : {}),
+  };
+}
+
+function statusFields(p: Product): Pick<ProductResult, "status" | "status_since" | "recall_url" | "regions"> {
+  const notActive = p.status !== undefined && p.status !== "active";
+  return {
+    ...(notActive ? { status: p.status } : {}),
+    ...(notActive && p.status_since ? { status_since: p.status_since } : {}),
+    ...(p.status === "recalled" && p.recall_url ? { recall_url: p.recall_url } : {}),
+    ...(p.regions ? { regions: p.regions } : {}),
+  };
 }

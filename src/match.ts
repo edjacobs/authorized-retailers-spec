@@ -2,7 +2,7 @@
 // cached public list use the same function, so they reach the same answer.
 
 import { channelKey, coversTerritory, territoryForDomain } from "./identity.js";
-import { productCovered, productLineCovered } from "./product.js";
+import { findProduct, productCovered, productInRegion, productLineCovered, productResult } from "./product.js";
 import { parseTimestamp } from "./timestamp.js";
 import type { Authorization, ProductResult, PublicList, UnlistedReason, VerifyRequest } from "./types.js";
 
@@ -13,7 +13,7 @@ export interface MatchResult {
   authorization?: Authorization;
   /** Present when the request named a product (section 9). */
   product?: ProductResult;
-  /** Signal types to attach to the answer, e.g. "product_not_in_catalog" (section 9.2 rule 5). */
+  /** Signal types to attach to the answer, e.g. "product_not_in_catalog" (section 9.2 rule 6). */
   signals: string[];
 }
 
@@ -52,7 +52,7 @@ export function matchRequest(list: PublicList, request: VerifyRequest, now: numb
     const ended = inTerritory.filter(({ a }) => expiresBy(a, at)).map(({ a }) => a);
     if (ended.length > 0) {
       const latest = ended.reduce((x, y) => (parseTimestamp(y.expires!)! > parseTimestamp(x.expires!)! ? y : x));
-      return { status: "expired", authorization: latest, signals: [], ...productOnly(list, request) };
+      return { status: "expired", authorization: latest, ...productOnly(list, request) };
     }
     // Section 6.2: a marketplace domain fixes the territory. Say so when the seller is listed there.
     const marketplaceElsewhere = named.some(
@@ -61,7 +61,6 @@ export function matchRequest(list: PublicList, request: VerifyRequest, now: numb
     return {
       status: "unlisted",
       ...(marketplaceElsewhere ? { reason: "territory_mismatch" as const } : {}),
-      signals: [],
       ...productOnly(list, request),
     };
   }
@@ -69,23 +68,25 @@ export function matchRequest(list: PublicList, request: VerifyRequest, now: numb
   let candidates = live;
   if (request.product_line !== undefined) {
     candidates = candidates.filter((a) => productLineCovered(a, request.product_line!, list.exclusions));
-    if (candidates.length === 0) return { status: "unlisted", signals: [], ...productOnly(list, request) };
+    if (candidates.length === 0) return { status: "unlisted", ...productOnly(list, request) };
   }
 
   if (request.product === undefined) return { status: "authorized", authorization: candidates[0]!, signals: [] };
 
+  const { product, signals } = productOnly(list, request) as { product: ProductResult; signals: string[] };
+  // Section 3.1: a product made for other regions is covered nowhere else, whatever the authorization says.
+  const found = findProduct(list.catalog, request.product);
+  if (found && !productInRegion(found, territory)) return { status: "unlisted", reason: "product_not_for_region", product, signals };
+
   const results = candidates.map((a) => ({ a, r: productCovered(list, a, request.product!) }));
   const hit = results.find(({ r }) => r.coverage === "covered");
   const first = results[0]!.r;
-  const product: ProductResult = first.in_catalog
-    ? { in_catalog: true, id: first.product.id, ...(first.product.product_line ? { product_line: first.product.product_line } : {}) }
-    : { in_catalog: false };
   if (hit) {
     return {
       status: "authorized",
       authorization: hit.a,
       product,
-      signals: hit.r.in_catalog ? [] : ["product_not_in_catalog"],
+      signals: hit.r.in_catalog ? signals : ["product_not_in_catalog", ...signals],
     };
   }
   const reason: UnlistedReason = !first.in_catalog
@@ -93,14 +94,17 @@ export function matchRequest(list: PublicList, request: VerifyRequest, now: numb
     : results.some(({ r }) => r.coverage === "excluded")
       ? "product_excluded"
       : "product_not_in_scope";
-  return { status: "unlisted", reason, product, signals: [] };
+  return { status: "unlisted", reason, product, signals };
 }
 
-/** The product part of an answer that was decided before the product was considered. */
-function productOnly(list: PublicList, request: VerifyRequest): { product?: ProductResult } {
-  if (request.product === undefined) return {};
-  const probe = productCovered(list, { scope: {} } as Authorization, request.product);
-  if (!probe.in_catalog) return { product: { in_catalog: false } };
-  const p = probe.product;
-  return { product: { in_catalog: true, id: p.id, ...(p.product_line ? { product_line: p.product_line } : {}) } };
+/**
+ * The product part of an answer: what the catalog says about it (section 9) and the
+ * product_details_mismatch signal when a sent mpn or style_code doesn't match.
+ */
+function productOnly(list: PublicList, request: VerifyRequest): { product?: ProductResult; signals: string[] } {
+  if (request.product === undefined) return { signals: [] };
+  const found = findProduct(list.catalog, request.product);
+  if (!found) return { product: { in_catalog: false }, signals: [] };
+  const product = productResult(found, request.product);
+  return { product, signals: product.mismatched ? ["product_details_mismatch"] : [] };
 }

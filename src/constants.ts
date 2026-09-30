@@ -46,3 +46,11 @@ export const MARKETPLACE_DOMAINS: Readonly<Record<string, { type: MarketplaceCha
 export const GENERIC_CCTLDS: ReadonlySet<string> = new Set([
   "ac", "ai", "cc", "co", "fm", "gg", "io", "la", "ly", "me", "sh", "so", "to", "tv", "vc", "ws",
 ]);
+
+/**
+ * Section 3.1: named groups a product's regions may use. EU: the 27 member states. The United
+ * Kingdom (GB) is not in the EU and is listed on its own.
+ */
+export const REGION_GROUPS: Readonly<Record<string, readonly string[]>> = {
+  EU: ["AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE"],
+};
