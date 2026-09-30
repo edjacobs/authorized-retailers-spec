@@ -121,7 +121,7 @@ Each product MUST have a `gtin` or at least one ASIN. A GTIN or ASIN MUST NOT ap
 
 **Model numbers and style codes** are unique only within a brand: many brands use "X100". They MUST NOT find a brand or a product on their own (section 4.2). An agent MAY send them with a GTIN or ASIN, and the answer says whether they match (section 9).
 
-**Status.** A recall is a fact about the product, not the seller, so it doesn't change whether a seller is authorized. It is carried on every answer about the product (section 9). A discontinued product can be legitimate clearance stock. Counterfeits of discontinued products are also common, so brands see how often agents ask about them.
+**Status.** A recall is a fact about the product, not the seller, so it doesn't change whether a seller is authorized. It is carried on every answer about the product (section 9). The registry SHOULD tell the retailers the brand has authorized for a recalled product, when they have registered. A discontinued product can be legitimate clearance stock. Counterfeits of discontinued products are also common, so brands see how often agents ask about them.
 
 **Regions** let one catalog hold products made for different markets, such as a US and an EU formula with different GTINs. A product is covered only in the territories its `regions` include, whatever an authorization says, as with exclusions. A region is a country code or one of these groups:
 
@@ -637,7 +637,7 @@ The registry's liability position, dispute timelines and data handling are set o
   - Finding the brand is removed from the open questions. GS1 company prefix is added (section 13).
   - A pointer MAY name v0.2 or v0.3: its format is unchanged, so brands don't need to replace it (section 5.1).
   - Why product status and regions: a recall is the most important thing an agent can learn about a product, and brands selling different formulas per market shouldn't need a list per domain.
-  - Products MAY carry `status` (`active`, `discontinued`, `recalled`), `status_since` and `recall_url`. Answers show them for every brand, public list or not. Agents MUST tell the user about a recall and SHOULD NOT complete the purchase (sections 3.1, 9, 9.3).
+  - Products MAY carry `status` (`active`, `discontinued`, `recalled`), `status_since` and `recall_url`. The registry SHOULD tell registered retailers authorized for a recalled product. Answers show them for every brand, public list or not. Agents MUST tell the user about a recall and SHOULD NOT complete the purchase (sections 3.1, 9, 9.3).
   - Products MAY carry `regions`. A product asked about outside them is `unlisted`, reason `product_not_for_region`. Region group `EU` (sections 3.1, 9.2).
   - Products MAY carry `mpns` and `style_code`. Requests MAY add `mpn` and `style_code` to a GTIN or ASIN; answers say which are `confirmed` or `mismatched`, and a mismatch adds the signal `product_details_mismatch`. They never find a brand or product alone (sections 3.1, 4.2, 9).
   - Public lists' answers also give the product's `name`, `mpns` and `style_code` (section 9).
