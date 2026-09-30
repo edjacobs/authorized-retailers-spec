@@ -13,7 +13,7 @@
   "additionalProperties": false,
   "properties": {
     "spec": {
-      "$ref": "common.json#/$defs/specVersion"
+      "$ref": "common.json#/$defs/pointerSpecVersion"
     },
     "form": {
       "const": "pointer"

@@ -7,6 +7,13 @@
     "note": "Section 5.1 example"
   },
   {
+    "path": "pointer/valid/pointer-v0.2.json",
+    "kind": "pointer",
+    "valid": true,
+    "fetched_from": "brand.example",
+    "note": "Section 5.1: a pointer published under v0.2 stays valid"
+  },
+  {
     "path": "pointer/valid/pointer-fetched-via-www.json",
     "kind": "pointer",
     "valid": true,
@@ -68,7 +75,7 @@
     "kind": "pointer",
     "valid": false,
     "expect": "schema",
-    "note": "Spec version is 0.3"
+    "note": "A pointer names 0.2 or 0.3"
   },
   {
     "path": "list/valid/list-no-catalog.json",

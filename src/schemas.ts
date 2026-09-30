@@ -814,6 +814,13 @@ export const common = {
       "items": {
         "$ref": "#/$defs/answerBrand"
       }
+    },
+    "pointerSpecVersion": {
+      "description": "Section 5.1: the pointer format is unchanged since v0.2, so a pointer may name either version.",
+      "enum": [
+        "authorized-retailers/0.2",
+        "authorized-retailers/0.3"
+      ]
     }
   }
 };
@@ -921,7 +928,7 @@ export const pointer = {
   "additionalProperties": false,
   "properties": {
     "spec": {
-      "$ref": "common.json#/$defs/specVersion"
+      "$ref": "common.json#/$defs/pointerSpecVersion"
     },
     "form": {
       "const": "pointer"

@@ -74,9 +74,13 @@ export interface Signature {
   jws: string;
 }
 
+/** Section 5.1: the pointer format is unchanged since v0.2, so a pointer may name either version. */
+export const POINTER_SPEC_VERSIONS = ["authorized-retailers/0.2", SPEC_VERSION] as const;
+export type PointerSpecVersion = (typeof POINTER_SPEC_VERSIONS)[number];
+
 /** Section 5.1: the optional, unsigned file at /.well-known/authorized-retailers.json. */
 export interface PointerFile {
-  spec: SpecVersion;
+  spec: PointerSpecVersion;
   form: "pointer";
   brand: { name: string; domain: string };
   verify_token: string;

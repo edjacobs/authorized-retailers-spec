@@ -17,6 +17,7 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 | 5.1 | Readers MUST treat a file with any `form` other than `pointer` as no file | `test/must.test.ts`, fixtures `full-form`, `private-form`, `unknown-form` |
 | 5.1 | `brand.domain` MUST be the domain the pointer was fetched from, also after redirects | `test/must.test.ts`, fixtures `pointer-domain-mismatch`, `pointer-fetched-via-www` |
 | 5.1 | `list` MUST be an `https://authorizedretailers.ai/` URL | `test/must.test.ts`, fixture `pointer-other-host` |
+| 5.1 | A pointer names `authorized-retailers/0.2` or `/0.3` | fixtures `pointer-v0.2`, `pointer-wrong-spec` |
 | 5.2 | Readers MUST treat an unsigned list, or one whose signature doesn't verify, as no list; a list counts only for the domains it names | `test/jws.test.ts` (`checkPublishedList`) |
 | 6 | Every authorization MUST name at least one channel identifier | `test/must.test.ts`, fixtures `list-no-channels`, `list-name-only-retailer` |
 | 6 | A marketplace channel's `domain` MUST be one of that type's marketplace domains; a `web` channel MUST NOT use one | `test/must.test.ts`, fixtures `list-amazon-on-walmart-domain`, `list-web-on-marketplace-domain` |

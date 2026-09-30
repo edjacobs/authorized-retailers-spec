@@ -161,6 +161,7 @@ const match = (request, expect) => ({ list: matchList, request, now: NOW, expect
 const cases = [
   // ---- pointer: valid
   ["pointer", "pointer", pointer, null, "Section 5.1 example", { fetched_from: "brand.example" }],
+  ["pointer", "pointer-v0.2", edit(pointer, (p) => (p.spec = "authorized-retailers/0.2")), null, "Section 5.1: a pointer published under v0.2 stays valid", { fetched_from: "brand.example" }],
   ["pointer", "pointer-fetched-via-www", pointer, null, "Section 5.1: www is ignored when matching the domain", { fetched_from: "www.brand.example" }],
 
   // ---- pointer: invalid
@@ -171,7 +172,7 @@ const cases = [
   ["pointer", "full-form", edit(pointer, (p) => { p.form = "full"; p.authorizations = []; }), "form_not_supported", "v0.1 full form was removed"],
   ["pointer", "private-form", edit(pointer, (p) => (p.form = "private")), "form_not_supported", "v0.1 private form was removed"],
   ["pointer", "unknown-form", edit(pointer, (p) => (p.form = "partial")), "form_not_supported", "Only pointer"],
-  ["pointer", "pointer-wrong-spec", edit(pointer, (p) => (p.spec = "authorized-retailers/0.2")), "schema", "Spec version is 0.3"],
+  ["pointer", "pointer-wrong-spec", edit(pointer, (p) => (p.spec = "authorized-retailers/0.1")), "schema", "A pointer names 0.2 or 0.3"],
 
   // ---- list: valid
   ["list", "list-no-catalog", listNoCatalog, null, "Section 5.2, no catalog"],

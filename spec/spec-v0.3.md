@@ -167,6 +167,7 @@ A brand MAY serve a pointer at `https://<brand-domain>/.well-known/authorized-re
 }
 ```
 
+- `spec` MAY be `authorized-retailers/0.2` or `authorized-retailers/0.3`. The pointer format has not changed since v0.2, so a pointer published then stays current.
 - `form` is `pointer`. It is the only form. The field stays so that later versions can add forms. Readers MUST treat a file with any other `form`, including the v0.1 `full` and `private` forms, as no file.
 - `brand.domain` MUST be the domain the pointer was fetched from. A pointer vouches only for its own domain.
 - `list` MUST be an `https://authorizedretailers.ai/` URL. A pointer naming any other host is treated as no file.
@@ -605,3 +606,4 @@ The registry's liability position, dispute timelines and data handling are set o
   - The catalog is what makes a brand findable from a product page. GTIN is the baseline; brands on Amazon SHOULD list ASINs (section 3.1).
   - Brand names and aliases are for display and search, and never resolve a brand (section 4.2).
   - Finding the brand is removed from the open questions. GS1 company prefix is added (section 13).
+  - A pointer MAY name v0.2 or v0.3: its format is unchanged, so brands don't need to replace it (section 5.1).

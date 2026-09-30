@@ -9,6 +9,7 @@ This file covers the package. Changes to the specification text are also listed 
 - Verify answers carry `brand` (`domain`, `name`) and `resolved_by` (`brand_domain`, `gtin` or `asin`), except `product_not_found` and `brand_ambiguous`. New statuses `product_not_found`, `brand_ambiguous` and `brand_mismatch`, the last two with `candidates`. Breaking: 0.2 validators reject these fields.
 - Resolve: `validateResolveRequest`, `validateResolveResponse`, `normalizeResolveRequest`, and `schemas/0.3/resolve-request.json` and `resolve-response.json` for `POST /v0/resolve` and the MCP tool `resolve_brand`.
 - `resolveClaims` decides resolution from the brands claiming a product's GTIN and ASIN, and `resolveFromLists` runs it over public lists, so the registry and agents agree. `findProduct` takes a GTIN, an ASIN or both, GTIN first.
+- Pointers: `spec` may be `authorized-retailers/0.2` or `/0.3` (`POINTER_SPEC_VERSIONS`), since the pointer format is unchanged. Brands don't need to replace a pointer published under v0.2.
 - Lists MAY carry `brand.aliases`, for display and search only (spec section 4.2). `SPEC_VERSION` is `authorized-retailers/0.3`.
 - Schemas are served per version: `schemas/0.3/` (new), `0.2` and `0.1` kept. The `./spec.md` export is v0.3.
 - Fixtures: new `resolve-request`, `resolve-response` and `resolve` kinds; `resolve` fixtures pair registered brands' lists and a product with the resolution section 9.5 requires.

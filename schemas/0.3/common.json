@@ -812,6 +812,13 @@
       "items": {
         "$ref": "#/$defs/answerBrand"
       }
+    },
+    "pointerSpecVersion": {
+      "description": "Section 5.1: the pointer format is unchanged since v0.2, so a pointer may name either version.",
+      "enum": [
+        "authorized-retailers/0.2",
+        "authorized-retailers/0.3"
+      ]
     }
   }
 }
