@@ -9,7 +9,7 @@
     "type": "git",
     "url": "git+https://github.com/authorizedretailers/spec.git"
   },
-  "bugs": "https://github.com/authorizedretailers/spec/issues",
+  "bugs": "https://authorizedretailers.ai/spec",
   "keywords": [
     "authorized-retailers",
     "authorized-retailers-json",
