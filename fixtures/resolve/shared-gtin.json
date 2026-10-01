@@ -133,6 +133,12 @@
           "asins": [
             "B0EXAMPLE1"
           ],
+          "walmart_item_ids": [
+            "123456789"
+          ],
+          "wpids": [
+            "1A2B3C4D5E6F"
+          ],
           "mpns": [
             "EB-100-BLK"
           ],
@@ -227,6 +233,13 @@
           "name": "Other Cap",
           "asins": [
             "B0OTHER001"
+          ]
+        },
+        {
+          "id": "OB-SCARF",
+          "name": "Other Scarf",
+          "walmart_item_ids": [
+            "987654321"
           ]
         }
       ],

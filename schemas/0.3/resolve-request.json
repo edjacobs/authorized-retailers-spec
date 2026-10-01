@@ -13,7 +13,7 @@
       "$ref": "common.json#/$defs/productRef"
     },
     "domain": {
-      "description": "The Amazon marketplace domain the ASIN was seen on.",
+      "description": "The marketplace domain the product was seen on: Amazon for an ASIN, walmart.com for a Walmart item ID or WPID.",
       "$ref": "common.json#/$defs/domain"
     }
   }

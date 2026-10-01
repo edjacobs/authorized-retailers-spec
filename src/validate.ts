@@ -2,7 +2,7 @@ import { Validator, type OutputUnit } from "@cfworker/json-schema";
 import { common, list, pointer, resolveRequest, resolveResponse, revocationFeed, verifyRequest, verifyResponse } from "./schemas.js";
 import { MAX_STALE_MS, MAX_VALIDITY_MS, MARKETPLACE_DOMAINS, REGION_GROUPS } from "./constants.js";
 import { isCountryCode, isMarketplaceDomain, isRecord, normalizeDomain, territoryForDomain } from "./identity.js";
-import { isValidAsin, isValidGtin, toGtin14 } from "./product.js";
+import { isValidAsin, isValidGtin, isValidWalmartItemId, isValidWpid, toGtin14 } from "./product.js";
 import { parseTimestamp } from "./timestamp.js";
 import type {
   Channel,
@@ -34,8 +34,11 @@ export type ErrorCode =
   | "invalid_region"
   | "recall_url_required"
   | "asin_needs_amazon_channel"
+  | "walmart_id_needs_walmart_channel"
   | "invalid_gtin"
   | "invalid_asin"
+  | "invalid_walmart_item_id"
+  | "invalid_wpid"
   | "product_without_identifier"
   | "duplicate_product_id"
   | "duplicate_identifier"
@@ -215,6 +218,8 @@ function catalogRules(r: Report, l: PublicList) {
       else claim(`gtin:${toGtin14(p.gtin)}`, `${base}/gtin`, `GTIN ${p.gtin}`);
     }
     p.asins?.forEach((a, j) => claim(`asin:${a}`, `${base}/asins/${j}`, `ASIN ${a}`));
+    p.walmart_item_ids?.forEach((w, j) => claim(`walmart_item_id:${w}`, `${base}/walmart_item_ids/${j}`, `Walmart item ID ${w}`));
+    p.wpids?.forEach((w, j) => claim(`wpid:${w}`, `${base}/wpids/${j}`, `WPID ${w}`));
   });
 
   const hasCatalog = catalog.length > 0;
@@ -243,13 +248,23 @@ function catalogRules(r: Report, l: PublicList) {
   });
 }
 
-/** Section 3.1: each product has a gtin or asins. Named plainly, since the schema's anyOf error is vague. */
+/** Section 3.1: each product has a gtin, asins, walmart_item_ids or wpids. Named plainly, since the schema's anyOf error is vague. */
 function productIdentifierRules(r: Report, input: unknown) {
   const catalog = isRecord(input) ? input.catalog : undefined;
   if (!Array.isArray(catalog)) return;
   catalog.forEach((p, i) => {
-    if (isRecord(p) && !("gtin" in p) && !("asins" in p)) {
-      r.error("product_without_identifier", `/catalog/${i}`, "every product needs a gtin or at least one ASIN (section 3.1)");
+    if (isRecord(p) && !("gtin" in p) && !("asins" in p) && !("walmart_item_ids" in p) && !("wpids" in p)) {
+      r.error("product_without_identifier", `/catalog/${i}`, "every product needs a gtin or at least one ASIN, Walmart item ID or WPID (section 3.1)");
+    }
+    if (isRecord(p) && Array.isArray(p.walmart_item_ids)) {
+      p.walmart_item_ids.forEach((w, j) => {
+        if (typeof w === "string" && !isValidWalmartItemId(w)) r.error("invalid_walmart_item_id", `/catalog/${i}/walmart_item_ids/${j}`, `${w} is not a Walmart item ID (5 to 15 digits)`);
+      });
+    }
+    if (isRecord(p) && Array.isArray(p.wpids)) {
+      p.wpids.forEach((w, j) => {
+        if (typeof w === "string" && !isValidWpid(w)) r.error("invalid_wpid", `/catalog/${i}/wpids/${j}`, `${w} is not a WPID (8 to 16 uppercase letters or digits)`);
+      });
     }
     if (isRecord(p) && Array.isArray(p.asins)) {
       p.asins.forEach((a, j) => {
@@ -360,8 +375,10 @@ export function validateVerifyRequest(input: unknown): ValidationResult<VerifyRe
   if (isRecord(input) && input.brand_domain === undefined) {
     if (input.product === undefined) {
       r.error("brand_or_product_required", "", "a verify request names a brand_domain, a product or both (section 9)");
-    } else if (isRecord(input.product) && input.product.gtin === undefined && typeof input.product.asin === "string" && isRecord(input.channel) && input.channel.type !== "amazon") {
-      r.error("asin_needs_amazon_channel", "/channel/type", "an ASIN alone finds a brand only on an Amazon channel; give a GTIN or the brand_domain (section 9.5)");
+    } else if (isRecord(input.product) && isRecord(input.channel)) {
+      const market = marketplaceRule(input.product, input.channel.type === "amazon", input.channel.type === "walmart" && input.channel.domain === WALMART_ID_DOMAIN);
+      if (market === "asin") r.error("asin_needs_amazon_channel", "/channel/type", "an ASIN alone finds a brand only on an Amazon channel; give a GTIN or the brand_domain (section 9.5)");
+      if (market === "walmart") r.error("walmart_id_needs_walmart_channel", "/channel", `a Walmart item ID or WPID alone finds a brand only on a walmart channel on ${WALMART_ID_DOMAIN}; give a GTIN or the brand_domain (section 9.5)`);
     }
   }
   merge(r, schemaErrors(verifyRequest, input));
@@ -375,10 +392,28 @@ export function validateVerifyRequest(input: unknown): ValidationResult<VerifyRe
   return r.done(input);
 }
 
+/** Walmart item IDs and WPIDs apply on walmart.com, the marketplace that issues them (section 3.1). */
+const WALMART_ID_DOMAIN = "walmart.com";
+
+/**
+ * Section 9.5: a product with no GTIN finds a brand only on the marketplace its identifiers come
+ * from. Returns which rule is broken, or null.
+ */
+function marketplaceRule(product: Record<string, unknown>, onAmazon: boolean, onWalmart: boolean): "asin" | "walmart" | null {
+  if (product.gtin !== undefined) return null;
+  const asin = product.asin !== undefined;
+  const walmart = product.walmart_item_id !== undefined || product.wpid !== undefined;
+  if (asin && !walmart && !onAmazon) return "asin";
+  if (walmart && !asin && !onWalmart) return "walmart";
+  if (asin && walmart && !onAmazon && !onWalmart) return "asin";
+  return null;
+}
+
 function productRefRules(r: Report, input: unknown) {
   const product = isRecord(input) && isRecord(input.product) ? input.product : undefined;
-  if (product && product.gtin === undefined && product.asin === undefined && (product.mpn !== undefined || product.style_code !== undefined)) {
-    r.error("product_identifier_required", "/product", "an mpn or style_code only confirms a match: send it with a gtin or asin (section 9)");
+  const identified = product && (product.gtin !== undefined || product.asin !== undefined || product.walmart_item_id !== undefined || product.wpid !== undefined);
+  if (product && !identified && (product.mpn !== undefined || product.style_code !== undefined)) {
+    r.error("product_identifier_required", "/product", "an mpn or style_code only confirms a match: send it with a gtin, asin, walmart_item_id or wpid (section 9)");
   }
   if (typeof product?.gtin === "string" && /^(\d{8}|\d{12,14})$/.test(product.gtin) && !isValidGtin(product.gtin)) {
     r.error("invalid_gtin", "/product/gtin", `${product.gtin} has a bad check digit`);
@@ -386,14 +421,24 @@ function productRefRules(r: Report, input: unknown) {
   if (typeof product?.asin === "string" && !isValidAsin(product.asin)) {
     r.error("invalid_asin", "/product/asin", `${product.asin} is not an ASIN (10 uppercase letters or digits)`);
   }
+  if (typeof product?.walmart_item_id === "string" && !isValidWalmartItemId(product.walmart_item_id)) {
+    r.error("invalid_walmart_item_id", "/product/walmart_item_id", `${product.walmart_item_id} is not a Walmart item ID (5 to 15 digits)`);
+  }
+  if (typeof product?.wpid === "string" && !isValidWpid(product.wpid)) {
+    r.error("invalid_wpid", "/product/wpid", `${product.wpid} is not a WPID (8 to 16 uppercase letters or digits)`);
+  }
 }
 
 /** Validates a canonical resolve request (section 9.5). Call normalizeResolveRequest on raw input first. */
 export function validateResolveRequest(input: unknown): ValidationResult<ResolveRequest> {
   const r = new Report();
   productRefRules(r, input);
-  if (isRecord(input) && typeof input.domain === "string" && MARKETPLACE_DOMAINS[input.domain]?.type !== "amazon") {
-    r.error("asin_needs_amazon_channel", "/domain", `${input.domain} is not an Amazon marketplace domain (section 6)`);
+  if (isRecord(input) && typeof input.domain === "string") {
+    const onAmazon = MARKETPLACE_DOMAINS[input.domain]?.type === "amazon";
+    const onWalmart = input.domain === WALMART_ID_DOMAIN;
+    const market = isRecord(input.product) ? marketplaceRule(input.product, onAmazon, onWalmart) : null;
+    if (market === "walmart") r.error("walmart_id_needs_walmart_channel", "/domain", `a Walmart item ID or WPID is read on ${WALMART_ID_DOMAIN}, not ${input.domain} (section 9.5)`);
+    else if (market === "asin" || (!onAmazon && !onWalmart)) r.error("asin_needs_amazon_channel", "/domain", `${input.domain} is not an Amazon marketplace domain or ${WALMART_ID_DOMAIN} (section 6)`);
   }
   merge(r, schemaErrors(resolveRequest, input));
   return r.done(input);

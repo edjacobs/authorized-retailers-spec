@@ -24,48 +24,70 @@ export function isValidAsin(asin: string): boolean {
   return /^[A-Z0-9]{10}$/.test(asin);
 }
 
+/** A Walmart item ID: 5 to 15 digits, as in a walmart.com product URL. */
+export function isValidWalmartItemId(id: string): boolean {
+  return /^[0-9]{5,15}$/.test(id);
+}
+
+/** A Walmart product ID (WPID): 8 to 16 uppercase letters or digits. */
+export function isValidWpid(wpid: string): boolean {
+  return /^[A-Z0-9]{8,16}$/.test(wpid);
+}
+
+/** The identifiers that find a product, in the order they're tried and reported (section 9.5). */
+export const PRODUCT_IDENTIFIERS = ["gtin", "asin", "walmart_item_id", "wpid"] as const;
+export type ProductIdentifier = (typeof PRODUCT_IDENTIFIERS)[number];
+
+/** Whether a catalog product carries this one identifier. */
+function hasIdentifier(p: Product, kind: ProductIdentifier, value: string): boolean {
+  switch (kind) {
+    case "gtin":
+      return isValidGtin(value) && p.gtin !== undefined && isValidGtin(p.gtin) && toGtin14(p.gtin) === toGtin14(value);
+    case "asin":
+      return p.asins?.includes(value.toUpperCase()) ?? false;
+    case "walmart_item_id":
+      return p.walmart_item_ids?.includes(value) ?? false;
+    case "wpid":
+      return p.wpids?.includes(value.toUpperCase()) ?? false;
+  }
+}
+
 /**
- * The catalog product a GTIN or ASIN refers to, or undefined when it isn't in the catalog. When the
- * request gives both, the GTIN is looked up first (section 9.5).
+ * The catalog product a GTIN, ASIN, Walmart item ID or WPID refers to, or undefined when it isn't in
+ * the catalog. When the request gives more than one, they're tried in PRODUCT_IDENTIFIERS order (section 9.5).
  */
 export function findProduct(catalog: Product[] | undefined, ref: ProductRef): Product | undefined {
   if (!catalog) return undefined;
-  if (ref.gtin !== undefined && isValidGtin(ref.gtin)) {
-    const want = toGtin14(ref.gtin);
-    const hit = catalog.find((p) => p.gtin !== undefined && isValidGtin(p.gtin) && toGtin14(p.gtin) === want);
+  for (const kind of PRODUCT_IDENTIFIERS) {
+    const value = ref[kind];
+    if (value === undefined) continue;
+    const hit = catalog.find((p) => hasIdentifier(p, kind, value));
     if (hit) return hit;
-  }
-  if (ref.asin !== undefined) {
-    const asin = ref.asin.toUpperCase();
-    return catalog.find((p) => p.asins?.includes(asin));
   }
   return undefined;
 }
 
 /** Section 9.5: the registered brands whose catalogs hold a product, by the identifier that matched. */
-export interface ProductClaims {
-  gtin?: AnswerBrand[];
-  asin?: AnswerBrand[];
-}
+export type ProductClaims = { [K in ProductIdentifier]?: AnswerBrand[] };
 
 export type Resolution =
-  | { status: "resolved"; brand: AnswerBrand; resolved_by: "gtin" | "asin" }
+  | { status: "resolved"; brand: AnswerBrand; resolved_by: ProductIdentifier }
   | { status: "product_not_found" }
   | { status: "brand_ambiguous"; candidates: AnswerBrand[] };
 
 /**
- * Section 9.5: the brand a product belongs to, from the registered brands claiming its GTIN and ASIN.
+ * Section 9.5: the brand a product belongs to, from the registered brands claiming its identifiers.
  * One brand across every identifier given resolves; none is product_not_found; more than one,
- * including a GTIN and an ASIN that point to different brands, is brand_ambiguous.
+ * including two identifiers that point to different brands, is brand_ambiguous.
  * Each brand is counted once: the caller passes one entry per brand, whatever its number of domains.
  */
 export function resolveClaims(claims: ProductClaims): Resolution {
   const byDomain = new Map<string, AnswerBrand>();
-  for (const b of [...(claims.gtin ?? []), ...(claims.asin ?? [])]) if (!byDomain.has(b.domain)) byDomain.set(b.domain, b);
+  for (const kind of PRODUCT_IDENTIFIERS) for (const b of claims[kind] ?? []) if (!byDomain.has(b.domain)) byDomain.set(b.domain, b);
   const all = [...byDomain.values()].sort((a, b) => a.domain.localeCompare(b.domain));
   if (all.length === 0) return { status: "product_not_found" };
   if (all.length > 1) return { status: "brand_ambiguous", candidates: all };
-  return { status: "resolved", brand: all[0]!, resolved_by: claims.gtin?.length ? "gtin" : "asin" };
+  return { status: "resolved", brand: all[0]!, resolved_by: PRODUCT_IDENTIFIERS.find((k) => claims[k]?.length)! };
 }
 
 /**
@@ -73,11 +95,13 @@ export function resolveClaims(claims: ProductClaims): Resolution {
  * every registered brand, including those whose lists aren't public, so its answer is the one to use.
  */
 export function resolveFromLists(lists: PublicList[], ref: ProductRef): Resolution {
-  const claims: Required<ProductClaims> = { gtin: [], asin: [] };
+  const claims: ProductClaims = {};
   for (const l of lists) {
     const brand = { domain: l.brand.domains[0]!, name: l.brand.name };
-    if (ref.gtin !== undefined && findProduct(l.catalog, { gtin: ref.gtin })) claims.gtin.push(brand);
-    if (ref.asin !== undefined && findProduct(l.catalog, { asin: ref.asin })) claims.asin.push(brand);
+    for (const kind of PRODUCT_IDENTIFIERS) {
+      const value = ref[kind];
+      if (value !== undefined && l.catalog?.some((p) => hasIdentifier(p, kind, value))) (claims[kind] ??= []).push(brand);
+    }
   }
   return resolveClaims(claims);
 }

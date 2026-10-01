@@ -546,8 +546,18 @@ export const common = {
       "type": "string",
       "pattern": "^[A-Z0-9]{10}$"
     },
+    "walmartItemId": {
+      "description": "A Walmart item ID: 5 to 15 digits, as in a walmart.com product URL.",
+      "type": "string",
+      "pattern": "^[0-9]{5,15}$"
+    },
+    "wpid": {
+      "description": "A Walmart product ID (WPID): 8 to 16 uppercase letters or digits.",
+      "type": "string",
+      "pattern": "^[A-Z0-9]{8,16}$"
+    },
     "product": {
-      "description": "Section 3.1. At least one of gtin or asins. A recalled product names its recall_url.",
+      "description": "Section 3.1. At least one of gtin, asins, walmart_item_ids or wpids. A recalled product names its recall_url.",
       "type": "object",
       "required": [
         "id",
@@ -585,6 +595,22 @@ export const common = {
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/asin"
+          }
+        },
+        "walmart_item_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/walmartItemId"
+          }
+        },
+        "wpids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/wpid"
           }
         },
         "mpns": {
@@ -626,6 +652,16 @@ export const common = {
         {
           "required": [
             "asins"
+          ]
+        },
+        {
+          "required": [
+            "walmart_item_ids"
+          ]
+        },
+        {
+          "required": [
+            "wpids"
           ]
         }
       ],
@@ -817,7 +853,7 @@ export const common = {
       }
     },
     "productRef": {
-      "description": "Section 9: a product by GTIN, ASIN or both. mpn and style_code only confirm a match.",
+      "description": "Section 9: a product by GTIN, ASIN, Walmart item ID or WPID, one or more. mpn and style_code only confirm a match.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -826,6 +862,12 @@ export const common = {
         },
         "asin": {
           "$ref": "#/$defs/asin"
+        },
+        "walmart_item_id": {
+          "$ref": "#/$defs/walmartItemId"
+        },
+        "wpid": {
+          "$ref": "#/$defs/wpid"
         },
         "mpn": {
           "$ref": "#/$defs/mpn"
@@ -843,6 +885,16 @@ export const common = {
         {
           "required": [
             "asin"
+          ]
+        },
+        {
+          "required": [
+            "walmart_item_id"
+          ]
+        },
+        {
+          "required": [
+            "wpid"
           ]
         }
       ]
@@ -868,7 +920,9 @@ export const common = {
       "enum": [
         "brand_domain",
         "gtin",
-        "asin"
+        "asin",
+        "walmart_item_id",
+        "wpid"
       ]
     },
     "candidates": {
@@ -1060,7 +1114,7 @@ export const resolveRequest = {
       "$ref": "common.json#/$defs/productRef"
     },
     "domain": {
-      "description": "The Amazon marketplace domain the ASIN was seen on.",
+      "description": "The marketplace domain the product was seen on: Amazon for an ASIN, walmart.com for a Walmart item ID or WPID.",
       "$ref": "common.json#/$defs/domain"
     }
   }
@@ -1093,7 +1147,9 @@ export const resolveResponse = {
     "resolved_by": {
       "enum": [
         "gtin",
-        "asin"
+        "asin",
+        "walmart_item_id",
+        "wpid"
       ]
     },
     "candidates": {

@@ -95,7 +95,7 @@ export function authorizationsForChannel(authorizations: Authorization[], channe
 
 /**
  * Brings raw agent input into the canonical form validateVerifyRequest expects: trims strings,
- * lowercases domains (dropping "www."), uppercases country codes and ASINs, maps "UK" to "GB",
+ * lowercases domains (dropping "www."), uppercases country codes, ASINs and WPIDs, maps "UK" to "GB",
  * strips spaces and dashes from GTINs and fills in channel.type from the domain when it's missing. Leaves unexpected shapes alone so the validator reports them.
  */
 export function normalizeVerifyRequest(input: unknown): unknown {
@@ -128,6 +128,8 @@ function normalizeProductRef(input: unknown): unknown {
   const p: Record<string, unknown> = { ...input };
   if (typeof p.gtin === "string") p.gtin = p.gtin.replace(/[\s-]/g, "");
   if (typeof p.asin === "string") p.asin = p.asin.trim().toUpperCase();
+  if (typeof p.walmart_item_id === "string") p.walmart_item_id = p.walmart_item_id.trim();
+  if (typeof p.wpid === "string") p.wpid = p.wpid.trim().toUpperCase();
   if (typeof p.mpn === "string") p.mpn = p.mpn.trim();
   if (typeof p.style_code === "string") p.style_code = p.style_code.trim();
   return p;

@@ -59,6 +59,14 @@ describe("§3.1 catalog rules", () => {
     l.catalog![3]!.asins = ["B0EXAMPLE2"];
     expect(codes(validateList(l))).toContain("duplicate_identifier");
   });
+  it("Walmart item IDs or WPIDs alone identify a product, and MUST NOT appear on two products", () => {
+    const l = withCatalog();
+    delete l.catalog![2]!.gtin;
+    l.catalog![2]!.wpids = ["9Z8Y7X6W5V4U"];
+    expect(validateList(l).valid).toBe(true);
+    l.catalog![3]!.wpids = ["9Z8Y7X6W5V4U"];
+    expect(codes(validateList(l))).toContain("duplicate_identifier");
+  });
   it("every named product line MUST exist in the catalog", () => {
     const l = withCatalog();
     l.authorizations[0]!.scope.product_lines = ["Hats"];
@@ -273,9 +281,22 @@ describe("§9.5 finding the brand from a product", () => {
     expect(validateVerifyRequest({ channel: amazon, product: { asin: "B0EXAMPLE1" } }).valid).toBe(true);
   });
 
+  it("a Walmart item ID or WPID alone finds a brand only on a walmart channel on walmart.com", () => {
+    const walmart = { type: "walmart", domain: "walmart.com", seller_id: "900000001" };
+    const walmartCa = { type: "walmart", domain: "walmart.ca", seller_id: "900000001" };
+    expect(codes(validateVerifyRequest({ channel: amazon, product: { walmart_item_id: "123456789" } }))).toContain("walmart_id_needs_walmart_channel");
+    expect(codes(validateVerifyRequest({ channel: walmartCa, product: { wpid: "1A2B3C4D5E6F" } }))).toContain("walmart_id_needs_walmart_channel");
+    expect(validateVerifyRequest({ channel: walmart, product: { walmart_item_id: "123456789" } }).valid).toBe(true);
+    expect(validateVerifyRequest({ channel: amazon, product: { gtin: "012345678905", walmart_item_id: "123456789" } }).valid).toBe(true);
+    expect(codes(validateResolveRequest({ product: { walmart_item_id: "123456789" }, domain: "amazon.com" }))).toContain("walmart_id_needs_walmart_channel");
+    expect(validateResolveRequest({ product: { walmart_item_id: "123456789" }, domain: "walmart.com" }).valid).toBe(true);
+    expect(codes(validateResolveRequest({ product: { asin: "B0EXAMPLE1" }, domain: "walmart.com" }))).toContain("asin_needs_amazon_channel");
+  });
+
   it("more than one brand claiming a product MUST NOT resolve, and brand_ambiguous is never authorized", () => {
     expect(resolveClaims({ gtin: [ex, other] })).toEqual({ status: "brand_ambiguous", candidates: [ex, other] });
     expect(resolveClaims({ gtin: [ex], asin: [other] })).toEqual({ status: "brand_ambiguous", candidates: [ex, other] });
+    expect(resolveClaims({ asin: [ex], walmart_item_id: [other] })).toEqual({ status: "brand_ambiguous", candidates: [ex, other] });
     const answer = fx("verify-response/valid/brand-ambiguous.json");
     expect(validateVerifyResponse({ ...answer, status: "authorized", authorization_id: "auth_1", revocation_id: "rv_Q2l8dX4bT0aN5kPw" }).valid).toBe(false);
   });
@@ -283,6 +304,8 @@ describe("§9.5 finding the brand from a product", () => {
   it("one brand resolves, preferring the GTIN when both identifiers agree; none is product_not_found", () => {
     expect(resolveClaims({ gtin: [ex], asin: [ex] })).toEqual({ status: "resolved", brand: ex, resolved_by: "gtin" });
     expect(resolveClaims({ asin: [ex] })).toEqual({ status: "resolved", brand: ex, resolved_by: "asin" });
+    expect(resolveClaims({ walmart_item_id: [ex], wpid: [ex] })).toEqual({ status: "resolved", brand: ex, resolved_by: "walmart_item_id" });
+    expect(resolveClaims({ wpid: [ex] })).toEqual({ status: "resolved", brand: ex, resolved_by: "wpid" });
     expect(resolveClaims({})).toEqual({ status: "product_not_found" });
   });
 

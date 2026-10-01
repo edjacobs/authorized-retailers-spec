@@ -8,8 +8,8 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 | 3 | The registry MUST NOT add, remove or change an authorization except on the brand's instruction or approval | Registry obligation |
 | 3 | The registry MUST keep a change log for each brand and MUST show it to the brand | Registry obligation |
 | 3 | Each authorization MUST carry channels and a product scope (product lines, products or both) | `test/must.test.ts`, fixtures `list-missing-scope`, `list-scope-no-products` |
-| 3.1 | Each product MUST have a `gtin` or at least one ASIN | `test/must.test.ts`, fixture `list-product-no-identifier` |
-| 3.1 | A GTIN or ASIN MUST NOT appear on two products | `test/must.test.ts`, fixtures `list-duplicate-asin`, `list-duplicate-gtin` |
+| 3.1 | Each product MUST have a `gtin` or at least one ASIN, Walmart item ID or WPID | `test/must.test.ts`, fixtures `list-product-no-identifier`, `list-product-walmart-only` |
+| 3.1 | A product identifier (GTIN, ASIN, Walmart item ID or WPID) MUST NOT appear on two products | `test/must.test.ts`, fixtures `list-duplicate-asin`, `list-duplicate-gtin`, `list-duplicate-walmart-item-id` |
 | 3.1 | Named and excluded product lines and products MUST exist in the catalog | `test/must.test.ts`, fixtures `list-unknown-line`, `list-unknown-product`, `list-exclude-unknown-product`, `list-brand-exclusion-no-catalog` |
 | 3.1 | A recalled product MUST name its `recall_url` | `test/must.test.ts`, fixtures `list-recalled-no-url`, `recalled-without-url` |
 | 3.1 | Model numbers and style codes MUST NOT find a brand or product alone | `test/must.test.ts`, fixture `mpn-only` |
@@ -42,9 +42,11 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 | 4.2 | A name or alias MUST NOT resolve a brand | `test/must.test.ts`, fixtures `resolve-request/invalid/brand-name` |
 | 9 | A verify request MUST name a `brand_domain`, a `product` or both | `test/must.test.ts`, fixture `no-brand-no-product` |
 | 9 | Finding a brand by ASIN alone MUST use an `amazon` channel | `test/must.test.ts`, fixture `asin-only-on-walmart` |
+| 9 | Finding a brand by Walmart item ID or WPID alone MUST use a `walmart` channel on walmart.com | `test/must.test.ts`, fixtures `walmart-item-id-only-on-amazon`, `wpid-only-on-walmart-ca` |
+| 9.5 | A resolve `domain` MUST be Amazon for an ASIN alone and walmart.com for a Walmart item ID or WPID alone | `test/must.test.ts`, fixtures `non-amazon-domain`, `walmart-item-id-on-amazon-domain` |
 | 9 | A GTIN with a bad check digit MUST be rejected | `test/must.test.ts`, fixtures `product-only-bad-gtin`, `resolve-request/invalid/bad-gtin` |
 | 9.5 | A catalog on a domain that is not registered MUST NOT resolve | Registry obligation |
-| 9.5 | More than one brand claiming a product MUST NOT answer `authorized` | `test/must.test.ts` (`resolveClaims`, verify-response schema), `resolve` fixtures `shared-gtin`, `gtin-and-asin-disagree` |
+| 9.5 | More than one brand claiming a product MUST NOT answer `authorized` | `test/must.test.ts` (`resolveClaims`, verify-response schema), `resolve` fixtures `shared-gtin`, `gtin-and-asin-disagree`, `asin-and-walmart-item-id-disagree` |
 | 9.5 | A product outside `brand_domain`'s catalog and claimed by other brands MUST answer `brand_mismatch` | Registry obligation; schema requires `candidates` (`test/must.test.ts`) |
 | 9.5 | Finding the brand MUST NOT reveal retailers, or catalog data of a list that isn't public | `test/must.test.ts` (resolve-response schema); rest is a registry obligation |
 | 10.1 | Agents MUST NOT rely on a cached list or answer past its `valid_until`, except as 10.2 allows | `test/jws.test.ts` (`answer_expired`, `list_expired`) |

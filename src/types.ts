@@ -33,7 +33,7 @@ export interface Party {
 /** Section 3.1: active (the default), discontinued or recalled. */
 export type ProductStatus = "active" | "discontinued" | "recalled";
 
-/** Section 3.1: one product in a brand's catalog. Has a gtin, asins or both. */
+/** Section 3.1: one product in a brand's catalog. Has a gtin, asins, walmart_item_ids or wpids. */
 export interface Product {
   id: string;
   name: string;
@@ -41,6 +41,10 @@ export interface Product {
   attributes?: Record<string, string>;
   gtin?: string;
   asins?: string[];
+  /** Walmart item IDs, as in a walmart.com product URL. */
+  walmart_item_ids?: string[];
+  /** Walmart product IDs (WPIDs), from Walmart Seller Center. */
+  wpids?: string[];
   /** Manufacturer part or model numbers. Unique only within the brand: they confirm a match, never find one. */
   mpns?: string[];
   /** The brand's style code. Unique only within the brand. */
@@ -133,8 +137,13 @@ export interface NotPublicList extends ListBase {
 
 export type SignedList = PublicList | NotPublicList;
 
-/** A product by GTIN, ASIN or both (section 9). mpn and style_code only confirm the match. */
-export type ProductRef = ({ gtin: string; asin?: string } | { gtin?: string; asin: string }) & { mpn?: string; style_code?: string };
+/** A product by GTIN, ASIN, Walmart item ID or WPID, one or more (section 9). mpn and style_code only confirm the match. */
+export type ProductRef = (
+  | { gtin: string; asin?: string; walmart_item_id?: string; wpid?: string }
+  | { gtin?: string; asin: string; walmart_item_id?: string; wpid?: string }
+  | { gtin?: string; asin?: string; walmart_item_id: string; wpid?: string }
+  | { gtin?: string; asin?: string; walmart_item_id?: string; wpid: string }
+) & { mpn?: string; style_code?: string };
 
 /** At least one of brand_domain or product (section 9). */
 export interface VerifyRequest {
@@ -165,7 +174,7 @@ export interface AnswerBrand {
 }
 
 /** Section 9.5: how the registry found the brand. */
-export type ResolvedBy = "brand_domain" | "gtin" | "asin";
+export type ResolvedBy = "brand_domain" | "gtin" | "asin" | "walmart_item_id" | "wpid";
 export type NotRegisteredReason = "not_registered" | "domain_unlinked" | "verification_lapsed";
 export type UnlistedReason = "territory_mismatch" | "product_excluded" | "product_not_in_scope" | "product_not_in_catalog" | "product_not_for_region";
 
@@ -296,7 +305,7 @@ export interface RevocationFeed {
 /** Section 9.5: which registered brand a product belongs to. */
 export interface ResolveRequest {
   product: ProductRef;
-  /** The Amazon marketplace domain the ASIN was seen on. */
+  /** The marketplace domain the product was seen on: Amazon for an ASIN, walmart.com for a Walmart item ID or WPID. */
   domain?: string;
 }
 
@@ -306,7 +315,7 @@ export interface ResolveResponse {
   status: ResolveStatus;
   /** Only on resolved. */
   brand?: AnswerBrand;
-  resolved_by?: "gtin" | "asin";
+  resolved_by?: Exclude<ResolvedBy, "brand_domain">;
   /** Only on brand_ambiguous: two or more brands. */
   candidates?: AnswerBrand[];
   checked: Timestamp;

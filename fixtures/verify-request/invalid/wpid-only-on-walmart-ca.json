@@ -1,0 +1,10 @@
+{
+  "channel": {
+    "type": "walmart",
+    "domain": "walmart.ca",
+    "seller_id": "101234567"
+  },
+  "product": {
+    "wpid": "1A2B3C4D5E6F"
+  }
+}

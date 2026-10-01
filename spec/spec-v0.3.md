@@ -35,7 +35,7 @@ The key words MUST, SHOULD and MAY are used as defined in RFC 2119.
 | Authorization | A brand's statement that a retailer may sell within a stated scope, until the brand revokes it or until an end date the brand sets. |
 | Channel | A place a seller sells, identified by a domain: a marketplace domain and seller ID, or a web store's domain. |
 | Catalog | The brand's list of products on the registry. It defines what an authorization covers and lets agents find the brand from a product (sections 3.1, 9.5). |
-| Product | One entry in a catalog: a brand-chosen ID, a name and at least one GTIN or ASIN. |
+| Product | One entry in a catalog: a brand-chosen ID, a name and at least one GTIN, ASIN, Walmart item ID or WPID. |
 | GTIN | A GS1 Global Trade Item Number: a UPC (12 digits), EAN (13 or 8 digits) or GTIN-14. A UPC is a GTIN. |
 | Product line | A named group of products, such as "Classic Tee". |
 | Observation | Evidence from outside the brand's list that an authorized seller is actively selling on a channel. |
@@ -85,6 +85,7 @@ An agent on a product page sees a product identifier and a seller, not the brand
 
 - **GTIN is the baseline.** A UPC or EAN column is enough to start. Most product feeds and listings outside Amazon expose a GTIN.
 - **ASINs for Amazon.** A brand that sells on Amazon SHOULD also list its ASINs. Amazon listings expose ASINs more reliably than barcodes.
+- **Walmart item IDs and WPIDs for Walmart.** A brand that sells on Walmart SHOULD also list its Walmart item IDs, the number in a walmart.com product URL, which is what an agent on the page can read. It MAY add WPIDs, the product IDs in Walmart Seller Center.
 
 The catalog is not a general product database. It holds only what the brand chooses to add. Finding the brand from a product names the brand and nothing else from the catalog (section 9.5).
 
@@ -96,6 +97,8 @@ The catalog is not a general product database. It holds only what the brand choo
   "attributes": { "color": "Black", "size": "M" },
   "gtin": "00012345678905",
   "asins": ["B0EXAMPLE1"],
+  "walmart_item_ids": ["123456789"],
+  "wpids": ["1A2B3C4D5E6F"],
   "mpns": ["EB-100-BLK"],
   "style_code": "EB-TEE",
   "regions": ["US", "CA"]
@@ -110,6 +113,8 @@ The catalog is not a general product database. It holds only what the brand choo
 | `attributes` | Optional flat string key/value pairs, for display and filtering. Never used for matching. |
 | `gtin` | Optional. 8, 12, 13 or 14 digits with a valid GS1 check digit (a UPC, EAN or GTIN). Compared as GTIN-14: left-padded with zeros to 14 digits. |
 | `asins` | Optional. Amazon ASINs: 10 uppercase letters or digits. An ASIN applies on every Amazon marketplace domain. |
+| `walmart_item_ids` | Optional. Walmart item IDs: 5 to 15 digits, as in a walmart.com product URL (`walmart.com/ip/<name>/<item ID>`). |
+| `wpids` | Optional. Walmart product IDs (WPIDs): 8 to 16 uppercase letters or digits. |
 | `mpns` | Optional. Up to 10 manufacturer part or model numbers, such as regional variants of one model. |
 | `style_code` | Optional. The brand's style code, often shared by every size of a style or colorway. |
 | `status` | Optional. `active` (the default), `discontinued` or `recalled`. |
@@ -117,9 +122,9 @@ The catalog is not a general product database. It holds only what the brand choo
 | `recall_url` | Required when `status` is `recalled`: the official or brand recall notice, over HTTPS. |
 | `regions` | Optional. Where the product is made to be sold: ISO 3166-1 alpha-2 codes or named groups. Without it, the product is made for every territory. |
 
-Each product MUST have a `gtin` or at least one ASIN. A GTIN or ASIN MUST NOT appear on two products in the same catalog.
+Each product MUST have a `gtin` or at least one ASIN, Walmart item ID or WPID. A product identifier (a GTIN, ASIN, Walmart item ID or WPID) MUST NOT appear on two products in the same catalog. Walmart item IDs and WPIDs apply on walmart.com, the marketplace that issues them.
 
-**Model numbers and style codes** are unique only within a brand: many brands use "X100". They MUST NOT find a brand or a product on their own (section 4.2). An agent MAY send them with a GTIN or ASIN, and the answer says whether they match (section 9).
+**Model numbers and style codes** are unique only within a brand: many brands use "X100". They MUST NOT find a brand or a product on their own (section 4.2). An agent MAY send them with a product identifier, and the answer says whether they match (section 9).
 
 **Status.** A recall is a fact about the product, not the seller, so it doesn't change whether a seller is authorized. It is carried on every answer about the product (section 9). The registry SHOULD tell the retailers the brand has authorized for a recalled product, when they have registered. A discontinued product can be legitimate clearance stock. Counterfeits of discontinued products are also common, so brands see how often agents ask about them.
 
@@ -170,7 +175,7 @@ A domain is identity, not territory: a brand whose domain is brand.co.uk can aut
 
 ### 4.2 Brand names and aliases
 
-A brand's name, and any aliases it adds (such as a former name or a common short form), are for display and search. A list MAY carry them as `brand.name` and `brand.aliases`. A name or alias MUST NOT resolve a brand for a verify answer: names are not unique and anyone can type one. The same holds for model numbers and style codes: they confirm a product found by its GTIN or ASIN, and never find a brand or product alone. Only a verified domain or a product in a registered brand's catalog finds a brand (section 9.5).
+A brand's name, and any aliases it adds (such as a former name or a common short form), are for display and search. A list MAY carry them as `brand.name` and `brand.aliases`. A name or alias MUST NOT resolve a brand for a verify answer: names are not unique and anyone can type one. The same holds for model numbers and style codes: they confirm a product found by its product identifier, and never find a brand or product alone. Only a verified domain or a product in a registered brand's catalog finds a brand (section 9.5).
 
 ## 5. The pointer file and the signed list
 
@@ -380,10 +385,10 @@ The same request with the brand's domain, a territory and a date:
 | `channel` | Required. A channel identifier (section 6). `type` is optional in a request: a marketplace domain implies its type (`amazon.com` is `amazon`), and any other domain is `web`. A `type` that is sent MUST agree with the domain. |
 | `territory` | Optional. Defaults to the channel domain's country. Required for a web store on a generic domain. |
 | `product_line` | Optional. Asks about a whole product line. |
-| `product` | Optional when `brand_domain` is given. `gtin`, `asin` or both. A GTIN is a UPC-A (12 digits), EAN-13, GTIN-8 or GTIN-14 with a valid check digit, compared as GTIN-14. An ASIN is read on the channel's Amazon marketplace. `mpn` and `style_code` MAY be added to a GTIN or ASIN to confirm the match, never on their own. |
+| `product` | Optional when `brand_domain` is given. One or more of `gtin`, `asin`, `walmart_item_id` and `wpid`. A GTIN is a UPC-A (12 digits), EAN-13, GTIN-8 or GTIN-14 with a valid check digit, compared as GTIN-14. An ASIN is read on the channel's Amazon marketplace, and a Walmart item ID or WPID on walmart.com. `mpn` and `style_code` MAY be added to a product identifier to confirm the match, never on their own. |
 | `as_of` | Optional. An ISO 8601 date or UTC date-time. The answer reflects status at that time. Defaults to now. |
 
-A request MUST name a `brand_domain`, a `product` or both. A request that finds the brand by ASIN alone MUST use an `amazon` channel. The registry MUST reject a GTIN with a bad check digit rather than resolve it.
+A request MUST name a `brand_domain`, a `product` or both. A request that finds the brand by ASIN alone MUST use an `amazon` channel, and one that finds it by Walmart item ID or WPID alone MUST use a `walmart` channel on walmart.com. The registry MUST reject a GTIN with a bad check digit rather than resolve it.
 
 Response:
 
@@ -415,7 +420,7 @@ Response:
 | `brand_ambiguous` | The request gave no `brand_domain`, and more than one registered brand claims the product (section 9.5) |
 | `brand_mismatch` | The product is not in the catalog of the brand named by `brand_domain`, and other registered brands claim it (section 9.5) |
 
-- `brand` and `resolved_by` appear on every answer except `product_not_found` and `brand_ambiguous`. `brand` has the brand's `domain` and, when registered, its `name`. `resolved_by` is `brand_domain`, `gtin` or `asin`: how the registry found the brand.
+- `brand` and `resolved_by` appear on every answer except `product_not_found` and `brand_ambiguous`. `brand` has the brand's `domain` and, when registered, its `name`. `resolved_by` is `brand_domain`, `gtin`, `asin`, `walmart_item_id` or `wpid`: how the registry found the brand.
 - `candidates` appears only on `brand_ambiguous` and `brand_mismatch`: the registered brands that claim the product, each as `{ "domain", "name" }`.
 - `authorization_id` appears on `authorized`, `expired` and `disputed`. `expires` appears with it when the authorization has an end date.
 - `revocation_id` appears only on `authorized` (section 10.3).
@@ -443,7 +448,7 @@ Authorization is decided for the seller first: channel, seller ID, territory and
 
 ### 9.2 Matching a product
 
-When a request names a product, the registry looks it up in the catalog by GTIN-14 or ASIN, and for the authorizations that cover the seller:
+When a request names a product, the registry looks it up in the catalog by GTIN-14, ASIN, Walmart item ID or WPID, and for the authorizations that cover the seller:
 
 1. Product in the catalog, and the territory is outside its `regions`: `unlisted`, reason `product_not_for_region`.
 2. Product in the catalog and covered by an authorization: `authorized`.
@@ -469,10 +474,10 @@ The same capability is exposed as MCP tools: `verify_seller` (the request above,
 When a request gives no `brand_domain`, the registry finds the brand from the product:
 
 1. Only registered brands take part (section 4): the domain is verified and independently linked. A catalog on a domain that is not registered MUST NOT resolve, so a lookalike brand can't take over a product by uploading someone else's barcodes.
-2. The registry looks up the GTIN, as GTIN-14, and the ASIN in every registered brand's catalog. Domains that share one list count as one brand.
+2. The registry looks up every identifier given (the GTIN as GTIN-14, the ASIN, the Walmart item ID and the WPID) in every registered brand's catalog. Domains that share one list count as one brand.
 3. No brand claims the product: `product_not_found`.
-4. Exactly one brand claims it, by every identifier given: the registry answers from that brand's list, as it would for its `brand_domain`, with `resolved_by` set to `gtin` if the GTIN matched and otherwise `asin`.
-5. More than one brand claims it, or the GTIN and the ASIN point to different brands: `brand_ambiguous` with the `candidates`. The registry MUST NOT answer `authorized` and SHOULD flag the product for review.
+4. Exactly one brand claims it, by every identifier given: the registry answers from that brand's list, as it would for its `brand_domain`, with `resolved_by` set to the first identifier given in this order: `gtin`, `asin`, `walmart_item_id`, `wpid`.
+5. More than one brand claims it, or two of the identifiers given point to different brands: `brand_ambiguous` with the `candidates`. The registry MUST NOT answer `authorized` and SHOULD flag the product for review.
 
 When a request gives a `brand_domain` and a product, the brand comes from the domain (`resolved_by` is `brand_domain`). If the product is not in that brand's catalog and other registered brands claim it, the registry MUST answer `brand_mismatch` with those brands as `candidates`, rather than trust either the domain or the catalog. If the product is in that brand's catalog, the registry answers as usual, whether or not another brand also claims it.
 
@@ -484,7 +489,7 @@ Finding the brand reveals only which registered brand a product belongs to. It M
 { "product": { "asin": "B0EXAMPLE1" }, "domain": "amazon.com" }
 ```
 
-`domain` is optional: the Amazon marketplace an ASIN was seen on. The signed answer has `status` (`resolved`, `product_not_found` or `brand_ambiguous`), `brand` and `resolved_by` (`gtin` or `asin`) when resolved, `candidates` when ambiguous, and `checked`, `valid_until`, `stale_until` and `signature` as in section 9.
+`domain` is optional: the marketplace the product was seen on. With an ASIN alone it MUST be an Amazon marketplace domain, and with a Walmart item ID or WPID alone it MUST be walmart.com. The signed answer has `status` (`resolved`, `product_not_found` or `brand_ambiguous`), `brand` and `resolved_by` (`gtin`, `asin`, `walmart_item_id` or `wpid`) when resolved, `candidates` when ambiguous, and `checked`, `valid_until`, `stale_until` and `signature` as in section 9.
 
 ```json
 {
@@ -641,5 +646,7 @@ The registry's liability position, dispute timelines and data handling are set o
   - Products MAY carry `regions`. A product asked about outside them is `unlisted`, reason `product_not_for_region`. Region group `EU` (sections 3.1, 9.2).
   - Products MAY carry `mpns` and `style_code`. Requests MAY add `mpn` and `style_code` to a GTIN or ASIN; answers say which are `confirmed` or `mismatched`, and a mismatch adds the signal `product_details_mismatch`. They never find a brand or product alone (sections 3.1, 4.2, 9).
   - Public lists' answers also give the product's `name`, `mpns` and `style_code` (section 9).
+  - Why Walmart identifiers: agents on walmart.com see a Walmart item ID, rarely a barcode, so a brand selling there needs a Walmart identifier to be findable, as ASINs do for Amazon.
+  - Products MAY carry `walmart_item_ids` and `wpids`. Requests MAY give `walmart_item_id` or `wpid`, alone only on a `walmart` channel on walmart.com; `resolved_by` may be `walmart_item_id` or `wpid` (sections 3.1, 9, 9.5).
   - `channel.type` is optional in a request: the domain implies it (section 9).
   - For a web store on a generic domain, the territory is the buyer's country, sent by the agent; the registry never infers it from an authorization (section 6.2).

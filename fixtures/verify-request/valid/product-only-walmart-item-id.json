@@ -1,0 +1,10 @@
+{
+  "channel": {
+    "type": "walmart",
+    "domain": "walmart.com",
+    "seller_id": "101234567"
+  },
+  "product": {
+    "walmart_item_id": "123456789"
+  }
+}

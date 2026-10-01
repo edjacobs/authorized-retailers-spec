@@ -63,6 +63,12 @@
       "asins": [
         "b0example1"
       ],
+      "walmart_item_ids": [
+        "123456789"
+      ],
+      "wpids": [
+        "1A2B3C4D5E6F"
+      ],
       "mpns": [
         "EB-100-BLK"
       ],

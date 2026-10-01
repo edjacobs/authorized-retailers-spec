@@ -314,7 +314,34 @@
     "kind": "list",
     "valid": false,
     "expect": "product_without_identifier",
-    "note": "Section 3.1: gtin or asins"
+    "note": "Section 3.1: gtin, asins, walmart_item_ids or wpids"
+  },
+  {
+    "path": "list/valid/list-product-walmart-only.json",
+    "kind": "list",
+    "valid": true,
+    "note": "Section 3.1: Walmart identifiers alone are enough"
+  },
+  {
+    "path": "list/invalid/list-bad-walmart-item-id.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "invalid_walmart_item_id",
+    "note": "Section 3.1: Walmart item IDs are 5 to 15 digits"
+  },
+  {
+    "path": "list/invalid/list-bad-wpid.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "invalid_wpid",
+    "note": "Section 3.1: WPIDs are uppercase letters or digits"
+  },
+  {
+    "path": "list/invalid/list-duplicate-walmart-item-id.json",
+    "kind": "list",
+    "valid": false,
+    "expect": "duplicate_identifier",
+    "note": "Section 3.1: one Walmart item ID on two products"
   },
   {
     "path": "list/invalid/list-duplicate-asin.json",
@@ -525,6 +552,18 @@
     "note": "Section 9.5: an ASIN on an Amazon channel"
   },
   {
+    "path": "verify-request/valid/product-only-walmart-item-id.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 9.5: a Walmart item ID on walmart.com"
+  },
+  {
+    "path": "verify-request/valid/product-only-wpid.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 9.5: a WPID on walmart.com"
+  },
+  {
     "path": "verify-request/valid/as-of-datetime.json",
     "kind": "verify-request",
     "valid": true,
@@ -557,6 +596,27 @@
     "valid": false,
     "expect": "asin_needs_amazon_channel",
     "note": "Section 9.5: an ASIN alone finds a brand only on Amazon"
+  },
+  {
+    "path": "verify-request/invalid/walmart-item-id-only-on-amazon.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "walmart_id_needs_walmart_channel",
+    "note": "Section 9.5: a Walmart item ID alone finds a brand only on walmart.com"
+  },
+  {
+    "path": "verify-request/invalid/wpid-only-on-walmart-ca.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "walmart_id_needs_walmart_channel",
+    "note": "Section 3.1: Walmart IDs apply on walmart.com"
+  },
+  {
+    "path": "verify-request/invalid/bad-walmart-item-id.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "invalid_walmart_item_id",
+    "note": "Walmart item IDs are digits"
   },
   {
     "path": "verify-request/invalid/empty-product.json",
@@ -733,6 +793,12 @@
     "kind": "verify-response",
     "valid": true,
     "note": "Section 9.5: brand found from the ASIN"
+  },
+  {
+    "path": "verify-response/valid/authorized-resolved-by-walmart-item-id.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.5: brand found from the Walmart item ID"
   },
   {
     "path": "verify-response/valid/recalled-product.json",
@@ -992,6 +1058,19 @@
     "note": "Bad check digit"
   },
   {
+    "path": "resolve-request/valid/walmart-item-id-with-domain.json",
+    "kind": "resolve-request",
+    "valid": true,
+    "note": "Walmart item ID and walmart.com"
+  },
+  {
+    "path": "resolve-request/invalid/walmart-item-id-on-amazon-domain.json",
+    "kind": "resolve-request",
+    "valid": false,
+    "expect": "walmart_id_needs_walmart_channel",
+    "note": "A Walmart item ID is read on walmart.com"
+  },
+  {
     "path": "resolve-request/invalid/non-amazon-domain.json",
     "kind": "resolve-request",
     "valid": false,
@@ -1071,6 +1150,11 @@
     "path": "match/seller-authorized-for-line.json",
     "kind": "match",
     "note": "Rule 2: in the catalog and covered"
+  },
+  {
+    "path": "match/seller-authorized-by-walmart-item-id.json",
+    "kind": "match",
+    "note": "Section 9.2: a Walmart item ID finds the catalog product"
   },
   {
     "path": "match/seller-authorized-by-gtin.json",
@@ -1180,6 +1264,24 @@
     "path": "resolve/gtin-and-asin-disagree.json",
     "kind": "resolve",
     "note": "GTIN and ASIN point to different brands"
+  },
+  {
+    "path": "resolve/by-walmart-item-id.json",
+    "kind": "resolve"
+  },
+  {
+    "path": "resolve/by-wpid.json",
+    "kind": "resolve"
+  },
+  {
+    "path": "resolve/asin-and-walmart-item-id-agree.json",
+    "kind": "resolve",
+    "note": "resolved_by is the first identifier in order: gtin, asin, walmart_item_id, wpid"
+  },
+  {
+    "path": "resolve/asin-and-walmart-item-id-disagree.json",
+    "kind": "resolve",
+    "note": "ASIN and Walmart item ID point to different brands"
   },
   {
     "path": "resolve/unknown-gtin.json",

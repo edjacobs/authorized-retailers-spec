@@ -25,7 +25,9 @@
     "resolved_by": {
       "enum": [
         "gtin",
-        "asin"
+        "asin",
+        "walmart_item_id",
+        "wpid"
       ]
     },
     "candidates": {

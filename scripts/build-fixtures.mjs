@@ -30,7 +30,7 @@ const pointer = {
 // ---- signed list (section 5.2)
 const times = { issued: "2026-09-28T14:00:00Z", valid_until: "2026-09-28T14:15:00Z", stale_until: "2026-09-29T14:00:00Z" };
 const catalog = [
-  { id: "EB-TEE-BLK-M", name: "Classic Tee, Black, M", product_line: "Classic Tee", attributes: { color: "Black", size: "M" }, gtin: "00012345678905", asins: ["B0EXAMPLE1"], mpns: ["EB-100-BLK"], style_code: "EB-TEE" },
+  { id: "EB-TEE-BLK-M", name: "Classic Tee, Black, M", product_line: "Classic Tee", attributes: { color: "Black", size: "M" }, gtin: "00012345678905", asins: ["B0EXAMPLE1"], walmart_item_ids: ["123456789"], wpids: ["1A2B3C4D5E6F"], mpns: ["EB-100-BLK"], style_code: "EB-TEE" },
   { id: "EB-TEE-WHT-M", name: "Classic Tee, White, M", product_line: "Classic Tee", gtin: "4006381333931", asins: ["B0EXAMPLE2"] },
   { id: "EB-RUN-V2", name: "Runner V2", product_line: "Running", gtin: "96385074" },
   { id: "EB-RUN-V3", name: "Runner V3", product_line: "Running", asins: ["B0EXAMPLE3"] },
@@ -140,7 +140,7 @@ const matchList = edit(listWithCatalog, (l) => {
     },
   ];
 });
-// A second registered brand: shares one GTIN with Example Brand and has an ASIN of its own.
+// A second registered brand: shares one GTIN with Example Brand and has an ASIN and a Walmart item ID of its own.
 const otherList = {
   spec: SPEC,
   brand: { name: "Other Brand", domains: ["other.example"], aliases: ["Other"] },
@@ -149,6 +149,7 @@ const otherList = {
   catalog: [
     { id: "OB-HAT", name: "Other Hat", gtin: "4006381333931" },
     { id: "OB-CAP", name: "Other Cap", asins: ["B0OTHER001"] },
+    { id: "OB-SCARF", name: "Other Scarf", walmart_item_ids: ["987654321"] },
   ],
   authorizations: [],
   signature: sig,
@@ -157,6 +158,7 @@ const resolveCase = (product, expect) => ({ lists: [matchList, otherList], produ
 const amazonUS = { type: "amazon", domain: "amazon.com", seller_id: "A1B2C3D4E5F6G7" };
 const amazonUK = { type: "amazon", domain: "amazon.co.uk", seller_id: "A9Z8Y7X6W5V4U3" };
 const global = { type: "web", domain: "globalshoes.example" };
+const walmartUS = { type: "walmart", domain: "walmart.com", seller_id: "101234567" };
 const req = (channel, extra = {}) => ({ brand_domain: "brand.example", channel, ...extra });
 const match = (request, expect) => ({ list: matchList, request, now: NOW, expect });
 
@@ -219,7 +221,11 @@ const cases = [
   ["list", "list-bad-region", edit(listWithCatalog, (l) => (l.catalog[0].regions = ["UK"])), "invalid_region", "Section 3.1: the United Kingdom is GB"],
   ["list", "list-recalled-no-url", edit(listWithCatalog, (l) => { l.catalog[0].status = "recalled"; }), "recall_url_required", "Section 3.1: a recall names its notice"],
   ["list", "list-bad-asin", edit(listWithCatalog, (l) => (l.catalog[0].asins = ["b0example1"])), "invalid_asin", "Section 3.1: ASINs are 10 uppercase letters or digits"],
-  ["list", "list-product-no-identifier", edit(listWithCatalog, (l) => { delete l.catalog[0].gtin; delete l.catalog[0].asins; }), "product_without_identifier", "Section 3.1: gtin or asins"],
+  ["list", "list-product-no-identifier", edit(listWithCatalog, (l) => { delete l.catalog[0].gtin; delete l.catalog[0].asins; delete l.catalog[0].walmart_item_ids; delete l.catalog[0].wpids; }), "product_without_identifier", "Section 3.1: gtin, asins, walmart_item_ids or wpids"],
+  ["list", "list-product-walmart-only", edit(listWithCatalog, (l) => { delete l.catalog[0].gtin; delete l.catalog[0].asins; }), null, "Section 3.1: Walmart identifiers alone are enough"],
+  ["list", "list-bad-walmart-item-id", edit(listWithCatalog, (l) => (l.catalog[0].walmart_item_ids = ["12AB"])), "invalid_walmart_item_id", "Section 3.1: Walmart item IDs are 5 to 15 digits"],
+  ["list", "list-bad-wpid", edit(listWithCatalog, (l) => (l.catalog[0].wpids = ["1a2b3c4d5e6f"])), "invalid_wpid", "Section 3.1: WPIDs are uppercase letters or digits"],
+  ["list", "list-duplicate-walmart-item-id", edit(listWithCatalog, (l) => (l.catalog[1].walmart_item_ids = ["123456789"])), "duplicate_identifier", "Section 3.1: one Walmart item ID on two products"],
   ["list", "list-duplicate-asin", edit(listWithCatalog, (l) => (l.catalog[1].asins = ["B0EXAMPLE1"])), "duplicate_identifier", "Section 3.1: one ASIN on two products"],
   ["list", "list-gtin-11-digits", edit(listWithCatalog, (l) => (l.catalog[1].gtin = "12345678905")), "schema", "11 digits is not a GTIN length"],
   ["list", "list-duplicate-gtin", edit(listWithCatalog, (l) => (l.catalog[1].gtin = "0012345678905")), "duplicate_identifier", "Section 3.1: GTIN-13 and GTIN-14 of the same number collide"],
@@ -255,6 +261,8 @@ const cases = [
   ["verify-request", "product-only-upc", { channel: amazonUS, product: { gtin: "012345678905" } }, null, "Section 9.5: no brand_domain, found by UPC-A"],
   ["verify-request", "product-only-ean", { channel: { type: "web", domain: "retailer.co.uk" }, product: { gtin: "4006381333931" } }, null, "Section 9.5: no brand_domain, found by EAN-13"],
   ["verify-request", "product-only-asin", { channel: amazonUS, product: { asin: "B0EXAMPLE1" } }, null, "Section 9.5: an ASIN on an Amazon channel"],
+  ["verify-request", "product-only-walmart-item-id", { channel: walmartUS, product: { walmart_item_id: "123456789" } }, null, "Section 9.5: a Walmart item ID on walmart.com"],
+  ["verify-request", "product-only-wpid", { channel: walmartUS, product: { wpid: "1A2B3C4D5E6F" } }, null, "Section 9.5: a WPID on walmart.com"],
   ["verify-request", "as-of-datetime", req(amazonUS, { as_of: "2026-09-01T12:00:00Z" }), null, "as_of as a UTC date-time"],
 
   // ---- verify request: invalid
@@ -262,6 +270,9 @@ const cases = [
   ["verify-request", "mpn-only", req(amazonUS, { product: { mpn: "EB-100-BLK" } }), "product_identifier_required", "Section 9: an mpn only confirms a GTIN or ASIN"],
   ["verify-request", "no-brand-no-product", { channel: amazonUS }, "brand_or_product_required", "Section 9: brand_domain, product or both"],
   ["verify-request", "asin-only-on-walmart", { channel: { type: "walmart", domain: "walmart.com", seller_id: "900000001" }, product: { asin: "B0EXAMPLE1" } }, "asin_needs_amazon_channel", "Section 9.5: an ASIN alone finds a brand only on Amazon"],
+  ["verify-request", "walmart-item-id-only-on-amazon", { channel: amazonUS, product: { walmart_item_id: "123456789" } }, "walmart_id_needs_walmart_channel", "Section 9.5: a Walmart item ID alone finds a brand only on walmart.com"],
+  ["verify-request", "wpid-only-on-walmart-ca", { channel: { type: "walmart", domain: "walmart.ca", seller_id: "101234567" }, product: { wpid: "1A2B3C4D5E6F" } }, "walmart_id_needs_walmart_channel", "Section 3.1: Walmart IDs apply on walmart.com"],
+  ["verify-request", "bad-walmart-item-id", req(walmartUS, { product: { walmart_item_id: "12AB" } }), "invalid_walmart_item_id", "Walmart item IDs are digits"],
   ["verify-request", "empty-product", req(amazonUS, { product: {} }), "schema", "A product names a gtin, an asin or both"],
   ["verify-request", "product-only-bad-gtin", { channel: amazonUS, product: { gtin: "012345678906" } }, "invalid_gtin", "Section 9.5: a bad check digit is rejected, never resolved"],
   ["verify-request", "bad-gtin", req(amazonUS, { product: { gtin: "00012345678906" } }), "invalid_gtin", "GTIN check digit"],
@@ -293,6 +304,7 @@ const cases = [
   ["verify-response", "with-signal", edit(authorized, (r) => r.signals.push({ type: "account_name_changed", observed: "2026-09-20T00:00:00Z", detail: "Storefront name changed" })), null, "Section 7 signals"],
 
   ["verify-response", "authorized-resolved-by-asin", { ...authorized, resolved_by: "asin" }, null, "Section 9.5: brand found from the ASIN"],
+  ["verify-response", "authorized-resolved-by-walmart-item-id", { ...authorized, resolved_by: "walmart_item_id" }, null, "Section 9.5: brand found from the Walmart item ID"],
   ["verify-response", "recalled-product", edit(authorized, (r) => (r.product = { in_catalog: true, status: "recalled", status_since: "2026-09-01", recall_url: "https://www.cpsc.gov/Recalls/2026/example" })), null, "Section 9.3: status shows on every list"],
   ["verify-response", "not-for-region", { ...unlisted, reason: "product_not_for_region", product: { in_catalog: true, regions: ["US"] } }, null, "Section 9.2"],
   ["verify-response", "product-not-found", productNotFound, null, "Section 9.5: no registered brand's catalog has it"],
@@ -335,6 +347,8 @@ const cases = [
   ["resolve-request", "gtin-and-asin", { product: { gtin: "4006381333931", asin: "B0EXAMPLE2" } }, null, "Both identifiers"],
   ["resolve-request", "no-product", { domain: "amazon.com" }, "schema", "product is required"],
   ["resolve-request", "bad-gtin", { product: { gtin: "4006381333932" } }, "invalid_gtin", "Bad check digit"],
+  ["resolve-request", "walmart-item-id-with-domain", { product: { walmart_item_id: "123456789" }, domain: "walmart.com" }, null, "Walmart item ID and walmart.com"],
+  ["resolve-request", "walmart-item-id-on-amazon-domain", { product: { walmart_item_id: "123456789" }, domain: "amazon.com" }, "walmart_id_needs_walmart_channel", "A Walmart item ID is read on walmart.com"],
   ["resolve-request", "non-amazon-domain", { product: { asin: "B0EXAMPLE1" }, domain: "walmart.com" }, "asin_needs_amazon_channel", "domain is an Amazon marketplace"],
   ["resolve-request", "brand-name", { product: { gtin: "012345678905" }, brand_name: "Example Brand" }, "schema", "Section 4.2: a name never resolves a brand"],
   ["resolve-response", "resolved", resolved, null, ""],
@@ -352,6 +366,7 @@ const cases = [
 
   // ---- matching (section 9)
   ["match", "seller-authorized-for-line", match(req(amazonUS, { product: { asin: "B0EXAMPLE1" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee", name: "Classic Tee, Black, M", mpns: ["EB-100-BLK"], style_code: "EB-TEE" }, signals: [] }), null, "Rule 2: in the catalog and covered"],
+  ["match", "seller-authorized-by-walmart-item-id", match(req(walmartUS, { product: { walmart_item_id: "123456789" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee", name: "Classic Tee, Black, M", mpns: ["EB-100-BLK"], style_code: "EB-TEE" }, signals: [] }), null, "Section 9.2: a Walmart item ID finds the catalog product"],
   ["match", "seller-authorized-by-gtin", match(req(amazonUS, { product: { gtin: "012345678905" } }), { status: "authorized", authorization_id: "auth_01J9X2", product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee", name: "Classic Tee, Black, M", mpns: ["EB-100-BLK"], style_code: "EB-TEE" }, signals: [] }), null, "GTIN-12 matches the catalog's GTIN-14"],
   ["match", "product-excluded-by-authorization", match(req(amazonUS, { product: { asin: "B0EXAMPLE2" } }), { status: "unlisted", reason: "product_excluded", product: { in_catalog: true, id: "EB-TEE-WHT-M", product_line: "Classic Tee", name: "Classic Tee, White, M" }, signals: [] }), null, "Rule 3: authorization excludes the product"],
   ["match", "product-not-in-scope", match(req(amazonUS, { product: { gtin: "96385074" } }), { status: "unlisted", reason: "product_not_in_scope", product: { in_catalog: true, id: "EB-RUN-V2", product_line: "Running", name: "Runner V2" }, signals: [] }), null, "Rule 4: in the catalog, not included"],
@@ -376,6 +391,10 @@ const cases = [
   ["resolve", "gtin-and-asin-agree", resolveCase({ gtin: "012345678905", asin: "B0EXAMPLE1" }, { status: "resolved", brand: exampleBrand, resolved_by: "gtin" }), null, "Both identifiers, one brand"],
   ["resolve", "shared-gtin", resolveCase({ gtin: "4006381333931" }, { status: "brand_ambiguous", candidates: [exampleBrand, otherBrand] }), null, "Two brands claim one GTIN: never pick one"],
   ["resolve", "gtin-and-asin-disagree", resolveCase({ gtin: "012345678905", asin: "B0OTHER001" }, { status: "brand_ambiguous", candidates: [exampleBrand, otherBrand] }), null, "GTIN and ASIN point to different brands"],
+  ["resolve", "by-walmart-item-id", resolveCase({ walmart_item_id: "123456789" }, { status: "resolved", brand: exampleBrand, resolved_by: "walmart_item_id" }), null, ""],
+  ["resolve", "by-wpid", resolveCase({ wpid: "1A2B3C4D5E6F" }, { status: "resolved", brand: exampleBrand, resolved_by: "wpid" }), null, ""],
+  ["resolve", "asin-and-walmart-item-id-agree", resolveCase({ asin: "B0EXAMPLE1", walmart_item_id: "123456789" }, { status: "resolved", brand: exampleBrand, resolved_by: "asin" }), null, "resolved_by is the first identifier in order: gtin, asin, walmart_item_id, wpid"],
+  ["resolve", "asin-and-walmart-item-id-disagree", resolveCase({ asin: "B0EXAMPLE1", walmart_item_id: "987654321" }, { status: "brand_ambiguous", candidates: [exampleBrand, otherBrand] }), null, "ASIN and Walmart item ID point to different brands"],
   ["resolve", "unknown-gtin", resolveCase({ gtin: "5012345678900" }, { status: "product_not_found" }), null, "No catalog has it"],
 
   // ---- product status, regions and details (sections 3.1, 9.2)
