@@ -567,7 +567,7 @@
     "path": "verify-request/valid/spec-0.4.json",
     "kind": "verify-request",
     "valid": true,
-    "note": "Section 9.6: written for v0.4, so it can be answered unauthorized"
+    "note": "Section 9.6: pins v0.4, the latest"
   },
   {
     "path": "verify-request/valid/as-of-datetime.json",
@@ -908,7 +908,7 @@
     "kind": "verify-response",
     "valid": false,
     "expect": "schema",
-    "note": "Section 9.6: a v0.3 answer about a declared seller names no declaration"
+    "note": "Section 9.6: an unlisted answer names no declaration"
   },
   {
     "path": "verify-response/invalid/recalled-without-url.json",

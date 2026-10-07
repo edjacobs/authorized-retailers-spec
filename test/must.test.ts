@@ -386,21 +386,21 @@ describe("§3.2, §9.6 declared unauthorized sellers", () => {
     expect(validateVerifyResponse(fx("verify-response/valid/disputed-declaration.json")).valid).toBe(true);
     expect(validateVerifyResponse(fx("verify-response/invalid/disputed-both-ids.json")).valid).toBe(false);
   });
-  it("a request that doesn't name v0.4 MUST get the v0.3 answer: unlisted, with no declaration", () => {
+  it("a request that pins v0.3 MUST get the v0.3 answer: unlisted, with no declaration; others get the latest", () => {
+    const v03 = { spec: "authorized-retailers/0.3" } as const;
     for (const status of ["unauthorized", "disputed"] as const) {
       const answer = { ...unauthorized(), status };
-      for (const spec of [undefined, "authorized-retailers/0.3"] as const) {
-        const v03 = answerForRequest(answer, spec === undefined ? {} : { spec });
-        expect(v03.status).toBe("unlisted");
-        expect(v03).not.toHaveProperty("declaration_id");
-        expect(v03).not.toHaveProperty("declared");
-        expect(validateVerifyResponse(v03).valid).toBe(true);
-      }
+      const old = answerForRequest(answer, v03);
+      expect(old.status).toBe("unlisted");
+      expect(old).not.toHaveProperty("declaration_id");
+      expect(old).not.toHaveProperty("declared");
+      expect(validateVerifyResponse(old).valid).toBe(true);
+      expect(answerForRequest(answer, {})).toEqual(answer);
       expect(answerForRequest(answer, { spec: "authorized-retailers/0.4" })).toEqual(answer);
     }
     const authorized = fx("verify-response/valid/authorized.json");
-    expect(answerForRequest(authorized, {})).toEqual(authorized);
-    expect(answerForRequest(fx("verify-response/valid/disputed.json"), {}).status).toBe("disputed");
+    expect(answerForRequest(authorized, v03)).toEqual(authorized);
+    expect(answerForRequest(fx("verify-response/valid/disputed.json"), v03).status).toBe("disputed");
     expect(validateVerifyResponse(fx("verify-response/invalid/unlisted-with-declaration.json")).valid).toBe(false);
   });
   it("a request names v0.3 or v0.4", () => {

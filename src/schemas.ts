@@ -954,7 +954,7 @@ export const common = {
       ]
     },
     "requestSpecVersion": {
-      "description": "Section 9.6: the spec version a verify request is written for. A request that names no version is answered as v0.3.",
+      "description": "Section 9.6: pins the spec version a verify answer follows. A request that names no version gets the latest.",
       "enum": [
         "authorized-retailers/0.3",
         "authorized-retailers/0.4"

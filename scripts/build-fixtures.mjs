@@ -264,7 +264,7 @@ const cases = [
   ["verify-request", "product-only-asin", { channel: amazonUS, product: { asin: "B0EXAMPLE1" } }, null, "Section 9.5: an ASIN on an Amazon channel"],
   ["verify-request", "product-only-walmart-item-id", { channel: walmartUS, product: { walmart_item_id: "123456789" } }, null, "Section 9.5: a Walmart item ID on walmart.com"],
   ["verify-request", "product-only-wpid", { channel: walmartUS, product: { wpid: "1A2B3C4D5E6F" } }, null, "Section 9.5: a WPID on walmart.com"],
-  ["verify-request", "spec-0.4", req(amazonUS, { spec: "authorized-retailers/0.4" }), null, "Section 9.6: written for v0.4, so it can be answered unauthorized"],
+  ["verify-request", "spec-0.4", req(amazonUS, { spec: "authorized-retailers/0.4" }), null, "Section 9.6: pins v0.4, the latest"],
   ["verify-request", "as-of-datetime", req(amazonUS, { as_of: "2026-09-01T12:00:00Z" }), null, "as_of as a UTC date-time"],
 
   // ---- verify request: invalid
@@ -324,7 +324,7 @@ const cases = [
   ["verify-response", "unauthorized-with-authorization", { ...unauthorized, authorization_id: "auth_01J9X2" }, "schema", "Section 3.2: a declaration and an authorization never cover the same seller"],
   ["verify-response", "unauthorized-observed", { ...unauthorized, observed: { last_seen: "2026-09-20T00:00:00Z" } }, "schema", "Section 7: only authorized answers carry observed"],
   ["verify-response", "disputed-both-ids", { ...unauthorized, status: "disputed", authorization_id: "auth_01J9X2" }, "schema", "Section 11: a dispute is about an authorization or a declaration, not both"],
-  ["verify-response", "unlisted-with-declaration", { ...unlisted, declaration_id: "dcl_01J9Y4" }, "schema", "Section 9.6: a v0.3 answer about a declared seller names no declaration"],
+  ["verify-response", "unlisted-with-declaration", { ...unlisted, declaration_id: "dcl_01J9Y4" }, "schema", "Section 9.6: an unlisted answer names no declaration"],
   ["verify-response", "recalled-without-url", edit(authorized, (r) => (r.product = { in_catalog: true, status: "recalled" })), "schema", "A recalled product names its recall notice"],
   ["verify-response", "not-in-catalog-with-status", edit(authorized, (r) => (r.product = { in_catalog: false, status: "active" })), "schema", "A product not in the catalog has no status"],
   ["verify-response", "authorized-missing-brand", edit(authorized, (r) => delete r.brand), "schema", "Section 9.5: every answer about a brand names it"],

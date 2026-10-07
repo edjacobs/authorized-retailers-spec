@@ -104,7 +104,7 @@ const answer = await fetch("https://authorizedretailers.ai/v0/verify", {
     brand_domain: "brand.example",    // if you know it; otherwise the registry finds it from the product
     territory: "US",                  // defaults to the domain's country
     as_of: "2026-09-28",              // defaults to now
-    spec: "authorized-retailers/0.4", // to be told when the brand has declared the seller unauthorized
+    spec: "authorized-retailers/0.4", // pins the version; defaults to the latest
   }),
 }).then((r) => r.json());
 
@@ -115,7 +115,7 @@ const verified = await verifyDocument(answer, jwks);
 
 Without a `brand_domain`, the registry finds the brand from the product through registered brands' catalogs (spec section 9.5). If no registered brand has the product the answer is `product_not_found`. If more than one claims it, the answer is `brand_ambiguous` with the `candidates`, never `authorized`. If you give a `brand_domain` and the product belongs to other brands, the answer is `brand_mismatch`. An ASIN alone finds a brand only on an Amazon channel, and a Walmart item ID or WPID alone only on walmart.com. Check `answer.product.status`: if it is `recalled`, tell your user and don't complete the purchase, whatever the seller's status. To find the brand without asking about a seller, `POST /v0/resolve` with `{ "product": { "gtin": "012345678905" } }`.
 
-Send `spec: "authorized-retailers/0.4"` to get `unauthorized` when the brand has declared the seller not authorized, rather than `unlisted`, which only means the brand hasn't authorized it. A seller disputing a declaration is `disputed` until the brand reconfirms or withdraws it, or 30 days pass. Without `spec` you get v0.3 answers, where a declared seller is `unlisted` (spec sections 3.2, 9.6, 11).
+`unauthorized` means the brand has declared the seller not authorized, unlike `unlisted`, which only means the brand hasn't authorized it. A seller disputing a declaration is `disputed` until the brand reconfirms or withdraws it, or 30 days pass. Answers follow the latest spec version; send `spec: "authorized-retailers/0.3"` to pin v0.3, where a declared seller is `unlisted`. Treat any status you don't recognise as not authorized (spec sections 3.2, 9.6, 11).
 
 Marketplace channels are identified by their domain and seller ID, and web stores by their domain. A marketplace domain sets the territory (amazon.com is US, amazon.ca is CA), and a request for a different territory is answered `unlisted`. Ask with a GTIN or, on Amazon, an ASIN, or on Walmart, a Walmart item ID or WPID. Authorization is decided per seller first, then checked against the product lines or products the brand has authorized. Every answer that includes a product says whether it is in the brand's catalog. A product that isn't may be a duplicate listing.
 

@@ -33,7 +33,8 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 | 3.2 | A declaration and an active authorization MUST NOT cover the same channel identifier | Registry obligation; schema rejects an `unauthorized` answer with an `authorization_id` (`test/must.test.ts`, fixture `unauthorized-with-authorization`) |
 | 3.2 | A declaration MUST NOT appear in a list, a list endpoint or the revocation feed, or anywhere but a verify answer about that channel identifier | Schema side (lists and feed have no declaration fields; only `unauthorized` and a disputed declaration carry `declaration_id`): `test/must.test.ts`. Otherwise a registry obligation |
 | 3.2 | The registry MUST NOT add, remove or change a declaration on its own | Registry obligation |
-| 9.6 | A request that doesn't name v0.4 MUST be answered as v0.3: a declared seller is `unlisted`, with no declaration fields | `test/must.test.ts` (`answerForRequest`), fixture `unlisted-with-declaration` |
+| 9.6 | A request that pins v0.3 MUST be answered as v0.3: a declared seller is `unlisted`, with no declaration fields | `test/must.test.ts` (`answerForRequest`), fixture `unlisted-with-declaration` |
+| 9.6 | Agents MUST treat a `status` they don't recognise as not authorized | Agent obligation |
 | 11 | Disputing a declaration MUST NOT require proof of control of the seller ID | Registry obligation |
 | 11 | The brand MUST reconfirm or withdraw a disputed declaration; after 30 days with neither, the answer goes back to `unauthorized` | Registry obligation; schema requires `declaration_id` and `declared` on a disputed declaration (`test/must.test.ts`) |
 | 6.2 | A web store on a generic domain MUST list `scope.territories` | `test/must.test.ts`, fixture `list-generic-web-no-territories` |
