@@ -581,7 +581,7 @@ An agent holding a stale answer or list MUST check it against the newest feed it
 3. While a dispute is open, verify answers return `disputed` only if the brand has flagged the authorization for review. Otherwise the brand's current decision stands.
 4. The registry does not rule on commercial relationships. The brand's decision is final for authorization status. Identifier errors are corrected by the registry.
 
-**Disputing a declaration.** A seller declared unauthorized (section 3.2) can dispute the declaration. Marketplace sellers can't prove control of a seller ID (section 6.3), so the registry MUST NOT require that proof: the dispute gives a contact email address and evidence.
+**Disputing a declaration.** A seller declared unauthorized (section 3.2) can dispute the declaration. Marketplace sellers can't prove control of a seller ID (section 6.3), so the registry MUST NOT require that proof: the dispute gives a contact email address and evidence. For a web store, the registry MAY require an address at the store's domain, as it does to confirm retailer web stores (section 6).
 
 1. While the dispute is open, verify answers about the seller are `disputed`, with the `declaration_id`.
 2. The brand is notified and MUST either reconfirm the declaration, which answers `unauthorized` again, or withdraw it, which answers `unlisted`.
@@ -686,7 +686,7 @@ The registry's liability position, dispute timelines and data handling are set o
 - **Unreleased (v0.4)**
   - Why declarations: `unlisted` can't tell a seller the brand hasn't got round to listing from one it knows is diverting. Brands asked to say so, and agents asked to know.
   - A brand MAY declare a seller on a channel identifier not authorized. Verify answers about it are `unauthorized`, with `declaration_id` and `declared`, whatever the product. A declaration and an active authorization never cover the same channel identifier. Declarations are never published in lists or the feed (sections 2, 3.2, 9, 9.1).
-  - A seller can dispute a declaration without proving control of the seller ID. While the dispute is open the answer is `disputed` with the `declaration_id`. The brand reconfirms or withdraws; after 30 days with neither, the answer goes back to `unauthorized` (section 11).
+  - A seller can dispute a declaration without proving control of the seller ID; a web store MAY be asked for an address at its domain. While the dispute is open the answer is `disputed` with the `declaration_id`. The brand reconfirms or withdraws; after 30 days with neither, the answer goes back to `unauthorized` (section 11).
   - Verify requests MAY name their version in `spec`. A request that doesn't name v0.4 is answered as v0.3, where a declared seller is `unlisted`, so agents written for v0.3 see no new status (section 9.6).
   - A declaration is the brand's statement, not a finding that the seller acts unlawfully (sections 1, 12).
   - A pointer MAY name v0.2, v0.3 or v0.4 (section 5.1).
