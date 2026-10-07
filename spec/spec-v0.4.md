@@ -1,6 +1,6 @@
 # Authorized Retailers Specification v0.4
 
-Draft v0.4 · unreleased  
+Draft v0.4 · 7 October 2026  
 Editor: authorizedretailers.ai
 
 Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). JSON Schemas and reference code: Apache-2.0.
@@ -656,7 +656,7 @@ The registry's liability position, dispute timelines and data handling are set o
   - The verify API MUST reflect a revocation within 1 minute (was 15). `valid_until` is at most 15 minutes (was 24 hours) (sections 9, 10).
   - Availability: `stale_until`, mirrors, a revocation feed of random IDs, and the rule that an outage leaves a seller unconfirmed, never authorized or unauthorized (section 10.2, 10.3).
   - Bring-your-own-key signing and SKU-level scope are removed from the open questions. Cross-border purchases, per-marketplace ASINs and finding the brand domain are added (section 13).
-- **Unreleased (v0.3)**
+- **2026-10-07 (v0.3, breaking; published together with v0.4)**
   - Why DNS only: a file on a brand's site is weaker proof than DNS and many site platforms can't serve it, and distributors and retailers shouldn't have to publish anything when the brand's list is what authorizes them.
   - Brand domain verification is by DNS TXT record only. The pointer no longer verifies a domain; it is offered once DNS verification is done. A lapsed domain is one whose DNS record is gone (sections 4, 5.1).
   - Distributors and retailer web stores publish nothing on their domain. The registry confirms them through an account signed in with an email address at that domain (sections 3, 6).
@@ -678,7 +678,7 @@ The registry's liability position, dispute timelines and data handling are set o
   - Products MAY carry `walmart_item_ids` and `wpids`. Requests MAY give `walmart_item_id` or `wpid`, alone only on a `walmart` channel on walmart.com; `resolved_by` may be `walmart_item_id` or `wpid` (sections 3.1, 9, 9.5).
   - `channel.type` is optional in a request: the domain implies it (section 9).
   - For a web store on a generic domain, the territory is the buyer's country, sent by the agent; the registry never infers it from an authorization (section 6.2).
-- **Unreleased (v0.4)**
+- **2026-10-07 (v0.4)**
   - Why declarations: `unlisted` can't tell a seller the brand hasn't got round to listing from one it knows is diverting. Brands asked to say so, and agents asked to know.
   - A brand MAY declare a seller on a channel identifier not authorized. Verify answers about it are `unauthorized`, with `declaration_id` and `declared`, whatever the product. A declaration and an active authorization never cover the same channel identifier. Declarations are never published in lists or the feed (sections 2, 3.2, 9, 9.1).
   - A seller can dispute a declaration without proving control of the seller ID; a web store MAY be asked for an address at its domain. While the dispute is open the answer is `disputed` with the `declaration_id`. The brand reconfirms or withdraws; after 30 days with neither, the answer goes back to `unauthorized` (section 11).

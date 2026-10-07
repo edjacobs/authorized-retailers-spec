@@ -2,7 +2,10 @@
 
 This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.4.md).
 
-## Unreleased (0.4.0)
+## 0.4.0 (2026-10-07)
+
+The first release since 0.2.0: it includes every 0.3.0 change below, which was never published on its own.
+
 
 - Spec v0.4: brand-declared unauthorized sellers. A brand that knows a seller is not authorized can say so, instead of leaving it `unlisted` (spec sections 3.2, 9, 11).
 - Verify answers: new status `unauthorized` with `declaration_id` and `declared`. `disputed` now carries either `authorization_id` (a dispute on an authorization) or `declaration_id` and `declared` (a dispute on a declaration). `VerifyResponseUnauthorized`, `VerifyResponseDisputedAuthorization` and `VerifyResponseDisputedDeclaration` types.
@@ -10,7 +13,7 @@ This file covers the package. Changes to the specification text are also listed 
 - Pointers may also name `authorized-retailers/0.4`. `SPEC_VERSION` is `authorized-retailers/0.4`.
 - Schemas: `schemas/0.4/` (new); 0.3, 0.2 and 0.1 kept. The `./spec.md` export is v0.4.
 
-## 0.3.0 (unreleased, breaking)
+## 0.3.0 (never published; shipped in 0.4.0, breaking)
 
 - Spec v0.3: product-first verification. An agent on a product page sees a product and a seller, not the brand's domain, so verify requests MAY omit `brand_domain` when they give a `product`, and the registry finds the brand from registered brands' catalogs (spec section 9.5).
 - Verify requests: `brand_domain` or `product` is required (`brand_or_product_required`). `product` takes `gtin`, `asin`, `walmart_item_id` and `wpid`, one or more. An ASIN alone finds a brand only on an `amazon` channel (`asin_needs_amazon_channel`).

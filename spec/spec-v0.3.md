@@ -1,6 +1,6 @@
 # Authorized Retailers Specification v0.3
 
-Draft v0.3 · unreleased  
+Draft v0.3 · 7 October 2026 (published together with v0.4)  
 Editor: authorizedretailers.ai
 
 Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). JSON Schemas and reference code: Apache-2.0.
@@ -628,7 +628,7 @@ The registry's liability position, dispute timelines and data handling are set o
   - The verify API MUST reflect a revocation within 1 minute (was 15). `valid_until` is at most 15 minutes (was 24 hours) (sections 9, 10).
   - Availability: `stale_until`, mirrors, a revocation feed of random IDs, and the rule that an outage leaves a seller unconfirmed, never authorized or unauthorized (section 10.2, 10.3).
   - Bring-your-own-key signing and SKU-level scope are removed from the open questions. Cross-border purchases, per-marketplace ASINs and finding the brand domain are added (section 13).
-- **Unreleased (v0.3)**
+- **2026-10-07 (v0.3, breaking; published together with v0.4)**
   - Why DNS only: a file on a brand's site is weaker proof than DNS and many site platforms can't serve it, and distributors and retailers shouldn't have to publish anything when the brand's list is what authorizes them.
   - Brand domain verification is by DNS TXT record only. The pointer no longer verifies a domain; it is offered once DNS verification is done. A lapsed domain is one whose DNS record is gone (sections 4, 5.1).
   - Distributors and retailer web stores publish nothing on their domain. The registry confirms them through an account signed in with an email address at that domain (sections 3, 6).

@@ -5,10 +5,6 @@
   "license": "Apache-2.0 AND CC-BY-4.0",
   "author": "Authorized Retailers",
   "homepage": "https://authorizedretailers.ai/spec",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/authorizedretailers/spec.git"
-  },
   "bugs": "https://authorizedretailers.ai/spec",
   "keywords": [
     "authorized-retailers",
