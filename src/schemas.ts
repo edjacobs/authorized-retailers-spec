@@ -953,13 +953,6 @@ export const common = {
         }
       ]
     },
-    "requestSpecVersion": {
-      "description": "Section 9.6: pins the spec version a verify answer follows. A request that names no version gets the latest.",
-      "enum": [
-        "authorized-retailers/0.3",
-        "authorized-retailers/0.4"
-      ]
-    },
     "productStatus": {
       "description": "Section 3.1: active (the default), discontinued or recalled.",
       "enum": [
@@ -1333,9 +1326,6 @@ export const verifyRequest = {
           "$ref": "common.json#/$defs/timestamp"
         }
       ]
-    },
-    "spec": {
-      "$ref": "common.json#/$defs/requestSpecVersion"
     }
   },
   "anyOf": [

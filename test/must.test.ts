@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  answerForRequest,
   authorizationsForChannel,
   channelKey,
   expandRegions,
@@ -373,7 +372,7 @@ describe("§3.1 product status, regions and details", () => {
   });
 });
 
-describe("§3.2, §9.6 declared unauthorized sellers", () => {
+describe("§3.2 declared unauthorized sellers", () => {
   const unauthorized = () => fx("verify-response/valid/unauthorized.json");
   it("an unauthorized answer MUST name the declaration and carry no authorization, reason or observation", () => {
     expect(validateVerifyResponse(unauthorized()).valid).toBe(true);
@@ -386,25 +385,10 @@ describe("§3.2, §9.6 declared unauthorized sellers", () => {
     expect(validateVerifyResponse(fx("verify-response/valid/disputed-declaration.json")).valid).toBe(true);
     expect(validateVerifyResponse(fx("verify-response/invalid/disputed-both-ids.json")).valid).toBe(false);
   });
-  it("a request that pins v0.3 MUST get the v0.3 answer: unlisted, with no declaration; others get the latest", () => {
-    const v03 = { spec: "authorized-retailers/0.3" } as const;
-    for (const status of ["unauthorized", "disputed"] as const) {
-      const answer = { ...unauthorized(), status };
-      const old = answerForRequest(answer, v03);
-      expect(old.status).toBe("unlisted");
-      expect(old).not.toHaveProperty("declaration_id");
-      expect(old).not.toHaveProperty("declared");
-      expect(validateVerifyResponse(old).valid).toBe(true);
-      expect(answerForRequest(answer, {})).toEqual(answer);
-      expect(answerForRequest(answer, { spec: "authorized-retailers/0.4" })).toEqual(answer);
-    }
-    const authorized = fx("verify-response/valid/authorized.json");
-    expect(answerForRequest(authorized, v03)).toEqual(authorized);
-    expect(answerForRequest(fx("verify-response/valid/disputed.json"), v03).status).toBe("disputed");
+  it("an unlisted answer names no declaration", () => {
     expect(validateVerifyResponse(fx("verify-response/invalid/unlisted-with-declaration.json")).valid).toBe(false);
   });
-  it("a request names v0.3 or v0.4", () => {
-    expect(validateVerifyRequest(fx("verify-request/valid/spec-0.4.json")).valid).toBe(true);
-    expect(validateVerifyRequest(fx("verify-request/invalid/spec-0.1.json")).valid).toBe(false);
+  it("a request carries no version", () => {
+    expect(validateVerifyRequest(fx("verify-request/invalid/spec-field.json")).valid).toBe(false);
   });
 });

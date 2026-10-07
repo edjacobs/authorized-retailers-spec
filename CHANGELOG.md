@@ -6,7 +6,7 @@ This file covers the package. Changes to the specification text are also listed 
 
 - Spec v0.4: brand-declared unauthorized sellers. A brand that knows a seller is not authorized can say so, instead of leaving it `unlisted` (spec sections 3.2, 9, 11).
 - Verify answers: new status `unauthorized` with `declaration_id` and `declared`. `disputed` now carries either `authorization_id` (a dispute on an authorization) or `declaration_id` and `declared` (a dispute on a declaration). `VerifyResponseUnauthorized`, `VerifyResponseDisputedAuthorization` and `VerifyResponseDisputedDeclaration` types.
-- Verify requests MAY pin a version in `spec` (`authorized-retailers/0.3` or `/0.4`, `REQUEST_SPEC_VERSIONS`). Without it answers follow the latest version. A request that pins `/0.3` gets v0.3 answers: `answerForRequest` turns a v0.4 answer into the v0.3 one, and `requestAllowsDeclarations` says which applies. Agents MUST treat a status they don't recognise as not authorized (spec section 9.6).
+- Verify requests carry no version. Agents MUST treat a status they don't recognise as not authorized (spec section 9).
 - Pointers may also name `authorized-retailers/0.4`. `SPEC_VERSION` is `authorized-retailers/0.4`.
 - Schemas: `schemas/0.4/` (new); 0.3, 0.2 and 0.1 kept. The `./spec.md` export is v0.4.
 

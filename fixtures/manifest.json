@@ -564,12 +564,6 @@
     "note": "Section 9.5: a WPID on walmart.com"
   },
   {
-    "path": "verify-request/valid/spec-0.4.json",
-    "kind": "verify-request",
-    "valid": true,
-    "note": "Section 9.6: pins v0.4, the latest"
-  },
-  {
     "path": "verify-request/valid/as-of-datetime.json",
     "kind": "verify-request",
     "valid": true,
@@ -695,11 +689,11 @@
     "note": "Bare hostname only"
   },
   {
-    "path": "verify-request/invalid/spec-0.1.json",
+    "path": "verify-request/invalid/spec-field.json",
     "kind": "verify-request",
     "valid": false,
     "expect": "schema",
-    "note": "Section 9.6: a request names 0.3 or 0.4"
+    "note": "Section 9: requests carry no version"
   },
   {
     "path": "verify-request/invalid/bad-as-of.json",
@@ -908,7 +902,7 @@
     "kind": "verify-response",
     "valid": false,
     "expect": "schema",
-    "note": "Section 9.6: an unlisted answer names no declaration"
+    "note": "Section 3.2: an unlisted answer names no declaration"
   },
   {
     "path": "verify-response/invalid/recalled-without-url.json",

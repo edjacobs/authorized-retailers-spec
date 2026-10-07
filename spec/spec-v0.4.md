@@ -150,7 +150,7 @@ Matching a verify request against the catalog is described in section 9.2.
 
 ### 3.2 Declared unauthorized sellers
 
-Unlisted means only that the brand hasn't authorized a seller. A brand that knows a seller is not authorized, for example a diverter it has already found, MAY say so with a declaration. Verify answers about that seller are then `unauthorized` instead of `unlisted` (section 9), unless the request pins v0.3 (section 9.6).
+Unlisted means only that the brand hasn't authorized a seller. A brand that knows a seller is not authorized, for example a diverter it has already found, MAY say so with a declaration. Verify answers about that seller are then `unauthorized` instead of `unlisted` (section 9).
 
 - A declaration names one channel identifier (section 6): a marketplace domain and seller ID, or a web store's domain. It covers every product and territory on that channel identifier, and is matched as in section 6.1.
 - A declaration and an active authorization MUST NOT cover the same channel identifier. The registry MUST refuse a declaration for a channel identifier that an active authorization names, and MUST refuse an authorization for a declared one until the declaration is withdrawn.
@@ -400,7 +400,6 @@ The same request with the brand's domain, a territory and a date:
 | `product_line` | Optional. Asks about a whole product line. |
 | `product` | Optional when `brand_domain` is given. One or more of `gtin`, `asin`, `walmart_item_id` and `wpid`. A GTIN is a UPC-A (12 digits), EAN-13, GTIN-8 or GTIN-14 with a valid check digit, compared as GTIN-14. An ASIN is read on the channel's Amazon marketplace, and a Walmart item ID or WPID on walmart.com. `mpn` and `style_code` MAY be added to a product identifier to confirm the match, never on their own. |
 | `as_of` | Optional. An ISO 8601 date or UTC date-time. The answer reflects status at that time. Defaults to now. |
-| `spec` | Optional. Pins the spec version the answer follows: `authorized-retailers/0.3` or `authorized-retailers/0.4`. Without it the answer follows the latest version (section 9.6). |
 
 A request MUST name a `brand_domain`, a `product` or both. A request that finds the brand by ASIN alone MUST use an `amazon` channel, and one that finds it by Walmart item ID or WPID alone MUST use a `walmart` channel on walmart.com. The registry MUST reject a GTIN with a bad check digit rather than resolve it.
 
@@ -427,7 +426,7 @@ Response:
 | --- | --- |
 | `authorized` | An authorization covers this seller, channel, territory and product |
 | `unlisted` | The brand is registered and no authorization covers this request |
-| `unauthorized` | The brand has declared this seller not authorized (section 3.2). Not given to a request that pins v0.3 (section 9.6) |
+| `unauthorized` | The brand has declared this seller not authorized (section 3.2) |
 | `expired` | An authorization with an end date covered this seller, and the end date has passed |
 | `brand_not_registered` | The brand domain is not registered (section 4) |
 | `disputed` | A dispute is open on this authorization, and the brand has flagged it for review, or on a declaration the brand hasn't yet reconfirmed (section 11) |
@@ -447,6 +446,8 @@ Response:
   - `confirmed` and `mismatched`: which of a sent `mpn` and `style_code` match the catalog. A mismatch adds the signal `product_details_mismatch`, for example an ASIN whose listing shows another model, and never changes the status;
   - `id`, `product_line`, `name`, `mpns` and `style_code`, only for a brand whose list is public.
 - When `product.status` is `recalled`, an agent MUST tell its user and SHOULD NOT complete the purchase, whatever the seller's status. `discontinued` is information for the user.
+
+New statuses can be added, as `unauthorized` was in v0.4. An agent MUST treat a `status` it doesn't recognise as not authorized, and SHOULD treat the seller as unconfirmed, as for an unreachable registry (section 10.2).
 
 `reason` is optional on `brand_not_registered` (section 4) and `unlisted`, and MUST NOT appear on any other status:
 
@@ -522,14 +523,6 @@ Finding the brand reveals only which registered brand a product belongs to. It M
 ```
 
 For now an ASIN resolves on every Amazon marketplace, as it does in a catalog (section 3.1).
-
-### 9.6 Request versions
-
-A request that names no version gets answers in the latest version. A request MAY pin an earlier one in `spec`, and the MCP tool `verify_seller` takes the same field.
-
-A request that pins `authorized-retailers/0.3` MUST be answered as v0.3 does. A declared seller (section 3.2) then answers `unlisted`, with no `reason`, `declaration_id` or `declared`, and so does a seller whose declaration is disputed. In v0.3 terms that is accurate: no authorization covers the seller. Every other answer is the same in both versions.
-
-New versions can add statuses. An agent MUST treat a `status` it doesn't recognise as not authorized, and SHOULD treat the seller as unconfirmed, as for an unreachable registry (section 10.2). An agent that can't handle a new status should pin the version it was written for.
 
 ## 10. Expiry, revocation and freshness
 
@@ -689,8 +682,8 @@ The registry's liability position, dispute timelines and data handling are set o
   - Why declarations: `unlisted` can't tell a seller the brand hasn't got round to listing from one it knows is diverting. Brands asked to say so, and agents asked to know.
   - A brand MAY declare a seller on a channel identifier not authorized. Verify answers about it are `unauthorized`, with `declaration_id` and `declared`, whatever the product. A declaration and an active authorization never cover the same channel identifier. Declarations are never published in lists or the feed (sections 2, 3.2, 9, 9.1).
   - A seller can dispute a declaration without proving control of the seller ID; a web store MAY be asked for an address at its domain. While the dispute is open the answer is `disputed` with the `declaration_id`. The brand reconfirms or withdraws; after 30 days with neither, the answer goes back to `unauthorized` (section 11).
-  - Why the latest version by default: agents that don't know to opt in would never see a declaration, and a status an agent can't parse is safe if it's treated as not authorized.
-  - Verify requests get the latest version unless they pin one in `spec`. A request that pins v0.3 gets v0.3 answers, where a declared seller is `unlisted`. Agents MUST treat a status they don't recognise as not authorized (section 9.6).
+  - Why agents must handle unknown statuses: the spec can add statuses, as this version does, and requests carry no version to opt out of them. A status an agent can't parse is safe if it's treated as not authorized.
+  - Agents MUST treat a `status` they don't recognise as not authorized, and SHOULD treat the seller as unconfirmed (section 9).
   - A declaration is the brand's statement, not a finding that the seller acts unlawfully (sections 1, 12).
   - A pointer MAY name v0.2, v0.3 or v0.4 (section 5.1).
   - Brand-declared `unauthorized` is removed from the open questions (section 13).

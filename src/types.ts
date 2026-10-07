@@ -155,13 +155,7 @@ export interface VerifyRequest {
   product?: ProductRef;
   /** ISO 8601 date or UTC date-time. Defaults to now. */
   as_of?: string;
-  /** Section 9.6: pins the version the answer follows. Without it the answer follows the latest version. */
-  spec?: RequestSpecVersion;
 }
-
-/** Section 9.6: versions a verify request can pin. */
-export const REQUEST_SPEC_VERSIONS = ["authorized-retailers/0.3", SPEC_VERSION] as const;
-export type RequestSpecVersion = (typeof REQUEST_SPEC_VERSIONS)[number];
 
 export type VerifyStatus =
   | "authorized"
@@ -264,7 +258,7 @@ export interface VerifyResponseDisputedDeclaration extends VerifyResponseBase {
   declared: Timestamp;
 }
 
-/** Section 3.2: the brand has declared this seller not authorized. Not given to requests that pin v0.3 (section 9.6). */
+/** Section 3.2: the brand has declared this seller not authorized. */
 export interface VerifyResponseUnauthorized extends VerifyResponseBase {
   status: "unauthorized";
   declaration_id: string;
