@@ -108,3 +108,19 @@ function productOnly(list: PublicList, request: VerifyRequest): { product?: Prod
   const product = productResult(found, request.product);
   return { product, signals: product.mismatched ? ["product_details_mismatch"] : [] };
 }
+
+/** Section 9.6: whether a request is written for v0.4 or later, and so can be answered `unauthorized`. */
+export function requestAllowsDeclarations(request: Pick<VerifyRequest, "spec">): boolean {
+  return request.spec !== undefined && request.spec !== "authorized-retailers/0.3";
+}
+
+/**
+ * Section 9.6: the answer for a request written for v0.3 (or naming no version). `unauthorized` and
+ * a `disputed` declaration don't exist there, so both become `unlisted`, without the declaration's
+ * fields: in v0.3 terms, no authorization covers the seller. Every other answer is unchanged.
+ */
+export function answerForRequest<T extends { status: string }>(answer: T, request: Pick<VerifyRequest, "spec">): T {
+  if (requestAllowsDeclarations(request) || !("declaration_id" in answer)) return answer;
+  const { declaration_id: _id, declared: _at, ...rest } = answer as T & { declaration_id: string; declared: string };
+  return { ...rest, status: "unlisted" } as unknown as T;
+}

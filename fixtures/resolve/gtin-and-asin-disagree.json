@@ -1,7 +1,7 @@
 {
   "lists": [
     {
-      "spec": "authorized-retailers/0.3",
+      "spec": "authorized-retailers/0.4",
       "brand": {
         "name": "Example Brand",
         "domains": [
@@ -208,7 +208,7 @@
       }
     },
     {
-      "spec": "authorized-retailers/0.3",
+      "spec": "authorized-retailers/0.4",
       "brand": {
         "name": "Other Brand",
         "domains": [

@@ -1,0 +1,632 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/verify-response.json",
+  "title": "POST /v0/verify response (section 9)",
+  "type": "object",
+  "required": [
+    "status",
+    "checked",
+    "valid_until",
+    "stale_until",
+    "observed",
+    "signals",
+    "signature"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "enum": [
+        "authorized",
+        "unlisted",
+        "unauthorized",
+        "expired",
+        "brand_not_registered",
+        "disputed",
+        "product_not_found",
+        "brand_ambiguous",
+        "brand_mismatch"
+      ]
+    },
+    "reason": {
+      "enum": [
+        "not_registered",
+        "domain_unlinked",
+        "verification_lapsed",
+        "territory_mismatch",
+        "product_excluded",
+        "product_not_in_scope",
+        "product_not_in_catalog",
+        "product_not_for_region"
+      ]
+    },
+    "authorization_id": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "revocation_id": {
+      "$ref": "common.json#/$defs/revocationId"
+    },
+    "expires": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "declaration_id": {
+      "description": "Section 3.2: the brand's declaration that this seller is not authorized.",
+      "$ref": "common.json#/$defs/id"
+    },
+    "declared": {
+      "description": "Section 3.2: when the brand made the declaration.",
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "checked": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "as_of": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "valid_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "stale_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "product": {
+      "type": "object",
+      "required": [
+        "in_catalog"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "in_catalog": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "common.json#/$defs/id"
+        },
+        "product_line": {
+          "$ref": "common.json#/$defs/productLine"
+        },
+        "name": {
+          "$ref": "common.json#/$defs/nonEmptyString"
+        },
+        "mpns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.json#/$defs/mpn"
+          }
+        },
+        "style_code": {
+          "$ref": "common.json#/$defs/styleCode"
+        },
+        "status": {
+          "$ref": "common.json#/$defs/productStatus"
+        },
+        "status_since": {
+          "$ref": "common.json#/$defs/date"
+        },
+        "recall_url": {
+          "$ref": "common.json#/$defs/httpsUrl"
+        },
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.json#/$defs/region"
+          }
+        },
+        "confirmed": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "mpn",
+              "style_code"
+            ]
+          }
+        },
+        "mismatched": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "mpn",
+              "style_code"
+            ]
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "in_catalog": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "id"
+              ]
+            },
+            {
+              "required": [
+                "product_line"
+              ]
+            },
+            {
+              "required": [
+                "name"
+              ]
+            },
+            {
+              "required": [
+                "mpns"
+              ]
+            },
+            {
+              "required": [
+                "style_code"
+              ]
+            },
+            {
+              "required": [
+                "status"
+              ]
+            },
+            {
+              "required": [
+                "status_since"
+              ]
+            },
+            {
+              "required": [
+                "recall_url"
+              ]
+            },
+            {
+              "required": [
+                "regions"
+              ]
+            },
+            {
+              "required": [
+                "confirmed"
+              ]
+            },
+            {
+              "required": [
+                "mismatched"
+              ]
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "recalled"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "recall_url"
+            ]
+          }
+        }
+      ]
+    },
+    "observed": {
+      "description": "Section 7: when the registry last saw this seller selling on the channel, within 30 days; otherwise null",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "last_seen"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "last_seen": {
+              "$ref": "common.json#/$defs/timestamp"
+            }
+          }
+        }
+      ]
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "observed"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,63}$"
+          },
+          "observed": {
+            "$ref": "common.json#/$defs/timestamp"
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        }
+      }
+    },
+    "signature": {
+      "$ref": "common.json#/$defs/signature"
+    },
+    "brand": {
+      "$ref": "common.json#/$defs/answerBrand"
+    },
+    "resolved_by": {
+      "$ref": "common.json#/$defs/resolvedBy"
+    },
+    "candidates": {
+      "$ref": "common.json#/$defs/candidates"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "authorized",
+              "expired"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "authorization_id"
+        ]
+      },
+      "else": {
+        "if": {
+          "properties": {
+            "status": {
+              "const": "disputed"
+            }
+          }
+        },
+        "then": {
+          "oneOf": [
+            {
+              "required": [
+                "authorization_id"
+              ]
+            },
+            {
+              "required": [
+                "declaration_id"
+              ]
+            }
+          ]
+        },
+        "else": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "authorization_id"
+                ]
+              },
+              {
+                "required": [
+                  "expires"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unauthorized"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "declaration_id",
+          "declared"
+        ]
+      },
+      "else": {
+        "if": {
+          "properties": {
+            "status": {
+              "const": "disputed"
+            }
+          }
+        },
+        "then": {
+          "if": {
+            "required": [
+              "declaration_id"
+            ]
+          },
+          "then": {
+            "required": [
+              "declared"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "authorization_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "expires"
+                  ]
+                }
+              ]
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "declared"
+              ]
+            }
+          }
+        },
+        "else": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "declaration_id"
+                ]
+              },
+              {
+                "required": [
+                  "declared"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "expired"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "expires"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "authorized"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "revocation_id"
+        ]
+      },
+      "else": {
+        "properties": {
+          "observed": {
+            "const": null
+          }
+        },
+        "not": {
+          "required": [
+            "revocation_id"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "brand_not_registered"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "not_registered",
+              "domain_unlinked",
+              "verification_lapsed"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unlisted"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "territory_mismatch",
+              "product_excluded",
+              "product_not_in_scope",
+              "product_not_in_catalog",
+              "product_not_for_region"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "authorized",
+              "expired",
+              "disputed",
+              "unauthorized"
+            ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "reason"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "product_not_found",
+              "brand_ambiguous"
+            ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "brand"
+              ]
+            },
+            {
+              "required": [
+                "resolved_by"
+              ]
+            },
+            {
+              "required": [
+                "reason"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "brand",
+          "resolved_by"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "brand_ambiguous",
+              "brand_mismatch"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "candidates"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "candidates"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "brand_ambiguous"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "candidates": {
+            "minItems": 2
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "brand_mismatch",
+              "brand_not_registered"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "resolved_by": {
+            "const": "brand_domain"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "brand_mismatch"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "reason"
+          ]
+        }
+      }
+    }
+  ]
+}

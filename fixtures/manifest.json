@@ -564,6 +564,12 @@
     "note": "Section 9.5: a WPID on walmart.com"
   },
   {
+    "path": "verify-request/valid/spec-0.4.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 9.6: written for v0.4, so it can be answered unauthorized"
+  },
+  {
     "path": "verify-request/valid/as-of-datetime.json",
     "kind": "verify-request",
     "valid": true,
@@ -689,6 +695,13 @@
     "note": "Bare hostname only"
   },
   {
+    "path": "verify-request/invalid/spec-0.1.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9.6: a request names 0.3 or 0.4"
+  },
+  {
     "path": "verify-request/invalid/bad-as-of.json",
     "kind": "verify-request",
     "valid": false,
@@ -745,6 +758,24 @@
     "path": "verify-response/valid/unlisted.json",
     "kind": "verify-response",
     "valid": true
+  },
+  {
+    "path": "verify-response/valid/unauthorized.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 3.2: the brand declared this seller not authorized"
+  },
+  {
+    "path": "verify-response/valid/unauthorized-with-product.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 9.1: seller first, whatever the product"
+  },
+  {
+    "path": "verify-response/valid/disputed-declaration.json",
+    "kind": "verify-response",
+    "valid": true,
+    "note": "Section 11: the seller disputes the declaration"
   },
   {
     "path": "verify-response/valid/unlisted-territory-mismatch.json",
@@ -829,6 +860,55 @@
     "kind": "verify-response",
     "valid": true,
     "note": "Section 9.5: the product belongs to another brand"
+  },
+  {
+    "path": "verify-response/invalid/unauthorized-no-declaration.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 3.2: an unauthorized answer names the declaration"
+  },
+  {
+    "path": "verify-response/invalid/unauthorized-no-declared.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 3.2: and when it was made"
+  },
+  {
+    "path": "verify-response/invalid/unauthorized-with-reason.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9: unauthorized carries no reason"
+  },
+  {
+    "path": "verify-response/invalid/unauthorized-with-authorization.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 3.2: a declaration and an authorization never cover the same seller"
+  },
+  {
+    "path": "verify-response/invalid/unauthorized-observed.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 7: only authorized answers carry observed"
+  },
+  {
+    "path": "verify-response/invalid/disputed-both-ids.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 11: a dispute is about an authorization or a declaration, not both"
+  },
+  {
+    "path": "verify-response/invalid/unlisted-with-declaration.json",
+    "kind": "verify-response",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9.6: a v0.3 answer about a declared seller names no declaration"
   },
   {
     "path": "verify-response/invalid/recalled-without-url.json",

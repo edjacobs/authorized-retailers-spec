@@ -1,0 +1,984 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/common.json",
+  "title": "Authorized Retailers v0.4 shared definitions",
+  "$defs": {
+    "specVersion": {
+      "const": "authorized-retailers/0.4"
+    },
+    "timestamp": {
+      "description": "RFC 3339 timestamp in UTC with a Z suffix.",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$"
+    },
+    "date": {
+      "description": "ISO 8601 calendar date.",
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "domain": {
+      "description": "A bare hostname, lowercase: no scheme, port, path, trailing dot or leading www. (section 6).",
+      "type": "string",
+      "maxLength": 253,
+      "pattern": "^(?!www\\.)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})$"
+    },
+    "countryCode": {
+      "description": "ISO 3166-1 alpha-2, uppercase. The United Kingdom is GB.",
+      "enum": [
+        "AD",
+        "AE",
+        "AF",
+        "AG",
+        "AI",
+        "AL",
+        "AM",
+        "AO",
+        "AQ",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BH",
+        "BI",
+        "BJ",
+        "BL",
+        "BM",
+        "BN",
+        "BO",
+        "BQ",
+        "BR",
+        "BS",
+        "BT",
+        "BV",
+        "BW",
+        "BY",
+        "BZ",
+        "CA",
+        "CC",
+        "CD",
+        "CF",
+        "CG",
+        "CH",
+        "CI",
+        "CK",
+        "CL",
+        "CM",
+        "CN",
+        "CO",
+        "CR",
+        "CU",
+        "CV",
+        "CW",
+        "CX",
+        "CY",
+        "CZ",
+        "DE",
+        "DJ",
+        "DK",
+        "DM",
+        "DO",
+        "DZ",
+        "EC",
+        "EE",
+        "EG",
+        "EH",
+        "ER",
+        "ES",
+        "ET",
+        "FI",
+        "FJ",
+        "FK",
+        "FM",
+        "FO",
+        "FR",
+        "GA",
+        "GB",
+        "GD",
+        "GE",
+        "GF",
+        "GG",
+        "GH",
+        "GI",
+        "GL",
+        "GM",
+        "GN",
+        "GP",
+        "GQ",
+        "GR",
+        "GS",
+        "GT",
+        "GU",
+        "GW",
+        "GY",
+        "HK",
+        "HM",
+        "HN",
+        "HR",
+        "HT",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IM",
+        "IN",
+        "IO",
+        "IQ",
+        "IR",
+        "IS",
+        "IT",
+        "JE",
+        "JM",
+        "JO",
+        "JP",
+        "KE",
+        "KG",
+        "KH",
+        "KI",
+        "KM",
+        "KN",
+        "KP",
+        "KR",
+        "KW",
+        "KY",
+        "KZ",
+        "LA",
+        "LB",
+        "LC",
+        "LI",
+        "LK",
+        "LR",
+        "LS",
+        "LT",
+        "LU",
+        "LV",
+        "LY",
+        "MA",
+        "MC",
+        "MD",
+        "ME",
+        "MF",
+        "MG",
+        "MH",
+        "MK",
+        "ML",
+        "MM",
+        "MN",
+        "MO",
+        "MP",
+        "MQ",
+        "MR",
+        "MS",
+        "MT",
+        "MU",
+        "MV",
+        "MW",
+        "MX",
+        "MY",
+        "MZ",
+        "NA",
+        "NC",
+        "NE",
+        "NF",
+        "NG",
+        "NI",
+        "NL",
+        "NO",
+        "NP",
+        "NR",
+        "NU",
+        "NZ",
+        "OM",
+        "PA",
+        "PE",
+        "PF",
+        "PG",
+        "PH",
+        "PK",
+        "PL",
+        "PM",
+        "PN",
+        "PR",
+        "PS",
+        "PT",
+        "PW",
+        "PY",
+        "QA",
+        "RE",
+        "RO",
+        "RS",
+        "RU",
+        "RW",
+        "SA",
+        "SB",
+        "SC",
+        "SD",
+        "SE",
+        "SG",
+        "SH",
+        "SI",
+        "SJ",
+        "SK",
+        "SL",
+        "SM",
+        "SN",
+        "SO",
+        "SR",
+        "SS",
+        "ST",
+        "SV",
+        "SX",
+        "SY",
+        "SZ",
+        "TC",
+        "TD",
+        "TF",
+        "TG",
+        "TH",
+        "TJ",
+        "TK",
+        "TL",
+        "TM",
+        "TN",
+        "TO",
+        "TR",
+        "TT",
+        "TV",
+        "TW",
+        "TZ",
+        "UA",
+        "UG",
+        "UM",
+        "US",
+        "UY",
+        "UZ",
+        "VA",
+        "VC",
+        "VE",
+        "VG",
+        "VI",
+        "VN",
+        "VU",
+        "WF",
+        "WS",
+        "YE",
+        "YT",
+        "ZA",
+        "ZM",
+        "ZW"
+      ]
+    },
+    "httpsUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "maxLength": 2048
+    },
+    "registryUrl": {
+      "description": "Section 5.1: a list URL MUST be on authorizedretailers.ai.",
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://authorizedretailers\\.ai/",
+      "maxLength": 2048
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "revocationId": {
+      "description": "Section 10.3: a random value, rv_ followed by at least 16 base64url characters.",
+      "type": "string",
+      "pattern": "^rv_[A-Za-z0-9_-]{16,64}$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "sellerId": {
+      "type": "string",
+      "pattern": "^\\S{1,128}$"
+    },
+    "amazonChannel": {
+      "type": "object",
+      "required": [
+        "type",
+        "domain",
+        "seller_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "amazon"
+        },
+        "domain": {
+          "enum": [
+            "amazon.com",
+            "amazon.ca",
+            "amazon.co.uk",
+            "amazon.de",
+            "amazon.fr",
+            "amazon.it",
+            "amazon.es",
+            "amazon.com.au"
+          ]
+        },
+        "seller_id": {
+          "$ref": "#/$defs/sellerId"
+        }
+      }
+    },
+    "walmartChannel": {
+      "type": "object",
+      "required": [
+        "type",
+        "domain",
+        "seller_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "walmart"
+        },
+        "domain": {
+          "enum": [
+            "walmart.com",
+            "walmart.ca"
+          ]
+        },
+        "seller_id": {
+          "$ref": "#/$defs/sellerId"
+        }
+      }
+    },
+    "ebayChannel": {
+      "type": "object",
+      "required": [
+        "type",
+        "domain",
+        "seller_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "ebay"
+        },
+        "domain": {
+          "enum": [
+            "ebay.com",
+            "ebay.co.uk",
+            "ebay.ca",
+            "ebay.de",
+            "ebay.com.au"
+          ]
+        },
+        "seller_id": {
+          "$ref": "#/$defs/sellerId"
+        }
+      }
+    },
+    "webChannel": {
+      "type": "object",
+      "required": [
+        "type",
+        "domain"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "web"
+        },
+        "domain": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/domain"
+            },
+            {
+              "not": {
+                "enum": [
+                  "amazon.com",
+                  "amazon.ca",
+                  "amazon.co.uk",
+                  "amazon.de",
+                  "amazon.fr",
+                  "amazon.it",
+                  "amazon.es",
+                  "amazon.com.au",
+                  "walmart.com",
+                  "walmart.ca",
+                  "ebay.com",
+                  "ebay.co.uk",
+                  "ebay.ca",
+                  "ebay.de",
+                  "ebay.com.au"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "channel": {
+      "description": "Section 6. Every channel is identified by a domain.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/amazonChannel"
+        },
+        {
+          "$ref": "#/$defs/walmartChannel"
+        },
+        {
+          "$ref": "#/$defs/ebayChannel"
+        },
+        {
+          "$ref": "#/$defs/webChannel"
+        }
+      ]
+    },
+    "party": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "entity_id": {
+          "$ref": "#/$defs/id"
+        }
+      }
+    },
+    "territories": {
+      "description": "ISO 3166-1 alpha-2 codes, or exactly [\"*\"] for worldwide.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "anyOf": [
+        {
+          "const": [
+            "*"
+          ]
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/countryCode"
+          }
+        }
+      ]
+    },
+    "productLine": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^\\S(.*\\S)?$"
+    },
+    "productLines": {
+      "description": "Named product lines, or exactly [\"all\"].",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "anyOf": [
+        {
+          "const": [
+            "all"
+          ]
+        },
+        {
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/productLine"
+              },
+              {
+                "not": {
+                  "const": "all"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "namedProductLines": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/productLine"
+          },
+          {
+            "not": {
+              "const": "all"
+            }
+          }
+        ]
+      }
+    },
+    "productIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/id"
+      }
+    },
+    "gtin": {
+      "description": "8, 12, 13 or 14 digits with a valid GS1 check digit (checked by the validator).",
+      "type": "string",
+      "pattern": "^([0-9]{8}|[0-9]{12,14})$"
+    },
+    "asin": {
+      "description": "10 uppercase letters or digits.",
+      "type": "string",
+      "pattern": "^[A-Z0-9]{10}$"
+    },
+    "walmartItemId": {
+      "description": "A Walmart item ID: 5 to 15 digits, as in a walmart.com product URL.",
+      "type": "string",
+      "pattern": "^[0-9]{5,15}$"
+    },
+    "wpid": {
+      "description": "A Walmart product ID (WPID): 8 to 16 uppercase letters or digits.",
+      "type": "string",
+      "pattern": "^[A-Z0-9]{8,16}$"
+    },
+    "product": {
+      "description": "Section 3.1. At least one of gtin, asins, walmart_item_ids or wpids. A recalled product names its recall_url.",
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "product_line": {
+          "$ref": "#/$defs/productLine"
+        },
+        "attributes": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "gtin": {
+          "$ref": "#/$defs/gtin"
+        },
+        "asins": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/asin"
+          }
+        },
+        "walmart_item_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/walmartItemId"
+          }
+        },
+        "wpids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/wpid"
+          }
+        },
+        "mpns": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/mpn"
+          }
+        },
+        "style_code": {
+          "$ref": "#/$defs/styleCode"
+        },
+        "status": {
+          "$ref": "#/$defs/productStatus"
+        },
+        "status_since": {
+          "$ref": "#/$defs/date"
+        },
+        "recall_url": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/region"
+          }
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "gtin"
+          ]
+        },
+        {
+          "required": [
+            "asins"
+          ]
+        },
+        {
+          "required": [
+            "walmart_item_ids"
+          ]
+        },
+        {
+          "required": [
+            "wpids"
+          ]
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "recalled"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "recall_url"
+            ]
+          }
+        }
+      ]
+    },
+    "scope": {
+      "description": "Section 3. product_lines, products or both; territories optional (section 6.2).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "territories": {
+          "$ref": "#/$defs/territories"
+        },
+        "product_lines": {
+          "$ref": "#/$defs/productLines"
+        },
+        "products": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/productIds"
+            },
+            {
+              "minItems": 1
+            }
+          ]
+        },
+        "exclude_product_lines": {
+          "$ref": "#/$defs/namedProductLines"
+        },
+        "exclude_products": {
+          "$ref": "#/$defs/productIds"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "product_lines"
+          ]
+        },
+        {
+          "required": [
+            "products"
+          ]
+        }
+      ]
+    },
+    "exclusions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "product_lines": {
+          "$ref": "#/$defs/namedProductLines"
+        },
+        "products": {
+          "$ref": "#/$defs/productIds"
+        }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "required": [
+        "id",
+        "revocation_id",
+        "retailer",
+        "channels",
+        "scope"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "revocation_id": {
+          "$ref": "#/$defs/revocationId"
+        },
+        "retailer": {
+          "$ref": "#/$defs/party"
+        },
+        "channels": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/channel"
+          }
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "proposed_by": {
+          "description": "The distributor that proposed this authorization, if any (section 3).",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/party"
+            }
+          ]
+        },
+        "expires": {
+          "description": "Optional end date set by the brand (section 10).",
+          "$ref": "#/$defs/timestamp"
+        }
+      }
+    },
+    "brand": {
+      "description": "Pointer form: one domain.",
+      "type": "object",
+      "required": [
+        "name",
+        "domain"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "domain": {
+          "$ref": "#/$defs/domain"
+        }
+      }
+    },
+    "listBrand": {
+      "description": "Every domain the list applies to (section 5.2).",
+      "type": "object",
+      "required": [
+        "name",
+        "domains"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "domains": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/domain"
+          }
+        },
+        "aliases": {
+          "description": "Section 4.2: other names the brand is known by, for display and search. Never used to resolve a brand.",
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": [
+        "kid",
+        "jws"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kid": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]{1,64}$"
+        },
+        "jws": {
+          "description": "Detached compact JWS: header..signature (empty payload segment).",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+\\.\\.[A-Za-z0-9_-]+$"
+        }
+      }
+    },
+    "productRef": {
+      "description": "Section 9: a product by GTIN, ASIN, Walmart item ID or WPID, one or more. mpn and style_code only confirm a match.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gtin": {
+          "$ref": "#/$defs/gtin"
+        },
+        "asin": {
+          "$ref": "#/$defs/asin"
+        },
+        "walmart_item_id": {
+          "$ref": "#/$defs/walmartItemId"
+        },
+        "wpid": {
+          "$ref": "#/$defs/wpid"
+        },
+        "mpn": {
+          "$ref": "#/$defs/mpn"
+        },
+        "style_code": {
+          "$ref": "#/$defs/styleCode"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "gtin"
+          ]
+        },
+        {
+          "required": [
+            "asin"
+          ]
+        },
+        {
+          "required": [
+            "walmart_item_id"
+          ]
+        },
+        {
+          "required": [
+            "wpid"
+          ]
+        }
+      ]
+    },
+    "answerBrand": {
+      "description": "Section 9.5: the brand an answer is about. name is absent for a domain that is not registered.",
+      "type": "object",
+      "required": [
+        "domain"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "$ref": "#/$defs/domain"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "resolvedBy": {
+      "description": "Section 9.5: how the registry found the brand.",
+      "enum": [
+        "brand_domain",
+        "gtin",
+        "asin",
+        "walmart_item_id",
+        "wpid"
+      ]
+    },
+    "candidates": {
+      "description": "Section 9.5: the registered brands whose catalogs hold the product.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/answerBrand"
+      }
+    },
+    "pointerSpecVersion": {
+      "description": "Section 5.1: the pointer format is unchanged since v0.2, so a pointer may name any of these versions.",
+      "enum": [
+        "authorized-retailers/0.2",
+        "authorized-retailers/0.3",
+        "authorized-retailers/0.4"
+      ]
+    },
+    "region": {
+      "description": "Section 3.1: an ISO 3166-1 alpha-2 country, or a named group (REGION_GROUPS): EU.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/countryCode"
+        },
+        {
+          "const": "EU"
+        }
+      ]
+    },
+    "requestSpecVersion": {
+      "description": "Section 9.6: the spec version a verify request is written for. A request that names no version is answered as v0.3.",
+      "enum": [
+        "authorized-retailers/0.3",
+        "authorized-retailers/0.4"
+      ]
+    },
+    "productStatus": {
+      "description": "Section 3.1: active (the default), discontinued or recalled.",
+      "enum": [
+        "active",
+        "discontinued",
+        "recalled"
+      ]
+    },
+    "mpn": {
+      "description": "Section 3.1: a manufacturer part or model number. Unique only within the brand.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^\\S(.*\\S)?$"
+    },
+    "styleCode": {
+      "description": "Section 3.1: the brand's style code. Unique only within the brand.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^\\S(.*\\S)?$"
+    }
+  }
+}

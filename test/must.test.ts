@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  answerForRequest,
   authorizationsForChannel,
   channelKey,
   expandRegions,
@@ -369,5 +370,41 @@ describe("§3.1 product status, regions and details", () => {
   it("§9 channel.type can be left out: the domain implies it", () => {
     expect(normalizeVerifyRequest({ brand_domain: "brand.example", channel: { domain: "Walmart.com", seller_id: "1" } })).toMatchObject({ channel: { type: "walmart", domain: "walmart.com" } });
     expect(normalizeVerifyRequest({ brand_domain: "brand.example", channel: { domain: "shop.example" }, territory: "US" })).toMatchObject({ channel: { type: "web" } });
+  });
+});
+
+describe("§3.2, §9.6 declared unauthorized sellers", () => {
+  const unauthorized = () => fx("verify-response/valid/unauthorized.json");
+  it("an unauthorized answer MUST name the declaration and carry no authorization, reason or observation", () => {
+    expect(validateVerifyResponse(unauthorized()).valid).toBe(true);
+    for (const f of ["unauthorized-no-declaration", "unauthorized-no-declared", "unauthorized-with-reason", "unauthorized-with-authorization", "unauthorized-observed"]) {
+      expect(validateVerifyResponse(fx(`verify-response/invalid/${f}.json`)).valid, f).toBe(false);
+    }
+  });
+  it("a disputed answer is about an authorization or a declaration, never both", () => {
+    expect(validateVerifyResponse(fx("verify-response/valid/disputed.json")).valid).toBe(true);
+    expect(validateVerifyResponse(fx("verify-response/valid/disputed-declaration.json")).valid).toBe(true);
+    expect(validateVerifyResponse(fx("verify-response/invalid/disputed-both-ids.json")).valid).toBe(false);
+  });
+  it("a request that doesn't name v0.4 MUST get the v0.3 answer: unlisted, with no declaration", () => {
+    for (const status of ["unauthorized", "disputed"] as const) {
+      const answer = { ...unauthorized(), status };
+      for (const spec of [undefined, "authorized-retailers/0.3"] as const) {
+        const v03 = answerForRequest(answer, spec === undefined ? {} : { spec });
+        expect(v03.status).toBe("unlisted");
+        expect(v03).not.toHaveProperty("declaration_id");
+        expect(v03).not.toHaveProperty("declared");
+        expect(validateVerifyResponse(v03).valid).toBe(true);
+      }
+      expect(answerForRequest(answer, { spec: "authorized-retailers/0.4" })).toEqual(answer);
+    }
+    const authorized = fx("verify-response/valid/authorized.json");
+    expect(answerForRequest(authorized, {})).toEqual(authorized);
+    expect(answerForRequest(fx("verify-response/valid/disputed.json"), {}).status).toBe("disputed");
+    expect(validateVerifyResponse(fx("verify-response/invalid/unlisted-with-declaration.json")).valid).toBe(false);
+  });
+  it("a request names v0.3 or v0.4", () => {
+    expect(validateVerifyRequest(fx("verify-request/valid/spec-0.4.json")).valid).toBe(true);
+    expect(validateVerifyRequest(fx("verify-request/invalid/spec-0.1.json")).valid).toBe(false);
   });
 });

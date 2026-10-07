@@ -2,11 +2,11 @@
 
 export const common = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.3/common.json",
-  "title": "Authorized Retailers v0.3 shared definitions",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/common.json",
+  "title": "Authorized Retailers v0.4 shared definitions",
   "$defs": {
     "specVersion": {
-      "const": "authorized-retailers/0.3"
+      "const": "authorized-retailers/0.4"
     },
     "timestamp": {
       "description": "RFC 3339 timestamp in UTC with a Z suffix.",
@@ -935,10 +935,11 @@ export const common = {
       }
     },
     "pointerSpecVersion": {
-      "description": "Section 5.1: the pointer format is unchanged since v0.2, so a pointer may name either version.",
+      "description": "Section 5.1: the pointer format is unchanged since v0.2, so a pointer may name any of these versions.",
       "enum": [
         "authorized-retailers/0.2",
-        "authorized-retailers/0.3"
+        "authorized-retailers/0.3",
+        "authorized-retailers/0.4"
       ]
     },
     "region": {
@@ -950,6 +951,13 @@ export const common = {
         {
           "const": "EU"
         }
+      ]
+    },
+    "requestSpecVersion": {
+      "description": "Section 9.6: the spec version a verify request is written for. A request that names no version is answered as v0.3.",
+      "enum": [
+        "authorized-retailers/0.3",
+        "authorized-retailers/0.4"
       ]
     },
     "productStatus": {
@@ -979,7 +987,7 @@ export const common = {
 
 export const list = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.3/list.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/list.json",
   "title": "Signed list (section 5.2)",
   "type": "object",
   "required": [
@@ -1067,7 +1075,7 @@ export const list = {
 
 export const pointer = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.3/pointer.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/pointer.json",
   "title": "authorized-retailers.json pointer (section 5.1)",
   "type": "object",
   "required": [
@@ -1101,7 +1109,7 @@ export const pointer = {
 
 export const resolveRequest = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.3/resolve-request.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/resolve-request.json",
   "title": "POST /v0/resolve request (section 9.5)",
   "description": "Canonical form. Call normalizeResolveRequest on raw input first.",
   "type": "object",
@@ -1122,7 +1130,7 @@ export const resolveRequest = {
 
 export const resolveResponse = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.3/resolve-response.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/resolve-response.json",
   "title": "POST /v0/resolve response (section 9.5)",
   "type": "object",
   "required": [
@@ -1236,7 +1244,7 @@ export const resolveResponse = {
 
 export const revocationFeed = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.3/revocation-feed.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/revocation-feed.json",
   "title": "Revocation feed (section 10.3)",
   "type": "object",
   "required": [
@@ -1292,7 +1300,7 @@ export const revocationFeed = {
 
 export const verifyRequest = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.3/verify-request.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/verify-request.json",
   "title": "POST /v0/verify request (section 9)",
   "description": "Canonical form. Call normalizeVerifyRequest on raw input first. At least one of brand_domain or product is required.",
   "type": "object",
@@ -1325,6 +1333,9 @@ export const verifyRequest = {
           "$ref": "common.json#/$defs/timestamp"
         }
       ]
+    },
+    "spec": {
+      "$ref": "common.json#/$defs/requestSpecVersion"
     }
   },
   "anyOf": [
@@ -1343,7 +1354,7 @@ export const verifyRequest = {
 
 export const verifyResponse = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.3/verify-response.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/verify-response.json",
   "title": "POST /v0/verify response (section 9)",
   "type": "object",
   "required": [
@@ -1361,6 +1372,7 @@ export const verifyResponse = {
       "enum": [
         "authorized",
         "unlisted",
+        "unauthorized",
         "expired",
         "brand_not_registered",
         "disputed",
@@ -1388,6 +1400,14 @@ export const verifyResponse = {
       "$ref": "common.json#/$defs/revocationId"
     },
     "expires": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "declaration_id": {
+      "description": "Section 3.2: the brand's declaration that this seller is not authorized.",
+      "$ref": "common.json#/$defs/id"
+    },
+    "declared": {
+      "description": "Section 3.2: when the brand made the declaration.",
       "$ref": "common.json#/$defs/timestamp"
     },
     "checked": {
@@ -1622,8 +1642,7 @@ export const verifyResponse = {
           "status": {
             "enum": [
               "authorized",
-              "expired",
-              "disputed"
+              "expired"
             ]
           }
         }
@@ -1634,8 +1653,15 @@ export const verifyResponse = {
         ]
       },
       "else": {
-        "not": {
-          "anyOf": [
+        "if": {
+          "properties": {
+            "status": {
+              "const": "disputed"
+            }
+          }
+        },
+        "then": {
+          "oneOf": [
             {
               "required": [
                 "authorization_id"
@@ -1643,10 +1669,99 @@ export const verifyResponse = {
             },
             {
               "required": [
-                "expires"
+                "declaration_id"
               ]
             }
           ]
+        },
+        "else": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "authorization_id"
+                ]
+              },
+              {
+                "required": [
+                  "expires"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unauthorized"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "declaration_id",
+          "declared"
+        ]
+      },
+      "else": {
+        "if": {
+          "properties": {
+            "status": {
+              "const": "disputed"
+            }
+          }
+        },
+        "then": {
+          "if": {
+            "required": [
+              "declaration_id"
+            ]
+          },
+          "then": {
+            "required": [
+              "declared"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "authorization_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "expires"
+                  ]
+                }
+              ]
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "declared"
+              ]
+            }
+          }
+        },
+        "else": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "declaration_id"
+                ]
+              },
+              {
+                "required": [
+                  "declared"
+                ]
+              }
+            ]
+          }
         }
       }
     },
@@ -1739,7 +1854,8 @@ export const verifyResponse = {
             "enum": [
               "authorized",
               "expired",
-              "disputed"
+              "disputed",
+              "unauthorized"
             ]
           }
         }

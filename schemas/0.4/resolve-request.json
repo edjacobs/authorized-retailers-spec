@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/resolve-request.json",
+  "title": "POST /v0/resolve request (section 9.5)",
+  "description": "Canonical form. Call normalizeResolveRequest on raw input first.",
+  "type": "object",
+  "required": [
+    "product"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "product": {
+      "$ref": "common.json#/$defs/productRef"
+    },
+    "domain": {
+      "description": "The marketplace domain the product was seen on: Amazon for an ASIN, walmart.com for a Walmart item ID or WPID.",
+      "$ref": "common.json#/$defs/domain"
+    }
+  }
+}

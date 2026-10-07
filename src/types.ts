@@ -1,6 +1,6 @@
-// Types mirror schemas/0.3/*.json. The schemas are canonical; if the two disagree, the schema wins.
+// Types mirror schemas/0.4/*.json. The schemas are canonical; if the two disagree, the schema wins.
 
-export const SPEC_VERSION = "authorized-retailers/0.3" as const;
+export const SPEC_VERSION = "authorized-retailers/0.4" as const;
 export type SpecVersion = typeof SPEC_VERSION;
 
 /** RFC 3339 UTC timestamp, e.g. "2026-09-28T00:00:00Z". */
@@ -93,7 +93,7 @@ export interface Signature {
 }
 
 /** Section 5.1: the pointer format is unchanged since v0.2, so a pointer may name either version. */
-export const POINTER_SPEC_VERSIONS = ["authorized-retailers/0.2", SPEC_VERSION] as const;
+export const POINTER_SPEC_VERSIONS = ["authorized-retailers/0.2", "authorized-retailers/0.3", SPEC_VERSION] as const;
 export type PointerSpecVersion = (typeof POINTER_SPEC_VERSIONS)[number];
 
 /** Section 5.1: the optional, unsigned file at /.well-known/authorized-retailers.json. */
@@ -155,11 +155,18 @@ export interface VerifyRequest {
   product?: ProductRef;
   /** ISO 8601 date or UTC date-time. Defaults to now. */
   as_of?: string;
+  /** Section 9.6: the version the request is written for. Without it the answer is a v0.3 answer. */
+  spec?: RequestSpecVersion;
 }
+
+/** Section 9.6: versions a verify request can be written for. */
+export const REQUEST_SPEC_VERSIONS = ["authorized-retailers/0.3", SPEC_VERSION] as const;
+export type RequestSpecVersion = (typeof REQUEST_SPEC_VERSIONS)[number];
 
 export type VerifyStatus =
   | "authorized"
   | "unlisted"
+  | "unauthorized"
   | "expired"
   | "brand_not_registered"
   | "disputed"
@@ -241,10 +248,27 @@ export interface VerifyResponseExpired extends VerifyResponseBase {
   expires: Timestamp;
 }
 
-export interface VerifyResponseDisputed extends VerifyResponseBase {
+/** Section 11: a dispute on an authorization the brand flagged for review, or on a declaration. */
+export type VerifyResponseDisputed = VerifyResponseDisputedAuthorization | VerifyResponseDisputedDeclaration;
+
+export interface VerifyResponseDisputedAuthorization extends VerifyResponseBase {
   status: "disputed";
   authorization_id: string;
   expires?: Timestamp;
+}
+
+/** Section 11: the seller disputes the brand's declaration, and the brand hasn't reconfirmed it. */
+export interface VerifyResponseDisputedDeclaration extends VerifyResponseBase {
+  status: "disputed";
+  declaration_id: string;
+  declared: Timestamp;
+}
+
+/** Section 3.2: the brand has declared this seller not authorized. Only for requests written for v0.4 (section 9.6). */
+export interface VerifyResponseUnauthorized extends VerifyResponseBase {
+  status: "unauthorized";
+  declaration_id: string;
+  declared: Timestamp;
 }
 
 export interface VerifyResponseUnlisted extends VerifyResponseBase {
@@ -279,6 +303,7 @@ export type VerifyResponse =
   | VerifyResponseExpired
   | VerifyResponseDisputed
   | VerifyResponseUnlisted
+  | VerifyResponseUnauthorized
   | VerifyResponseNotRegistered
   | VerifyResponseProductNotFound
   | VerifyResponseAmbiguous

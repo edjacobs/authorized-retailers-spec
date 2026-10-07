@@ -71,7 +71,7 @@ export type ValidationResult<T> =
   | { valid: false; errors: ValidationError[]; warnings: ValidationWarning[] };
 
 type Schema = Record<string, unknown>;
-const V = "https://authorizedretailers.ai/schemas/0.3";
+const V = "https://authorizedretailers.ai/schemas/0.4";
 const ALL_SCHEMAS: Schema[] = [common, pointer, list, verifyRequest, verifyResponse, resolveRequest, resolveResponse, revocationFeed];
 const scopeSchema: Schema = { $id: `${V}/scope.json`, $ref: "common.json#/$defs/scope" };
 const channelSchema: Schema = { $id: `${V}/channel.json`, $ref: "common.json#/$defs/channel" };
@@ -461,6 +461,7 @@ export function validateVerifyResponse(input: unknown): ValidationResult<VerifyR
     const res = input as VerifyResponse;
     freshnessRules(r, res.checked, "/checked", res);
     if ("expires" in res && res.expires !== undefined) ts(r, "/expires", res.expires);
+    if ("declared" in res) ts(r, "/declared", res.declared);
     if (res.as_of !== undefined) ts(r, "/as_of", res.as_of);
     for (const [i, s] of res.signals.entries()) ts(r, `/signals/${i}/observed`, s.observed);
     if (res.observed) ts(r, "/observed/last_seen", res.observed.last_seen);

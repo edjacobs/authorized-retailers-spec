@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
-const SPEC = "authorized-retailers/0.3";
+const SPEC = "authorized-retailers/0.4";
 const JWS = "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy";
 const sig = { kid: "ar-20260928-6e37", jws: JWS };
 
@@ -91,6 +91,7 @@ const unlisted = { status: "unlisted", brand: exampleBrand, resolved_by: "brand_
 const notRegistered = { status: "brand_not_registered", reason: "domain_unlinked", brand: { domain: "brand.example" }, resolved_by: "brand_domain", ...base };
 const productNotFound = { status: "product_not_found", product: { in_catalog: false }, ...base };
 const ambiguous = { status: "brand_ambiguous", candidates: [exampleBrand, otherBrand], product: { in_catalog: true }, ...base };
+const unauthorized = { status: "unauthorized", brand: exampleBrand, resolved_by: "brand_domain", declaration_id: "dcl_01J9Y4", declared: "2026-09-15T10:00:00Z", ...base };
 const mismatch = { status: "brand_mismatch", brand: exampleBrand, resolved_by: "brand_domain", candidates: [otherBrand], product: { in_catalog: false }, ...base };
 
 // ---- resolve (section 9.5)
@@ -263,6 +264,7 @@ const cases = [
   ["verify-request", "product-only-asin", { channel: amazonUS, product: { asin: "B0EXAMPLE1" } }, null, "Section 9.5: an ASIN on an Amazon channel"],
   ["verify-request", "product-only-walmart-item-id", { channel: walmartUS, product: { walmart_item_id: "123456789" } }, null, "Section 9.5: a Walmart item ID on walmart.com"],
   ["verify-request", "product-only-wpid", { channel: walmartUS, product: { wpid: "1A2B3C4D5E6F" } }, null, "Section 9.5: a WPID on walmart.com"],
+  ["verify-request", "spec-0.4", req(amazonUS, { spec: "authorized-retailers/0.4" }), null, "Section 9.6: written for v0.4, so it can be answered unauthorized"],
   ["verify-request", "as-of-datetime", req(amazonUS, { as_of: "2026-09-01T12:00:00Z" }), null, "as_of as a UTC date-time"],
 
   // ---- verify request: invalid
@@ -283,6 +285,7 @@ const cases = [
   ["verify-request", "missing-channel", { brand_domain: "brand.example" }, "schema", "Channel is required"],
   ["verify-request", "retailer-name-only", { brand_domain: "brand.example", retailer: "Example Retail LLC" }, "schema", "Section 6: agents match on identifiers, not names"],
   ["verify-request", "domain-with-scheme", req(amazonUS, { brand_domain: "https://brand.example" }), "schema", "Bare hostname only"],
+  ["verify-request", "spec-0.1", req(amazonUS, { spec: "authorized-retailers/0.1" }), "schema", "Section 9.6: a request names 0.3 or 0.4"],
   ["verify-request", "bad-as-of", req(amazonUS, { as_of: "yesterday" }), "schema", "as_of is an ISO 8601 date or UTC date-time"],
 
   // ---- verify response: valid
@@ -295,6 +298,9 @@ const cases = [
   ["verify-response", "expired", edit(authorized, (r) => { r.status = "expired"; r.expires = "2026-09-01T00:00:00Z"; delete r.revocation_id; }), null, ""],
   ["verify-response", "disputed", edit(authorized, (r) => { r.status = "disputed"; delete r.revocation_id; }), null, ""],
   ["verify-response", "unlisted", unlisted, null, ""],
+  ["verify-response", "unauthorized", unauthorized, null, "Section 3.2: the brand declared this seller not authorized"],
+  ["verify-response", "unauthorized-with-product", { ...unauthorized, product: { in_catalog: true, id: "EB-TEE-BLK-M", product_line: "Classic Tee" } }, null, "Section 9.1: seller first, whatever the product"],
+  ["verify-response", "disputed-declaration", { ...unauthorized, status: "disputed" }, null, "Section 11: the seller disputes the declaration"],
   ["verify-response", "unlisted-territory-mismatch", { ...unlisted, reason: "territory_mismatch" }, null, "Section 6.2"],
   ["verify-response", "unlisted-product-excluded", { ...unlisted, reason: "product_excluded", product: { in_catalog: true, id: "EB-DTC-1", product_line: "Limited" } }, null, "Section 9.2 rule 3"],
   ["verify-response", "unlisted-product-not-in-catalog", { ...unlisted, reason: "product_not_in_catalog", product: { in_catalog: false } }, null, "Section 9.2 rule 5"],
@@ -312,6 +318,13 @@ const cases = [
   ["verify-response", "brand-mismatch", mismatch, null, "Section 9.5: the product belongs to another brand"],
 
   // ---- verify response: invalid
+  ["verify-response", "unauthorized-no-declaration", edit(unauthorized, (r) => delete r.declaration_id), "schema", "Section 3.2: an unauthorized answer names the declaration"],
+  ["verify-response", "unauthorized-no-declared", edit(unauthorized, (r) => delete r.declared), "schema", "Section 3.2: and when it was made"],
+  ["verify-response", "unauthorized-with-reason", { ...unauthorized, reason: "product_excluded" }, "schema", "Section 9: unauthorized carries no reason"],
+  ["verify-response", "unauthorized-with-authorization", { ...unauthorized, authorization_id: "auth_01J9X2" }, "schema", "Section 3.2: a declaration and an authorization never cover the same seller"],
+  ["verify-response", "unauthorized-observed", { ...unauthorized, observed: { last_seen: "2026-09-20T00:00:00Z" } }, "schema", "Section 7: only authorized answers carry observed"],
+  ["verify-response", "disputed-both-ids", { ...unauthorized, status: "disputed", authorization_id: "auth_01J9X2" }, "schema", "Section 11: a dispute is about an authorization or a declaration, not both"],
+  ["verify-response", "unlisted-with-declaration", { ...unlisted, declaration_id: "dcl_01J9Y4" }, "schema", "Section 9.6: a v0.3 answer about a declared seller names no declaration"],
   ["verify-response", "recalled-without-url", edit(authorized, (r) => (r.product = { in_catalog: true, status: "recalled" })), "schema", "A recalled product names its recall notice"],
   ["verify-response", "not-in-catalog-with-status", edit(authorized, (r) => (r.product = { in_catalog: false, status: "active" })), "schema", "A product not in the catalog has no status"],
   ["verify-response", "authorized-missing-brand", edit(authorized, (r) => delete r.brand), "schema", "Section 9.5: every answer about a brand names it"],

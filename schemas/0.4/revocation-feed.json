@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.4/revocation-feed.json",
+  "title": "Revocation feed (section 10.3)",
+  "type": "object",
+  "required": [
+    "spec",
+    "feed",
+    "issued",
+    "valid_until",
+    "stale_until",
+    "entries",
+    "signature"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "spec": {
+      "$ref": "common.json#/$defs/specVersion"
+    },
+    "feed": {
+      "const": "revocations"
+    },
+    "issued": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "valid_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "stale_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "revocation_id",
+          "revoked"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "revocation_id": {
+            "$ref": "common.json#/$defs/revocationId"
+          },
+          "revoked": {
+            "$ref": "common.json#/$defs/timestamp"
+          }
+        }
+      }
+    },
+    "signature": {
+      "$ref": "common.json#/$defs/signature"
+    }
+  }
+}
