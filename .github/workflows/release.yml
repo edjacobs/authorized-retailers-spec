@@ -4,7 +4,7 @@ name: Release
 # on authorizedretailers.ai. Both happen in this one workflow: if either fails, the release fails.
 #
 # npm uses trusted publishing (OIDC): no token is stored. The site lives in the private
-# authorizedretailers/authorizedretailers repo; SITE_DEPLOY_TOKEN (a fine-grained token with Actions
+# edjacobs/authorizedretailers repo; SITE_DEPLOY_TOKEN (a fine-grained token with Actions
 # read and write on that repo only) starts its spec-release workflow and waits for it.
 #
 # Run it by hand (Actions > Release > Run workflow) for a dry run: npm publish --dry-run, and the
@@ -82,7 +82,7 @@ jobs:
       - name: Deploy the spec pages
         env:
           GH_TOKEN: ${{ secrets.SITE_DEPLOY_TOKEN }}
-          SITE_REPO: authorizedretailers/authorizedretailers
+          SITE_REPO: edjacobs/authorizedretailers
         run: |
           started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           # --ref: without it gh looks up the default branch over GraphQL, which the token can't read.
