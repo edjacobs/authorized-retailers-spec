@@ -132,10 +132,11 @@
     "note": "Worldwide scope"
   },
   {
-    "path": "list/valid/list-proposed-by.json",
+    "path": "list/invalid/list-proposed-by.json",
     "kind": "list",
-    "valid": true,
-    "note": "Section 3: distributor-proposed"
+    "valid": false,
+    "expect": "schema",
+    "note": "v0.5 removed proposed_by: a v0.5 list must not carry it (readers ignore it in older lists)"
   },
   {
     "path": "list/valid/list-not-public.json",

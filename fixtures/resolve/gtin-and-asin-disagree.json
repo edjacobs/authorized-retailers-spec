@@ -1,7 +1,7 @@
 {
   "lists": [
     {
-      "spec": "authorized-retailers/0.4",
+      "spec": "authorized-retailers/0.5",
       "brand": {
         "name": "Example Brand",
         "domains": [
@@ -47,8 +47,7 @@
             "exclude_products": [
               "EB-TEE-WHT-M"
             ]
-          },
-          "proposed_by": null
+          }
         },
         {
           "id": "auth_02",
@@ -208,7 +207,7 @@
       }
     },
     {
-      "spec": "authorized-retailers/0.4",
+      "spec": "authorized-retailers/0.5",
       "brand": {
         "name": "Other Brand",
         "domains": [
