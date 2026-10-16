@@ -2,17 +2,17 @@
 
 An open format with a single registry, for brands to record which retailers they have authorized and for software to check a seller against that record.
 
-> **Status: draft v0.4.** Breaking changes are possible before v1.0. See [GOVERNANCE.md](GOVERNANCE.md) for how changes are made.
+> **Status: draft v0.5.** Breaking changes are possible before v1.0. See [GOVERNANCE.md](GOVERNANCE.md) for how changes are made.
 
 The standard answers one question: has this brand authorized this seller, on this channel, in this territory, for this product, as of this date? Built for AI shopping agents to check before they recommend or buy. It works just as well for marketplaces, brand protection teams and anyone else who needs the answer.
 
-- **Read the spec:** [`spec/spec-v0.4.md`](spec/spec-v0.4.md), also at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec)
+- **Read the spec:** [`spec/spec-v0.5.md`](spec/spec-v0.5.md), also at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec)
 - **The registry:** [authorizedretailers.ai](https://authorizedretailers.ai). The registry currently lists US channels. Other countries are coming.
 
 ## Core principles
 
-- **Every authorization comes from the brand.** No one else can authorize a retailer: not a distributor, not a retailer and not the registry. The registry confirms the brand controls its domain, publishes the brand's list and signs it. It never changes a list on its own. The signature says who published the list, not who is authorized.
-- **Distributors can propose, only the brand approves.** A proposal changes nothing until the brand says yes.
+- **Every authorization comes from the brand.** No one else can authorize a seller: not another seller and not the registry. The registry confirms the brand controls its domain, publishes the brand's list and signs it. It never changes a list on its own. The signature says who published the list, not who is authorized.
+- **Sellers can request, only the brand approves.** A request changes nothing until the brand says yes.
 - **Authorization is scoped.** Each authorization names its channels and territories and the product lines or products it covers. It lasts until the brand revokes it, or until an end date if the brand sets one.
 - **One source of truth.** authorizedretailers.ai is the only registry. An answer counts only if it verifies against the registry's published keys. Anyone may cache or relay signed answers, but no one else can issue them.
 - **Authorization is not authenticity.** An answer says what the brand has approved. It does not say whether any item is genuine.

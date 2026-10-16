@@ -1,6 +1,6 @@
-// Types mirror schemas/0.4/*.json. The schemas are canonical; if the two disagree, the schema wins.
+// Types mirror schemas/0.5/*.json. The schemas are canonical; if the two disagree, the schema wins.
 
-export const SPEC_VERSION = "authorized-retailers/0.4" as const;
+export const SPEC_VERSION = "authorized-retailers/0.5" as const;
 export type SpecVersion = typeof SPEC_VERSION;
 
 /** RFC 3339 UTC timestamp, e.g. "2026-09-28T00:00:00Z". */
@@ -81,7 +81,6 @@ export interface Authorization {
   retailer: Party;
   channels: Channel[];
   scope: Scope;
-  proposed_by?: Party | null;
   /** Optional end date set by the brand (section 10). */
   expires?: Timestamp;
 }
@@ -93,7 +92,7 @@ export interface Signature {
 }
 
 /** Section 5.1: the pointer format is unchanged since v0.2, so a pointer may name either version. */
-export const POINTER_SPEC_VERSIONS = ["authorized-retailers/0.2", "authorized-retailers/0.3", SPEC_VERSION] as const;
+export const POINTER_SPEC_VERSIONS = ["authorized-retailers/0.2", "authorized-retailers/0.3", "authorized-retailers/0.4", SPEC_VERSION] as const;
 export type PointerSpecVersion = (typeof POINTER_SPEC_VERSIONS)[number];
 
 /** Section 5.1: the optional, unsigned file at /.well-known/authorized-retailers.json. */

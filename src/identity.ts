@@ -65,7 +65,7 @@ export function coversTerritory(authorization: Authorization, channel: Channel, 
 }
 
 /**
- * Section 6.1: the identity an agent matches on (never the retailer name). Domains are normalized;
+ * Section 6.1: the identity an agent matches on (never the seller name). Domains are normalized;
  * Amazon seller IDs are uppercased, eBay user IDs lowercased and Walmart partner IDs kept as they are.
  */
 export function channelKey(channel: Channel): string {

@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
-const SPEC = "authorized-retailers/0.4";
+const SPEC = "authorized-retailers/0.5";
 const JWS = "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy";
 const sig = { kid: "ar-20260928-6e37", jws: JWS };
 
@@ -49,7 +49,6 @@ const retailer = {
     { type: "web", domain: "retailer.example" },
   ],
   scope: { territories: ["US"], product_lines: ["all"] },
-  proposed_by: null,
 };
 const listNoCatalog = { spec: SPEC, brand: { name: "Example Brand", domains: ["brand.example"] }, public: true, ...times, authorizations: [retailer], signature: sig };
 const listWithCatalog = edit(listNoCatalog, (l) => {
@@ -190,7 +189,7 @@ const cases = [
   ["list", "list-cctld-web", noCatalog((a) => { a.channels = [{ type: "web", domain: "retailer.co.uk" }]; a.scope = { product_lines: ["all"] }; }), null, "Section 6.2: ccTLD web store takes GB from its domain"],
   ["list", "list-marketplace-no-territories", noCatalog((a) => { a.channels = [a.channels[0]]; a.scope = { product_lines: ["all"] }; }), null, "Section 6.2: marketplace territory comes from the domain"],
   ["list", "list-worldwide", noCatalog((a) => (a.scope.territories = ["*"])), null, "Worldwide scope"],
-  ["list", "list-proposed-by", noCatalog((a) => (a.proposed_by = { name: "Example Distribution Ltd", entity_id: "ent_DIST1" })), null, "Section 3: distributor-proposed"],
+  ["list", "list-proposed-by", noCatalog((a) => (a.proposed_by = { name: "Example Distribution Ltd", entity_id: "ent_DIST1" })), "schema", "v0.5 removed proposed_by: a v0.5 list must not carry it (readers ignore it in older lists)"],
   ["list", "list-not-public", notPublic, null, "Section 5.2: signed not-public response"],
   ["list", "list-no-authorizations", edit(listNoCatalog, (l) => (l.authorizations = [])), null, "A brand with nothing authorized"],
   ["list", "list-fractional-seconds", edit(listNoCatalog, (l) => (l.issued = "2026-09-28T14:00:00.123Z")), null, "Fractional seconds are allowed"],
@@ -284,7 +283,7 @@ const cases = [
   ["verify-request", "missing-channel", { brand_domain: "brand.example" }, "schema", "Channel is required"],
   ["verify-request", "retailer-name-only", { brand_domain: "brand.example", retailer: "Example Retail LLC" }, "schema", "Section 6: agents match on identifiers, not names"],
   ["verify-request", "domain-with-scheme", req(amazonUS, { brand_domain: "https://brand.example" }), "schema", "Bare hostname only"],
-  ["verify-request", "spec-field", req(amazonUS, { spec: "authorized-retailers/0.4" }), "schema", "Section 9: requests carry no version"],
+  ["verify-request", "spec-field", req(amazonUS, { spec: "authorized-retailers/0.5" }), "schema", "Section 9: requests carry no version"],
   ["verify-request", "bad-as-of", req(amazonUS, { as_of: "yesterday" }), "schema", "as_of is an ISO 8601 date or UTC date-time"],
 
   // ---- verify response: valid

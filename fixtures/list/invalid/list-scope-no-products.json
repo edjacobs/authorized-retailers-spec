@@ -1,5 +1,5 @@
 {
-  "spec": "authorized-retailers/0.4",
+  "spec": "authorized-retailers/0.5",
   "brand": {
     "name": "Example Brand",
     "domains": [
@@ -38,8 +38,7 @@
         "territories": [
           "US"
         ]
-      },
-      "proposed_by": null
+      }
     }
   ],
   "signature": {

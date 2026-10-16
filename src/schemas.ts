@@ -2,11 +2,11 @@
 
 export const common = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.4/common.json",
-  "title": "Authorized Retailers v0.4 shared definitions",
+  "$id": "https://authorizedretailers.ai/schemas/0.5/common.json",
+  "title": "Authorized Retailers v0.5 shared definitions",
   "$defs": {
     "specVersion": {
-      "const": "authorized-retailers/0.4"
+      "const": "authorized-retailers/0.5"
     },
     "timestamp": {
       "description": "RFC 3339 timestamp in UTC with a Z suffix.",
@@ -768,17 +768,6 @@ export const common = {
         "scope": {
           "$ref": "#/$defs/scope"
         },
-        "proposed_by": {
-          "description": "The distributor that proposed this authorization, if any (section 3).",
-          "oneOf": [
-            {
-              "type": "null"
-            },
-            {
-              "$ref": "#/$defs/party"
-            }
-          ]
-        },
         "expires": {
           "description": "Optional end date set by the brand (section 10).",
           "$ref": "#/$defs/timestamp"
@@ -939,7 +928,8 @@ export const common = {
       "enum": [
         "authorized-retailers/0.2",
         "authorized-retailers/0.3",
-        "authorized-retailers/0.4"
+        "authorized-retailers/0.4",
+        "authorized-retailers/0.5"
       ]
     },
     "region": {
@@ -980,7 +970,7 @@ export const common = {
 
 export const list = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.4/list.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.5/list.json",
   "title": "Signed list (section 5.2)",
   "type": "object",
   "required": [
@@ -1068,7 +1058,7 @@ export const list = {
 
 export const pointer = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.4/pointer.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.5/pointer.json",
   "title": "authorized-retailers.json pointer (section 5.1)",
   "type": "object",
   "required": [
@@ -1102,7 +1092,7 @@ export const pointer = {
 
 export const resolveRequest = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.4/resolve-request.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.5/resolve-request.json",
   "title": "POST /v0/resolve request (section 9.5)",
   "description": "Canonical form. Call normalizeResolveRequest on raw input first.",
   "type": "object",
@@ -1123,7 +1113,7 @@ export const resolveRequest = {
 
 export const resolveResponse = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.4/resolve-response.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.5/resolve-response.json",
   "title": "POST /v0/resolve response (section 9.5)",
   "type": "object",
   "required": [
@@ -1237,7 +1227,7 @@ export const resolveResponse = {
 
 export const revocationFeed = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.4/revocation-feed.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.5/revocation-feed.json",
   "title": "Revocation feed (section 10.3)",
   "type": "object",
   "required": [
@@ -1293,7 +1283,7 @@ export const revocationFeed = {
 
 export const verifyRequest = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.4/verify-request.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.5/verify-request.json",
   "title": "POST /v0/verify request (section 9)",
   "description": "Canonical form. Call normalizeVerifyRequest on raw input first. At least one of brand_domain or product is required.",
   "type": "object",
@@ -1344,7 +1334,7 @@ export const verifyRequest = {
 
 export const verifyResponse = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.4/verify-response.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.5/verify-response.json",
   "title": "POST /v0/verify response (section 9)",
   "type": "object",
   "required": [
