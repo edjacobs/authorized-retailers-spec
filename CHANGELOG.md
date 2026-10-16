@@ -1,6 +1,16 @@
 # Changelog
 
-This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.4.md).
+This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.5.md).
+
+## 0.5.0 (2026-10-15)
+
+Breaking: removes distributors and the `proposed_by` field.
+
+- Spec v0.5: distributors are no longer a party. The registry has two parties: the brand that decides and the seller that sells to consumers. The terminology row, the proposal flow and the designation rules are gone, and the section 3 diagram shows a retailer requesting authorization from the brand (spec sections 2, 3).
+- Schemas: `proposed_by` is removed from the authorization object (`Authorization` type and `schemas/0.5/common.json`). A v0.5 list MUST NOT include it; readers MUST ignore it in a list published under an earlier version (spec section 5.2). The `list-proposed-by` fixture is now an invalid case.
+- Pointers may also name `authorized-retailers/0.5`. `SPEC_VERSION` is `authorized-retailers/0.5`.
+- Schemas: `schemas/0.5/` (new); 0.4, 0.3, 0.2 and 0.1 kept. The `./spec.md` export is v0.5.
+- Reason: the registry has no distributor role. It removed the screens, accounts and proposal flow, and a spec that still described them misled agent builders and brands.
 
 ## 0.4.0 (2026-10-07)
 

@@ -6,7 +6,7 @@ Thanks for your interest in the standard. Brands, retailers, marketplaces and ag
 
 Use the feedback form at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec#feedback). Useful feedback says:
 
-- who you are (brand, retailer, distributor, marketplace or agent builder)
+- who you are (brand, retailer, marketplace or agent builder)
 - the real situation the spec gets wrong or leaves out
 - the section it concerns, if you know it
 
