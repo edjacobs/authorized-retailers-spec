@@ -19,7 +19,7 @@ Scope: the spec covers consumer-facing online channels: marketplaces and web sto
 
 It does not assert:
 
-- **Authenticity.** An authorized seller can still sell counterfeit goods or have its account compromised. Authorization and authenticity are separate questions.
+- **Authenticity.** An authorized retailer can still sell counterfeit goods or have its account compromised. Authorization and authenticity are separate questions.
 - **Pricing.** The format carries no price, MAP or discount terms.
 - **Legal status.** A seller not listed is unlisted, not unlawful. A seller the brand declares unauthorized (section 3.2) is one the brand says it has not authorized: that is the brand's statement, not a finding by the registry that the seller acts unlawfully or sells counterfeit goods. How an agent or platform acts on either result is its own decision.
 
@@ -30,15 +30,16 @@ The key words MUST, SHOULD and MAY are used as defined in RFC 2119.
 | Term | Meaning |
 | --- | --- |
 | Brand | The owner of a trademark whose products are sold, identified by one or more verified domains. |
-| Retailer | Any seller authorized to sell the brand's products: a marketplace seller or a web store. |
-| Authorization | A brand's statement that a retailer may sell within a stated scope, until the brand revokes it or until an end date the brand sets. |
+| Seller | Anyone who sells a brand's products on a channel, whether or not the brand has authorized it: a marketplace seller or a web store. |
+| Retailer | A seller the brand has authorized to sell its products (an authorized retailer). |
+| Authorization | A brand's statement that a seller may sell its products within a stated scope, until the brand revokes it or until an end date the brand sets. By that act the seller becomes an authorized retailer. |
 | Declaration | A brand's statement that a seller on a channel is not authorized to sell any of its products (section 3.2). |
 | Channel | A place a seller sells, identified by a domain: a marketplace domain and seller ID, or a web store's domain. |
 | Catalog | The brand's list of products on the registry. It defines what an authorization covers and lets agents find the brand from a product (sections 3.1, 9.5). |
 | Product | One entry in a catalog: a brand-chosen ID, a name and at least one GTIN, ASIN, Walmart item ID or WPID. |
 | GTIN | A GS1 Global Trade Item Number: a UPC (12 digits), EAN (13 or 8 digits) or GTIN-14. A UPC is a GTIN. |
 | Product line | A named group of products, such as "Classic Tee". |
-| Observation | Evidence from outside the brand's list that an authorized seller is actively selling on a channel. |
+| Observation | Evidence from outside the brand's list that an authorized retailer is actively selling on a channel. |
 | Registry | authorizedretailers.ai: the service that verifies brands, records their decisions, signs lists and answers and responds to verify requests. |
 | List | The registry's signed copy of one brand's authorizations and catalog (section 5.2). |
 | Pointer | An optional file on a brand's domain that names the brand's list and repeats its verification token (section 5.1). |
@@ -51,7 +52,7 @@ Every authorization MUST come from the brand. No other party can authorize a sel
 
 ```mermaid
 flowchart LR
-  R[Retailer] -->|requests authorization| B[Brand]
+  S[Seller] -->|requests authorization| B[Brand]
   B -->|approves + scopes| A[Authorization]
   A -->|signed by registry| L[List]
   L -->|verify query| G[Agent]
@@ -280,7 +281,7 @@ Agents see sellers as channel identifiers, not company names, so every authoriza
 | `amazon` | `domain`, `seller_id` | Amazon merchant ID on that marketplace domain |
 | `walmart` | `domain`, `seller_id` | Walmart Marketplace partner ID |
 | `ebay` | `domain`, `seller_id` | eBay user ID |
-| `web` | `domain` | The retailer's store domain |
+| `web` | `domain` | The seller's store domain |
 
 Every `domain` is lowercase, with no scheme, port, path, trailing dot or leading `www.`. For `amazon`, `walmart` and `ebay`, `domain` MUST be one of that type's marketplace domains in the table below. A channel whose type and domain don't match (for example `"type": "amazon"` with `walmart.com`) is invalid, and a `web` channel MUST NOT use a marketplace domain. The v0.1 `marketplace` field and `physical` channel type are removed, and readers MUST reject them.
 
@@ -306,7 +307,7 @@ New channel types and marketplace domains are added by the registry and publishe
 
 ### 6.1 Matching identifiers
 
-Agents MUST match on the channel identifier they see, never on the retailer name. Two identifiers are the same when their channel keys are equal:
+Agents MUST match on the channel identifier they see, never on the seller name. Two identifiers are the same when their channel keys are equal:
 
 | Channel type | Channel key |
 | --- | --- |
@@ -337,7 +338,7 @@ Country codes are ISO 3166-1 alpha-2: the United Kingdom is `GB`, not `UK`.
 
 ### 6.3 Proving channel identifiers
 
-The registry MAY let retailers prove their own channel identifiers before they request a listing: a `web` domain by an account signed in with an email address at that domain, without publishing anything on it, and a marketplace seller ID by confirming with the marketplace that it exists on that domain. Confirming that a seller ID exists does not prove that the retailer controls it, and the registry MUST NOT present it as proof of control.
+The registry MAY let sellers prove their own channel identifiers before they request authorization: a `web` domain by an account signed in with an email address at that domain, without publishing anything on it, and a marketplace seller ID by confirming with the marketplace that it exists on that domain. Confirming that a seller ID exists does not prove that the seller controls it, and the registry MUST NOT present it as proof of control.
 
 The registry MAY decline to register a marketplace seller that does not publicly list a seller name, business name and address on its marketplace.
 
@@ -345,11 +346,11 @@ The registry MAY decline to register a marketplace seller that does not publicly
 
 Every answer about a seller rests on the same evidence: a verified domain independently linked to the brand (section 4), the brand's own approval (section 3), and the registry's signature (section 8). There are no weaker grades of answer. Where that evidence is missing, the answer is `brand_not_registered`, whether or not a file exists on the brand's domain.
 
-The registry MAY also observe sellers: evidence from outside the brand's list that an authorized seller is actively selling the brand's products on the stated channel. Every answer MUST carry `observed`. On an `authorized` answer it is `{ "last_seen": <timestamp> }` when the registry has seen this seller selling within the last 30 days, and otherwise `null`. On every other status it MUST be `null`. Observation never changes the status.
+The registry MAY also observe sellers: evidence from outside the brand's list that an authorized retailer is actively selling the brand's products on the stated channel. Every answer MUST carry `observed`. On an `authorized` answer it is `{ "last_seen": <timestamp> }` when the registry has seen this seller selling within the last 30 days, and otherwise `null`. On every other status it MUST be `null`. Observation never changes the status.
 
 The registry does not observe sellers yet. Amazon marketplaces are planned first.
 
-Observation can also raise flags on an authorized seller: sudden changes in account name, address, catalog or volume that suggest a compromised account. The registry MAY return these as `signals` alongside the answer, without changing the authorization status.
+Observation can also raise flags on an authorized retailer: sudden changes in account name, address, catalog or volume that suggest a compromised account. The registry MAY return these as `signals` alongside the answer, without changing the authorization status.
 
 ## 8. Signing and key management
 
@@ -589,7 +590,7 @@ The registry's liability position, dispute timelines and data handling are set o
 - **Brand impersonation:** mitigated by domain verification plus independent brand linkage (section 4). This is the highest-impact attack, because a false brand could authorize diverters.
 - **Account takeover at the registry:** brand accounts MUST use multi-factor authentication. Revocations and new authorizations SHOULD trigger an email to every brand admin.
 - **Registry changes:** the registry cannot change a brand's list on its own, and every change is in a log the brand can see (section 3).
-- **Compromised seller accounts:** an authorized seller's marketplace account can be taken over. Observation signals (section 7) help, but authorization does not guarantee the seller's current conduct.
+- **Compromised retailer accounts:** an authorized retailer's marketplace account can be taken over. Observation signals (section 7) help, but authorization does not guarantee the retailer's current conduct.
 - **Declarations:** a brand could declare a seller it did in fact authorize, or one it has no relationship with. The answer only reports the brand's statement (section 1), the seller can dispute it (section 11), and declarations are never published as a list (section 3.2), so a declaration can't be read as a public blocklist.
 - **Dispute abuse:** anyone can dispute a declaration, which makes the answer `disputed` for up to 30 days. The brand can end it at once by reconfirming, and the registry can limit repeat disputes (section 11).
 - **Mailbox addresses:** a seller whose listed address is a PO box or a commercial mailbox can be hard to trace. The registry MAY warn a brand before it authorizes such a seller. The warning is for the brand only and MUST NOT change verify answers.
@@ -686,4 +687,5 @@ The registry's liability position, dispute timelines and data handling are set o
 - **2026-10-15 (v0.5, breaking)**
   - Distributors are removed. The registry has two parties: the brand that decides and the seller that sells to consumers. The terminology row, the proposal flow and the designation rules are gone (sections 2, 3).
   - `proposed_by` is removed from the authorization object and from `common.json`. Readers MUST ignore it if present in a list published under an earlier version (section 5.2).
+  - Terms: a seller is anyone who sells a brand's products on a channel, whether or not the brand has authorized it, and a retailer is a seller the brand has authorized. Authorizing makes a seller an authorized retailer. §2 now defines both. The diagram and sections 6 and 12 follow it: a party whose status is not yet known is a seller, an authorized one is a retailer (sections 2, 6, 7, 12).
   - A pointer MAY also name v0.5 (section 5.1).
