@@ -1,0 +1,80 @@
+[
+  {
+    "ask": "An Amazon seller",
+    "channel": { "domain": "amazon.com", "seller_id": "ADEMOSELLER001" },
+    "product": { "asin": "B0DEMO0001" },
+    "you_get": "authorized, found by ASIN",
+    "expect": { "status": "authorized", "resolved_by": "asin" }
+  },
+  {
+    "ask": "A Walmart seller, by UPC",
+    "channel": { "domain": "walmart.com", "seller_id": "900000001" },
+    "product": { "gtin": "200000001018" },
+    "you_get": "authorized, found by UPC",
+    "expect": { "status": "authorized", "resolved_by": "gtin" }
+  },
+  {
+    "ask": "A web store, for a buyer in the US",
+    "channel": { "domain": "demo-store.authorizedretailers.ai" },
+    "territory": "US",
+    "product": { "gtin": "200000001018" },
+    "you_get": "authorized for Demo Tees",
+    "expect": { "status": "authorized" }
+  },
+  {
+    "ask": "An eBay seller",
+    "channel": { "domain": "ebay.com", "seller_id": "demo-seasonal-seller" },
+    "product": { "gtin": "200000001018" },
+    "you_get": "authorized, with an end date",
+    "expect": { "status": "authorized", "has_expires": true }
+  },
+  {
+    "ask": "An Amazon seller the brand hasn't listed",
+    "channel": { "domain": "amazon.com", "seller_id": "ADEMOSELLER999" },
+    "product": { "asin": "B0DEMO0001" },
+    "you_get": "unlisted",
+    "expect": { "status": "unlisted" }
+  },
+  {
+    "ask": "An Amazon seller the brand has declared unauthorized",
+    "channel": { "domain": "amazon.com", "seller_id": "ADEMOSELLER666" },
+    "product": { "asin": "B0DEMO0001" },
+    "you_get": "unauthorized, with declaration_id: don't buy",
+    "expect": { "status": "unauthorized", "has_declaration": true }
+  },
+  {
+    "ask": "A product the brand sells only itself",
+    "channel": { "domain": "amazon.com", "seller_id": "ADEMOSELLER001" },
+    "product": { "asin": "B0DEMO0002" },
+    "you_get": "unlisted, product_excluded",
+    "expect": { "status": "unlisted", "reason": "product_excluded" }
+  },
+  {
+    "ask": "A recalled product",
+    "channel": { "domain": "amazon.com", "seller_id": "ADEMOSELLER001" },
+    "product": { "asin": "B0DEMO0003" },
+    "you_get": "authorized, with product.status recalled: tell the shopper, don't buy",
+    "expect": { "status": "authorized", "product_status": "recalled" }
+  },
+  {
+    "ask": "A product made for the EU, on amazon.com",
+    "channel": { "domain": "amazon.com", "seller_id": "ADEMOSELLER001" },
+    "product": { "asin": "B0DEMO0004" },
+    "you_get": "unlisted, product_not_for_region",
+    "expect": { "status": "unlisted", "reason": "product_not_for_region" }
+  },
+  {
+    "ask": "A listing showing another model number",
+    "channel": { "domain": "amazon.com", "seller_id": "ADEMOSELLER001" },
+    "product": { "asin": "B0DEMO0001", "mpn": "DT-999" },
+    "you_get": "authorized, with product.mismatched and a warning signal",
+    "expect": { "status": "authorized", "mismatched": ["mpn"] }
+  },
+  {
+    "ask": "A product no registered brand lists",
+    "channel": { "domain": "amazon.com", "seller_id": "ADEMOSELLER001" },
+    "product": { "gtin": "200000009991" },
+    "you_get": "product_not_found",
+    "expect": { "status": "product_not_found" }
+  }
+]

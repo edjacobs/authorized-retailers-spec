@@ -66,3 +66,17 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 | 12 | Agents MUST reject answers past their `valid_until`, except as 10.2 allows | `test/jws.test.ts` |
 
 Also tested, though not MUST-keyword rules: RFC 8785 canonicalization against the RFC's own test vectors (`test/jcs.test.ts`); the section 9.2 product matching rules, territory mismatch, `as_of` and end dates (`fixtures/match/`); marketplace territory mismatch in a list (`list-marketplace-territory-mismatch`); and the `territory_differs_from_domain` warning.
+
+## v0.6 draft rules
+
+Rules the [v0.6 draft](../spec/spec-v0.6-draft.md) adds or changes. The agent-side ones are tested by the [conformance suite](../conformance/README.md), whose consistency with the package is checked in `test/conformance.test.ts`.
+
+| § | Rule | Tested here |
+| --- | --- | --- |
+| 4.1 | The registry MUST NOT treat control of one domain, or a relationship between domains or companies, as proof of control of another | Registry obligation |
+| 7 | A registry MUST say which channel types, and which territories, it observes | Registry obligation |
+| 7 | Agents MUST NOT treat `observed: null` as a negative signal, or withhold an `authorized` answer because of it | Conformance vector `authorized-observed-null` |
+| 10.1 | An agent MUST NOT treat a seller as authorized after the `expires` on its answer | Conformance vector `past-expires` |
+| 10.2, 10.3 | A stale answer MUST be checked against a revocation feed issued at or after its `checked` (or the list's `issued`) | `test/jws.test.ts` (`revocation_feed_too_old`), conformance vector `stale-feed-before-answer` |
+| 12 | The query log MUST NOT hold a caller's IP address; the registry MUST NOT tell a brand which caller asked | Registry obligation |
+

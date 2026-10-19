@@ -72,6 +72,7 @@ export type VerifyFailure =
   | "feed_expired"
   | "revocation_feed_required"
   | "revocation_feed_invalid"
+  | "revocation_feed_too_old"
   | "revoked";
 
 export type SignatureCheck = { valid: true; kid: string; stale?: true } | { valid: false; reason: VerifyFailure };
@@ -81,7 +82,8 @@ export interface VerifyOptions {
   now?: number;
   /**
    * Section 10.2: accept a list or answer between its valid_until and stale_until. Only for when the
-   * registry and every mirror are unreachable, and only with a revocation feed to check against.
+   * verify API is unreachable, and only with a revocation feed issued at or after the document's
+   * `checked` (answers) or `issued` (lists), to check against.
    */
   allowStale?: boolean;
   /** The newest revocation feed the caller could get, unverified; verifyDocument checks it. */
@@ -94,8 +96,8 @@ export interface VerifyOptions {
  *  - the kid is in the current key set: signatures from keys no longer in the set are rejected (section 8 MUST);
  *  - the signature verifies over the canonical document;
  *  - the document is not past its valid_until (section 10.1 MUST). With allowStale and a revocation
- *    feed, a list or answer up to its stale_until is accepted as { valid: true, stale: true }, unless
- *    the feed lists the answer's revocation_id (section 10.3). A stale list's revoked authorizations
+ *    feed issued at or after the document, a list or answer up to its stale_until is accepted as
+ *    { valid: true, stale: true }, unless the feed lists the answer's revocation_id (section 10.3). A stale list's revoked authorizations
  *    are dropped by validAuthorizations(list, now, feed), not here.
  *  - a revocation feed is usable up to its own stale_until, and is flagged stale after valid_until.
  * Callers SHOULD refetch the key set once on "unknown_kid" before giving up (section 8).
@@ -140,6 +142,10 @@ export async function verifyDocument(doc: object, jwks: Jwks, opts: VerifyOption
   if (!opts.revocationFeed) return { valid: false, reason: "revocation_feed_required" };
   const feed = await verifyDocument(opts.revocationFeed, jwks, { now });
   if (!feed.valid || (opts.revocationFeed as { feed?: unknown }).feed !== "revocations") return { valid: false, reason: "revocation_feed_invalid" };
+  // A feed issued before the document says nothing about revocations since (sections 10.2, 10.3).
+  const feedIssued = parseTimestamp(String((opts.revocationFeed as { issued?: unknown }).issued ?? ""));
+  const since = parseTimestamp(String((doc as { checked?: unknown }).checked ?? (doc as { issued?: unknown }).issued ?? ""));
+  if (feedIssued === null || since === null || feedIssued < since) return { valid: false, reason: "revocation_feed_too_old" };
   if (typeof d.revocation_id === "string" && isRevoked(opts.revocationFeed, d.revocation_id)) return { valid: false, reason: "revoked" };
   return { valid: true, kid: sig.kid, stale: true };
 }

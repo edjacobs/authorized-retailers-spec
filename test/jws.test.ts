@@ -41,6 +41,8 @@ const feed = (): RevocationFeed => fx("revocation-feed/valid/feed.json");
 const LIST_LIVE = Date.parse("2026-09-28T14:10:00Z");
 const ANSWER_LIVE = Date.parse("2026-09-28T14:10:00Z");
 const STALE = Date.parse("2026-09-28T20:00:00Z"); // past valid_until, before stale_until
+/** A feed issued after the fixture answer was (14:02:11Z), as §10.2 requires of a feed that vouches for a stale answer. */
+const laterFeed = (): RevocationFeed => ({ ...feed(), issued: "2026-09-28T19:58:00Z", valid_until: "2026-09-28T20:13:00Z", stale_until: "2026-09-29T19:58:00Z" });
 
 beforeAll(async () => {
   k1 = await newKey("ar-20260923-0001");
@@ -141,13 +143,21 @@ describe("§10.2 stale answers and lists, §10.3 revocation feed", () => {
   });
   it("accepts a stale answer that the feed doesn't list, flagged stale", async () => {
     const signed = await sign(answer(), k1);
-    const f = await sign(feed(), k1);
+    const f = await sign(laterFeed(), k1);
     expect(await verifyDocument(signed, jwks, { now: STALE, allowStale: true, revocationFeed: f })).toEqual({ valid: true, kid: k1.jwk.kid, stale: true });
   });
   it("MUST drop a stale answer whose revocation_id is in the feed", async () => {
     const signed = await sign(answer(), k1);
-    const f = await sign({ ...feed(), entries: [{ revocation_id: signed.status === "authorized" ? signed.revocation_id : "", revoked: "2026-09-28T15:00:00Z" }] }, k1);
+    const f = await sign({ ...laterFeed(), entries: [{ revocation_id: signed.status === "authorized" ? signed.revocation_id : "", revoked: "2026-09-28T15:00:00Z" }] }, k1);
     expect(await verifyDocument(signed, jwks, { now: STALE, allowStale: true, revocationFeed: f })).toEqual({ valid: false, reason: "revoked" });
+  });
+  it("MUST NOT vouch for a stale answer with a feed issued before the answer: it says nothing about later revocations", async () => {
+    const signed = await sign(answer(), k1);
+    const before = await sign({ ...feed(), issued: "2026-09-28T14:00:00Z" }, k1); // the answer was checked at 14:02:11Z
+    expect(await verifyDocument(signed, jwks, { now: STALE, allowStale: true, revocationFeed: before })).toEqual({ valid: false, reason: "revocation_feed_too_old" });
+    // Issued at the same instant as the answer is enough: nothing could have been revoked in between.
+    const same = await sign({ ...feed(), issued: "2026-09-28T14:02:11Z" }, k1);
+    expect(await verifyDocument(signed, jwks, { now: STALE, allowStale: true, revocationFeed: same })).toMatchObject({ valid: true, stale: true });
   });
   it("rejects an unsigned or tampered feed", async () => {
     const signed = await sign(answer(), k1);
