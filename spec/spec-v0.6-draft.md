@@ -15,7 +15,7 @@ Status: draft v0.6 (unreleased), for discussion with brands, retailers and agent
 
 The spec asserts one thing: whether a brand has authorized a given seller, on a given channel, in a given territory, for a given product, as of a given date.
 
-Scope: the spec covers consumer-facing online channels: marketplaces and web stores. Every channel is identified by a domain, because agents buy from domains. Physical storefronts are not channels: an omnichannel retailer is listed by its web domain. Trade, wholesale and practitioner-only channels are out of scope. Sellers there are not listed, so their resale on consumer channels verifies as unlisted. Purchases across borders (for example on amazon.com for delivery to Canada) are out of scope for v0.5.
+Scope: the spec covers consumer-facing online channels: marketplaces and web stores. Every channel is identified by a domain, because agents buy from domains. Physical storefronts are not channels: an omnichannel retailer is listed by its web domain. Trade, wholesale and practitioner-only channels are out of scope. Sellers there are not listed, so their resale on consumer channels verifies as unlisted. So are sellers on a platform that hosts many independent sellers under one domain (a practitioner dispensary platform, say): the domain does not identify the seller, so authorizing it would authorize every seller on it, and a brand that does that has authorized them all. Purchases across borders (for example on amazon.com for delivery to Canada) are out of scope for v0.6.
 
 It does not assert:
 
@@ -531,6 +531,10 @@ For now an ASIN resolves on every Amazon marketplace, as it does in a catalog (s
 
 Agents SHOULD send a `User-Agent` header that names the agent and its operator and gives a way to reach them, for example `ExampleShopper/2.1 (+https://example.com/agent; agents@example.com)`. The registry MAY record it, with the name of the organization that owns the caller's network, to learn which agents use it and to contact their operators about the service (section 12). The header never changes an answer: an agent that sends none, or a generic one, gets the same signed answers, and nothing in this section is a condition of service.
 
+### 9.7 With agentic checkout protocols (informative)
+
+Protocols for agents that buy, such as the Universal Commerce Protocol (UCP) and the Agentic Commerce Protocol (ACP), describe how an agent finds a merchant's products and checks out with it. They say nothing about whether a brand authorized that merchant, and a merchant can't vouch for itself: only a signed registry answer counts (section 8). The check belongs between choosing a seller and starting checkout. The agent asks the question in section 9 about the seller the merchant's channel identifies (its web domain, or its marketplace and seller ID), and starts checkout only for a seller it may describe as authorized, or one the shopper accepts as unconfirmed. Nothing here depends on those protocols, and they don't depend on this one.
+
 ## 10. Expiry, revocation and freshness
 
 An authorization lasts until the brand revokes it, unless the brand gives it an end date (`expires`). There is no default end date and no maximum.
@@ -553,7 +557,7 @@ A registry outage never makes a seller unauthorized and never blocks a purchase 
 
 1. **Fail to unconfirmed, never to authorized.** An agent that can't get a current answer, or a stale one allowed below, treats the seller as unconfirmed. It MAY carry on as it would without this standard, but MUST NOT describe the seller as authorized.
 2. **Stale answers.** Between `valid_until` and `stale_until`, an agent MAY use a list or answer only if the verify API is unreachable, and only with a revocation feed (section 10.3) that was issued at or after the answer's `checked` (or the list's `issued`) and is itself still usable, up to its own `stale_until`. A feed issued before the answer says nothing about revocations since. The feed comes from a mirror, or from the registry if only its verify API is down; with no such feed the answer is unusable. The agent MUST mark the result as stale to its user or in its logs. After `stale_until` the list or answer is unusable. This follows the pattern of HTTP `stale-if-error` (RFC 5861).
-3. **Mirrors.** Mirrors run on a different provider and DNS from the registry. They serve the key set, every public list and the revocation feed, all signed by the registry. They never answer verify requests. Mirror base URLs are listed here when mirrors launch. There are none yet.
+3. **Mirrors.** Mirrors run on a different provider and DNS from the registry. They serve the key set, every public list and the revocation feed, all signed by the registry. They never answer verify requests. Reading a mirror needs no account or key, because everything on it is already public and signed; the operator MAY rate-limit at the provider to control cost. The registry's first mirror will run on Google Cloud. Mirror base URLs are listed here when mirrors launch. There are none yet.
 4. **Order.** An agent tries the live verify API, then a mirror (a public list, or a stale answer checked against the revocation feed), then treats the seller as unconfirmed.
 
 ### 10.3 Revocation feed
@@ -616,9 +620,7 @@ The registry's liability position, dispute timelines and data handling are set o
 ## 13. Open questions for v0.7
 
 - [ ] Territory splits where the trademark has different owners by country: one brand record or several?
-- [ ] Alignment with UCP and ACP: an extension field that points agents to a brand's list.
-- [ ] Dispensary and multi-seller platforms (e.g. practitioner dispensaries hosted on one platform domain): how to authorize individual sellers when agents only see the platform domain.
-- [ ] Channel audience: whether a channel needs an `audience` field (consumer, trade, practitioner) or whether consumer-only scope is enough.
+- [ ] Multi-seller platforms and channel audience: sellers that share one platform domain (such as practitioner dispensaries), and whether a channel needs an `audience` field. Deferred. They stay out of scope (section 1) and are assessed case by case, when a brand needs one, and only if compatible with the format. The likely shape is a platform channel type with a seller handle, like a marketplace's seller ID.
 - [ ] Cross-border purchases: buying on one country's marketplace for delivery to another.
 - [ ] Per-marketplace ASINs: products whose ASIN differs between Amazon marketplaces.
 - [ ] GS1 company prefix: finding a brand without a catalog from the company prefix in its GTINs, when the registry can confirm the brand owns that prefix.
@@ -710,3 +712,6 @@ The registry's liability position, dispute timelines and data handling are set o
   - Fix: a stale answer is usable when the verify API is unreachable, with a revocation feed issued at or after the answer. The old condition (registry and every mirror unreachable) could never be met, because the feed comes from one of them (sections 10.2, 10.3).
   - An answer is unusable as `authorized` after its `expires`, even before its `valid_until` (section 10.1).
   - Section 12 says what a registry's query log may hold.
+  - Mirrors are openly readable, with no account or key; operators MAY rate-limit. The first mirror will run on Google Cloud (section 10.2).
+  - Sellers that share one platform domain stay out of scope, and say why: authorizing the domain authorizes every seller on it (section 1). The platform and audience questions are deferred to a case-by-case basis (section 13).
+  - A short informative section places the check in agentic checkout flows such as UCP and ACP (section 9.7). The extension-field question is closed.
