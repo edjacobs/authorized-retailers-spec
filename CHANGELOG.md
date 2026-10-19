@@ -2,6 +2,12 @@
 
 This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.5.md).
 
+## Unreleased
+
+A clarification, not a format change: no schema, type or verify answer differs, so it does not need a version of its own and will ship with the next release.
+
+- Spec section 12 (new "Query logging" bullet): the query log MUST NOT hold a caller's IP address; it MAY hold a keyed hash of it, the name of the organization that owns the caller's network and the User-Agent; the registry MUST NOT tell a brand which caller asked about it; and SHOULD state in its privacy policy what the log holds, who can see it and for how long. This describes what the reference registry does and now tells callers it does.
+
 ## 0.5.0 (2026-10-15)
 
 Breaking: removes distributors and the `proposed_by` field.
