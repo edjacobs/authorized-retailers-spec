@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
-const SPEC = "authorized-retailers/0.5";
+const SPEC = "authorized-retailers/0.6";
 const JWS = "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy";
 const sig = { kid: "ar-20260928-6e37", jws: JWS };
 
@@ -283,7 +283,7 @@ const cases = [
   ["verify-request", "missing-channel", { brand_domain: "brand.example" }, "schema", "Channel is required"],
   ["verify-request", "retailer-name-only", { brand_domain: "brand.example", retailer: "Example Retail LLC" }, "schema", "Section 6: agents match on identifiers, not names"],
   ["verify-request", "domain-with-scheme", req(amazonUS, { brand_domain: "https://brand.example" }), "schema", "Bare hostname only"],
-  ["verify-request", "spec-field", req(amazonUS, { spec: "authorized-retailers/0.5" }), "schema", "Section 9: requests carry no version"],
+  ["verify-request", "spec-field", req(amazonUS, { spec: "authorized-retailers/0.6" }), "schema", "Section 9: requests carry no version"],
   ["verify-request", "bad-as-of", req(amazonUS, { as_of: "yesterday" }), "schema", "as_of is an ISO 8601 date or UTC date-time"],
 
   // ---- verify response: valid

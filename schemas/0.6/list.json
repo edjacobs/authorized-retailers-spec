@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.6/list.json",
+  "title": "Signed list (section 5.2)",
+  "type": "object",
+  "required": [
+    "spec",
+    "brand",
+    "public",
+    "issued",
+    "valid_until",
+    "stale_until",
+    "signature"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "spec": {
+      "$ref": "common.json#/$defs/specVersion"
+    },
+    "brand": {
+      "$ref": "common.json#/$defs/listBrand"
+    },
+    "public": {
+      "type": "boolean"
+    },
+    "issued": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "valid_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "stale_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "catalog": {
+      "type": "array",
+      "items": {
+        "$ref": "common.json#/$defs/product"
+      }
+    },
+    "exclusions": {
+      "$ref": "common.json#/$defs/exclusions"
+    },
+    "authorizations": {
+      "type": "array",
+      "items": {
+        "$ref": "common.json#/$defs/authorization"
+      }
+    },
+    "signature": {
+      "$ref": "common.json#/$defs/signature"
+    }
+  },
+  "if": {
+    "properties": {
+      "public": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "authorizations"
+    ]
+  },
+  "else": {
+    "not": {
+      "anyOf": [
+        {
+          "required": [
+            "authorizations"
+          ]
+        },
+        {
+          "required": [
+            "catalog"
+          ]
+        },
+        {
+          "required": [
+            "exclusions"
+          ]
+        }
+      ]
+    }
+  }
+}

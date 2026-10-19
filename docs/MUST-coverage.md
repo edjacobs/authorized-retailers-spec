@@ -67,9 +67,9 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 
 Also tested, though not MUST-keyword rules: RFC 8785 canonicalization against the RFC's own test vectors (`test/jcs.test.ts`); the section 9.2 product matching rules, territory mismatch, `as_of` and end dates (`fixtures/match/`); marketplace territory mismatch in a list (`list-marketplace-territory-mismatch`); and the `territory_differs_from_domain` warning.
 
-## v0.6 draft rules
+## v0.6 rules
 
-Rules the [v0.6 draft](../spec/spec-v0.6-draft.md) adds or changes. The agent-side ones are tested by the [conformance suite](../conformance/README.md), whose consistency with the package is checked in `test/conformance.test.ts`.
+Rules [v0.6](../spec/spec-v0.6.md) adds or changes. The agent-side ones are tested by the [conformance suite](../conformance/README.md), whose consistency with the package is checked in `test/conformance.test.ts`.
 
 | § | Rule | Tested here |
 | --- | --- | --- |

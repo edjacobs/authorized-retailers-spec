@@ -71,7 +71,7 @@ export type ValidationResult<T> =
   | { valid: false; errors: ValidationError[]; warnings: ValidationWarning[] };
 
 type Schema = Record<string, unknown>;
-const V = "https://authorizedretailers.ai/schemas/0.5";
+const V = "https://authorizedretailers.ai/schemas/0.6";
 const ALL_SCHEMAS: Schema[] = [common, pointer, list, verifyRequest, verifyResponse, resolveRequest, resolveResponse, revocationFeed];
 const scopeSchema: Schema = { $id: `${V}/scope.json`, $ref: "common.json#/$defs/scope" };
 const channelSchema: Schema = { $id: `${V}/channel.json`, $ref: "common.json#/$defs/channel" };

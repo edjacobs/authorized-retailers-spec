@@ -1,5 +1,5 @@
 {
-  "spec": "authorized-retailers/0.5",
+  "spec": "authorized-retailers/0.6",
   "feed": "revocations",
   "issued": "2026-09-28T14:02:00Z",
   "valid_until": "2026-09-28T14:17:01Z",

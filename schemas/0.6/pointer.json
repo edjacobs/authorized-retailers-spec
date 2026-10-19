@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.6/pointer.json",
+  "title": "authorized-retailers.json pointer (section 5.1)",
+  "type": "object",
+  "required": [
+    "spec",
+    "form",
+    "brand",
+    "verify_token",
+    "list"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "spec": {
+      "$ref": "common.json#/$defs/pointerSpecVersion"
+    },
+    "form": {
+      "const": "pointer"
+    },
+    "brand": {
+      "$ref": "common.json#/$defs/brand"
+    },
+    "verify_token": {
+      "description": "The domain's public verification token (section 4).",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{16,128}$"
+    },
+    "list": {
+      "$ref": "common.json#/$defs/registryUrl"
+    }
+  }
+}

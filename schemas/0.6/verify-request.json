@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.6/verify-request.json",
+  "title": "POST /v0/verify request (section 9)",
+  "description": "Canonical form. Call normalizeVerifyRequest on raw input first. At least one of brand_domain or product is required.",
+  "type": "object",
+  "required": [
+    "channel"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "brand_domain": {
+      "$ref": "common.json#/$defs/domain"
+    },
+    "channel": {
+      "$ref": "common.json#/$defs/channel"
+    },
+    "territory": {
+      "$ref": "common.json#/$defs/countryCode"
+    },
+    "product_line": {
+      "$ref": "common.json#/$defs/productLine"
+    },
+    "product": {
+      "$ref": "common.json#/$defs/productRef"
+    },
+    "as_of": {
+      "anyOf": [
+        {
+          "$ref": "common.json#/$defs/date"
+        },
+        {
+          "$ref": "common.json#/$defs/timestamp"
+        }
+      ]
+    }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "brand_domain"
+      ]
+    },
+    {
+      "required": [
+        "product"
+      ]
+    }
+  ]
+}

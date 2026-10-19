@@ -1,6 +1,6 @@
-# Authorized Retailers Specification v0.6 (draft)
+# Authorized Retailers Specification v0.6
 
-Draft v0.6 · unreleased, started 20 October 2026  
+Draft v0.6 · 19 October 2026  
 Editor: authorizedretailers.ai
 
 Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). JSON Schemas and reference code: Apache-2.0.
@@ -11,7 +11,7 @@ This spec defines how a brand records which retailers it has authorized to sell 
 
 The registry works like a notary. It checks that a brand controls its domain and is independently linked to it (section 4), records the brand's own decisions and signs them. The signature says who published a list, not who is authorized. Only the brand decides that (section 3).
 
-Status: draft v0.6 (unreleased), for discussion with brands, retailers and agent developers. Breaking changes are expected before v1.0. Changes are listed in section 14.
+Status: draft v0.6, for discussion with brands, retailers and agent developers. Breaking changes are expected before v1.0. Changes are listed in section 14.
 
 The spec asserts one thing: whether a brand has authorized a given seller, on a given channel, in a given territory, for a given product, as of a given date.
 
@@ -702,9 +702,7 @@ The registry's liability position, dispute timelines and data handling are set o
   - `proposed_by` is removed from the authorization object and from `common.json`. Readers MUST ignore it if present in a list published under an earlier version (section 5.2).
   - Terms: a seller is anyone who sells a brand's products on a channel, whether or not the brand has authorized it, and a retailer is a seller the brand has authorized. Authorizing makes a seller an authorized retailer. §2 now defines both. The diagram and sections 6 and 12 follow it: a party whose status is not yet known is a seller, an authorized one is a retailer (sections 2, 6, 7, 12).
   - A pointer MAY also name v0.5 (section 5.1).
-- **Unreleased (clarification, no change to the format or verify answers)**
-  - Section 12 says what a registry's query log may hold: never an IP address, but optionally a keyed hash of one, the network owner's name and the User-Agent, with the operator's privacy policy saying so. A registry MUST NOT tell a brand which caller asked about it.
-- **Unreleased (v0.6 draft)**
+- **2026-10-19 (v0.6)**
   - Observation is defined for every channel type, not only Amazon: what counts as a sighting, that a registry says which channels and territories it observes, and that `observed: null` is never a negative signal (section 7). Observation on channels beyond Amazon and multi-brand owners are removed from the open questions.
   - Finding sellers a brand hasn't listed is declared outside the spec: a lead is not a status and never appears in an answer, list or feed (section 7).
   - Each domain verifies with its own DNS record, and nothing carries over between domains or companies, so a parent company has no shortcut (section 4.1).

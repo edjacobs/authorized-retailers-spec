@@ -2,11 +2,11 @@
 
 An open format with a single registry, for brands to record which retailers they have authorized and for software to check a seller against that record.
 
-> **Status: draft v0.5.** Breaking changes are possible before v1.0. See [GOVERNANCE.md](GOVERNANCE.md) for how changes are made.
+> **Status: draft v0.6.** Breaking changes are possible before v1.0. See [GOVERNANCE.md](GOVERNANCE.md) for how changes are made.
 
 The standard answers one question: has this brand authorized this seller, on this channel, in this territory, for this product, as of this date? Built for AI shopping agents to check before they recommend or buy. It works just as well for marketplaces, brand protection teams and anyone else who needs the answer.
 
-- **Read the spec:** [`spec/spec-v0.5.md`](spec/spec-v0.5.md), also at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec)
+- **Read the spec:** [`spec/spec-v0.6.md`](spec/spec-v0.6.md), also at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec)
 - **The registry:** [authorizedretailers.ai](https://authorizedretailers.ai). The registry currently lists US channels. Other countries are coming.
 
 ## Core principles
@@ -43,7 +43,7 @@ https://<brand-domain>/.well-known/authorized-retailers.json
 
 ```json
 {
-  "spec": "authorized-retailers/0.4",
+  "spec": "authorized-retailers/0.6",
   "form": "pointer",
   "brand": { "name": "Example Brand", "domain": "brand.example" },
   "verify_token": "<token from the registry>",
