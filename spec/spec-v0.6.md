@@ -363,7 +363,7 @@ Observation can also raise flags on an authorized retailer: sudden changes in ac
 Lists, verify answers and the revocation feed are signed with a detached JWS (RFC 7515) over the JSON canonicalized per RFC 8785, using Ed25519 (`EdDSA`). Anyone can check a signature without trusting the registry's servers.
 
 - **Public keys:** published at `https://authorizedretailers.ai/.well-known/jwks.json`. Every signature names the key that made it (`kid`).
-- **Agent behavior:** agents SHOULD cache the key set and refetch it when they see an unknown `kid`. They MUST reject signatures from keys no longer in the set. Mirrors serve a copy of the key set, but an agent MUST NOT trust a key it has not also fetched from authorizedretailers.ai.
+- **Agent behavior:** agents SHOULD cache the key set, for no longer than the `Cache-Control` on the key set response allows (the registry serves it with a 5-minute lifetime, so a removed key is out of every cache that honors it within 5 minutes), and refetch it when they see an unknown `kid`. They MUST reject signatures from keys no longer in the set. Mirrors serve a copy of the key set, but an agent MUST NOT trust a key it has not also fetched from authorizedretailers.ai. An agent that passes an answer on without checking its signature SHOULD say that the answer is unverified.
 - **Scheduled rotation:** every 90 days. The new key is published at least 7 days before first use. The old key stays published until everything it signed is past its `stale_until` (section 10).
 - **Emergency rotation:** a compromised key is removed from the set immediately, and every current list is re-signed with a new key.
 - **Storage:** the registry SHOULD hold private keys in a managed key service, sign server-side, and never expose keys to application code or staff.
@@ -545,7 +545,7 @@ An authorization lasts until the brand revokes it, unless the brand gives it an 
 
 ### 10.1 Freshness
 
-Every signed list and answer carries `valid_until`, at most 15 minutes after it was issued, and `stale_until`, at most 24 hours after it was issued. These describe the signed copy, not the authorization. The registry re-signs each list at least every 15 minutes, and immediately on any change. A revoked seller can therefore look authorized in a cached copy for about 16 minutes at most.
+Every signed list and answer carries `valid_until`, at most 15 minutes after it was issued, and `stale_until`, at most 24 hours after it was issued. These describe the signed copy, not the authorization. An agent that shows `valid_until` to a person SHOULD present it as when the answer needs re-checking, not as when the authorization ends: an authorization lasts until the brand revokes it or until its own `expires`, when it has one. The registry re-signs each list at least every 15 minutes, and immediately on any change. A revoked seller can therefore look authorized in a cached copy for about 16 minutes at most.
 
 Agents SHOULD decide from the verify endpoint and MUST NOT rely on a cached list or answer past its `valid_until`, except as section 10.2 allows.
 
@@ -713,3 +713,6 @@ The registry's liability position, dispute timelines and data handling are set o
   - Mirrors are openly readable, with no account or key; operators MAY rate-limit. The first mirror will run on Google Cloud (section 10.2).
   - Sellers that share one platform domain stay out of scope, and say why: authorizing the domain authorizes every seller on it (section 1). The platform and audience questions are deferred to a case-by-case basis (section 13).
   - A short informative section places the check in agentic checkout flows such as UCP and ACP (section 9.7). The extension-field question is closed.
+- **2026-10-20 (0.6.1)**
+  - Agents SHOULD cache the key set no longer than its `Cache-Control` allows (5 minutes at the registry), so an emergency rotation reaches them, and SHOULD say when an answer's signature was not checked (section 8).
+  - `valid_until` is presented as when an answer needs re-checking, never as when an authorization ends; the authorization's own end is `expires` (section 10.1).

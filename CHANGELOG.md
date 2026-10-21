@@ -2,6 +2,15 @@
 
 This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.6.md).
 
+## 0.6.1 (2026-10-20)
+
+Text only: no schema or version-string change, so nothing the registry serves changes shape. Documents still name `authorized-retailers/0.6`.
+
+- Spec section 8: agents SHOULD cache the key set no longer than the response's `Cache-Control` allows (the registry serves it with a 5-minute lifetime), and refetch on an unknown `kid`, so an emergency rotation reaches every agent within minutes. An agent that passes an answer on without checking its signature SHOULD say it is unverified.
+- Spec section 10.1: `valid_until` is presented as when an answer needs re-checking, never as when an authorization ends; the authorization's own end is `expires`.
+- README: the key set example caches for the response's lifetime, not "once".
+- Reason: an MCP client summarised a signed list as "Valid until 18:08", which read as the retailer's authorization lapsing, and said it had not checked the signature. The registry's MCP instructions and agent guide now say this; the spec says the same so the two agree.
+
 ## 0.6.0 (2026-10-19)
 
 Spec v0.6. No schema changes apart from the version string, so the registry's lists, feeds and answers change shape in no way: documents now name `authorized-retailers/0.6`, and pointers may name 0.2 to 0.6. One reference-verifier behavior is stricter (the feed rule below). Collected over several changes and released once.

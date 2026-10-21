@@ -66,7 +66,7 @@ npm install @authorizedretailers/spec
 ```js
 import { validateFile, checkPublishedList, validAuthorizations } from "@authorizedretailers/spec";
 
-// The registry's public keys. Fetch once and cache.
+// The registry's public keys. Cache them no longer than the response's Cache-Control allows (5 minutes).
 const jwks = await fetch("https://authorizedretailers.ai/.well-known/jwks.json").then((r) => r.json());
 
 const pointer = await fetch("https://brand.example/.well-known/authorized-retailers.json").then((r) => r.json());
