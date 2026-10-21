@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://authorizedretailers.ai/schemas/0.7/verify-request.json",
+  "title": "POST /v0/verify request (section 9)",
+  "description": "Canonical form. Call normalizeVerifyRequest on raw input first. At least one of brand_domain or product is required.",
+  "type": "object",
+  "required": [
+    "channel"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "brand_domain": {
+      "$ref": "common.json#/$defs/domain"
+    },
+    "channel": {
+      "$ref": "common.json#/$defs/channel"
+    },
+    "territory": {
+      "$ref": "common.json#/$defs/countryCode"
+    },
+    "product_line": {
+      "$ref": "common.json#/$defs/productLine"
+    },
+    "product": {
+      "$ref": "common.json#/$defs/productRef"
+    },
+    "as_of": {
+      "anyOf": [
+        {
+          "$ref": "common.json#/$defs/date"
+        },
+        {
+          "$ref": "common.json#/$defs/timestamp"
+        }
+      ]
+    },
+    "price": {
+      "description": "Section 9: the price the agent is looking at for this seller and product. Read only when product is given; never changes the answer.",
+      "type": "object",
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "description": "A decimal string, at most two decimals, such as \"34.50\".",
+          "type": "string",
+          "pattern": "^[0-9]{1,9}(\\.[0-9]{1,2})?$"
+        },
+        "currency": {
+          "description": "ISO 4217 code.",
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        }
+      }
+    }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "brand_domain"
+      ]
+    },
+    {
+      "required": [
+        "product"
+      ]
+    }
+  ]
+}

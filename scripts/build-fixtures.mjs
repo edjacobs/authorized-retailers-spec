@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
-const SPEC = "authorized-retailers/0.6";
+const SPEC = "authorized-retailers/0.7";
 const JWS = "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy";
 const sig = { kid: "ar-20260928-6e37", jws: JWS };
 
@@ -258,6 +258,9 @@ const cases = [
   ["verify-request", "web-cctld-no-territory", req({ type: "web", domain: "retailer.co.uk" }), null, "Section 6.2: ccTLD implies GB"],
   ["verify-request", "gtin", req(amazonUS, { product: { gtin: "00012345678905" } }), null, "Product by GTIN"],
   ["verify-request", "gtin-and-asin", req(amazonUS, { product: { gtin: "00012345678905", asin: "B0EXAMPLE1" } }), null, "Section 9: a product may name both"],
+  ["verify-request", "with-price", req(amazonUS, { product: { asin: "B0EXAMPLE1" }, price: { amount: "34.50", currency: "USD" } }), null, "Section 9: the price the agent sees, sent with a product; never changes the answer"],
+  ["verify-request", "price-amount-not-decimal", req(amazonUS, { product: { asin: "B0EXAMPLE1" }, price: { amount: "$34.50", currency: "USD" } }), "schema", "Section 9: amount is a decimal string, no sign or separators"],
+  ["verify-request", "price-currency-not-iso", req(amazonUS, { product: { asin: "B0EXAMPLE1" }, price: { amount: "34.50", currency: "usd" } }), "schema", "Section 9: currency is an ISO 4217 code"],
   ["verify-request", "product-only-upc", { channel: amazonUS, product: { gtin: "012345678905" } }, null, "Section 9.5: no brand_domain, found by UPC-A"],
   ["verify-request", "product-only-ean", { channel: { type: "web", domain: "retailer.co.uk" }, product: { gtin: "4006381333931" } }, null, "Section 9.5: no brand_domain, found by EAN-13"],
   ["verify-request", "product-only-asin", { channel: amazonUS, product: { asin: "B0EXAMPLE1" } }, null, "Section 9.5: an ASIN on an Amazon channel"],

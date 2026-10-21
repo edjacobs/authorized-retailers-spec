@@ -2,6 +2,15 @@
 
 This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.6.md).
 
+## 0.7.0 (unreleased, draft)
+
+Spec v0.7. Documents name `authorized-retailers/0.7`; pointers may name 0.2 to 0.7. One request field is new; lists, feeds and answers keep their shape.
+
+- Spec v0.7 (`spec/spec-v0.7.md`, the `./spec.md` export). Registry review replaces the independent brand link: the registry MUST review each brand before its list counts, MAY decline or end a registration, and SHOULD publish how it reviews; `domain_unlinked` keeps its value and means the registry has not approved the brand yet (sections 4, 7, 9.5, 12). A verify request MAY carry `price` (`amount`, `currency`), the price the agent sees, which never changes the answer and never reveals a brand's minimum advertised price; the registry MAY keep it with the query log and show the brand, in aggregate, how often agents named a seller and product below its MAP (sections 9, 12). A declaration MAY carry a product `scope` with the same shape as an authorization's; a scoped declaration answers `unauthorized` only for what it names (sections 3.2, 9.1). An authorization dispute the brand doesn't answer within 14 days closes with its current decision standing (section 11). Pointers may name 0.2 to 0.7 and the examples show the document's version (sections 5.1, 5.2, 10.3).
+- Schemas: `schemas/0.7/` (new); `verify-request.json` gains the optional `price` object; `common.json`'s `pointerSpecVersion` lists 0.2 to 0.7 (0.6 had left 0.5 out). 0.6 and earlier kept.
+- `SPEC_VERSION` is `authorized-retailers/0.7`; `POINTER_SPEC_VERSIONS` adds 0.6. `VerifyRequest` gains `price?: Price`.
+- Held: drafted 2026-10-21, not tagged or published.
+
 ## 0.6.1 (2026-10-20)
 
 Text only: no schema or version-string change, so nothing the registry serves changes shape. Documents still name `authorized-retailers/0.6`.

@@ -535,6 +535,26 @@
     "note": "Section 9: a product may name both"
   },
   {
+    "path": "verify-request/valid/with-price.json",
+    "kind": "verify-request",
+    "valid": true,
+    "note": "Section 9: the price the agent sees, sent with a product; never changes the answer"
+  },
+  {
+    "path": "verify-request/invalid/price-amount-not-decimal.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9: amount is a decimal string, no sign or separators"
+  },
+  {
+    "path": "verify-request/invalid/price-currency-not-iso.json",
+    "kind": "verify-request",
+    "valid": false,
+    "expect": "schema",
+    "note": "Section 9: currency is an ISO 4217 code"
+  },
+  {
     "path": "verify-request/valid/product-only-upc.json",
     "kind": "verify-request",
     "valid": true,

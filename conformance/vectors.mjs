@@ -47,7 +47,7 @@ export async function buildVectors(spec) {
     ...over,
   });
   const feedDoc = (issuedMs, entries = [], over = {}) => ({
-    spec: "authorized-retailers/0.6",
+    spec: "authorized-retailers/0.7",
     feed: "revocations",
     issued: iso(issuedMs),
     valid_until: iso(issuedMs + 15 * MIN),

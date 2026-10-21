@@ -76,7 +76,7 @@ async function runRegistry(spec, base) {
     const body = { channel: c.channel, product: c.product, ...(c.territory ? { territory: c.territory } : {}) };
     const res = await fetch(`${base}/v0/verify`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "User-Agent": "authorized-retailers-conformance/0.6 (+https://authorizedretailers.ai/spec)" },
+      headers: { "Content-Type": "application/json", "User-Agent": "authorized-retailers-conformance/0.7 (+https://authorizedretailers.ai/spec)" },
       body: JSON.stringify(body),
     });
     const a = await res.json();

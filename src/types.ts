@@ -1,6 +1,6 @@
-// Types mirror schemas/0.6/*.json. The schemas are canonical; if the two disagree, the schema wins.
+// Types mirror schemas/0.7/*.json. The schemas are canonical; if the two disagree, the schema wins.
 
-export const SPEC_VERSION = "authorized-retailers/0.6" as const;
+export const SPEC_VERSION = "authorized-retailers/0.7" as const;
 export type SpecVersion = typeof SPEC_VERSION;
 
 /** RFC 3339 UTC timestamp, e.g. "2026-09-28T00:00:00Z". */
@@ -92,7 +92,7 @@ export interface Signature {
 }
 
 /** Section 5.1: the pointer format is unchanged since v0.2, so a pointer may name either version. */
-export const POINTER_SPEC_VERSIONS = ["authorized-retailers/0.2", "authorized-retailers/0.3", "authorized-retailers/0.4", "authorized-retailers/0.5", SPEC_VERSION] as const;
+export const POINTER_SPEC_VERSIONS = ["authorized-retailers/0.2", "authorized-retailers/0.3", "authorized-retailers/0.4", "authorized-retailers/0.5", "authorized-retailers/0.6", SPEC_VERSION] as const;
 export type PointerSpecVersion = (typeof POINTER_SPEC_VERSIONS)[number];
 
 /** Section 5.1: the optional, unsigned file at /.well-known/authorized-retailers.json. */
@@ -154,6 +154,14 @@ export interface VerifyRequest {
   product?: ProductRef;
   /** ISO 8601 date or UTC date-time. Defaults to now. */
   as_of?: string;
+  /** Section 9: the price the agent sees for this seller and product. Read only with `product`; never changes the answer. */
+  price?: Price;
+}
+
+/** A decimal string with at most two decimals and an ISO 4217 code: { amount: "34.50", currency: "USD" }. */
+export interface Price {
+  amount: string;
+  currency: string;
 }
 
 export type VerifyStatus =

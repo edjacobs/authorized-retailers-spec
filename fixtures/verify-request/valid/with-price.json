@@ -1,0 +1,15 @@
+{
+  "brand_domain": "brand.example",
+  "channel": {
+    "type": "amazon",
+    "domain": "amazon.com",
+    "seller_id": "A1B2C3D4E5F6G7"
+  },
+  "product": {
+    "asin": "B0EXAMPLE1"
+  },
+  "price": {
+    "amount": "34.50",
+    "currency": "USD"
+  }
+}
