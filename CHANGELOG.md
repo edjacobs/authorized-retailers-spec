@@ -11,6 +11,7 @@ Spec v0.7. Documents name `authorized-retailers/0.7`; pointers may name 0.2 to 0
 - `SPEC_VERSION` is `authorized-retailers/0.7`; `POINTER_SPEC_VERSIONS` adds 0.6. `VerifyRequest` gains `price?: Price`.
 - `normalizeVerifyRequest` no longer adds an undefined `channel` key to a request that has none; `validateVerifyRequest` on such a request now returns `{ valid: false }` instead of throwing (reason: the registry answered 500 to any verify body without a channel).
 - The registry's agent API paths carry no version: spec section 9 names `POST /verify` and `POST /resolve`, sections 5.1, 5.2 and 10.3 name `/brands/<domain>/list` and `/revocations`, and a registry MUST keep serving the `/v0/` forms. `REGISTRY_REVOCATIONS_URL` is now `https://authorizedretailers.ai/revocations`; the README, the conformance runner and the valid pointer fixture use the unversioned paths (`pointer-v0.2.json` keeps `/v0/`, which stays valid). The pointer schema is unchanged (any `https://authorizedretailers.ai/` URL).
+- Spec section 9.8 (new): an agent MUST NOT complete a purchase from a seller the brand has declared `unauthorized` on its own; only after the person has confirmed that purchase, told what the declaration means, or under a standing instruction such as for enforcement test purchases. For `unlisted` it SHOULD prefer an authorized seller and say when it picks another. Agent conduct only: answers, schemas and the conformance decision are unchanged.
 - Held: drafted 2026-10-21, not tagged or published.
 
 ## 0.6.1 (2026-10-20)
