@@ -375,7 +375,9 @@ Brands do nothing during rotation.
 
 An agent asks one question: is this seller authorized for this brand, on this channel, in this territory, for this product? The agent MAY name the brand by its domain, or let the registry find it from the product (section 9.5). The answer is signed and is the same whether the brand's list is public or not.
 
-Request: `POST /v0/verify`
+Request: `POST /verify`
+
+The verify API's paths carry no version: a request without one gets the current specification. A registry MUST also serve each of them under `/v0/` (`/v0/verify`, `/v0/resolve`, `/v0/revocations`, `/v0/brands/<domain>/list`) for clients that already use that form, with the same answers.
 
 ```json
 {
@@ -509,7 +511,7 @@ When a request gives a `brand_domain` and a product, the brand comes from the do
 
 Finding the brand reveals only which registered brand a product belongs to. It MUST NOT reveal a brand's retailers, and for a brand whose list is not public it MUST NOT reveal anything from the catalog beyond `in_catalog` (section 9.3).
 
-`POST /v0/resolve` (and the MCP tool `resolve_brand`) finds the brand without asking about a seller:
+`POST /resolve` (and the MCP tool `resolve_brand`) finds the brand without asking about a seller:
 
 ```json
 { "product": { "asin": "B0EXAMPLE1" }, "domain": "amazon.com" }
@@ -729,3 +731,4 @@ The registry's liability position, dispute timelines and data handling are set o
   - Housekeeping: a pointer MAY name any version from 0.2 to 0.7 (section 5.1; the 0.6 schema had left 0.5 out of `pointerSpecVersion`, fixed in 0.7), and the examples show the version of the document (sections 5.1, 5.2, 10.3).
   - Schemas: `schemas/0.7/` adds `price` to `verify-request.json` and the pointer version list; nothing else changes shape. Documents name `authorized-retailers/0.7`.
   - Wording: a declared seller is one the brand has found selling without authorization, and an agent SHOULD NOT send a shopper to it, since the goods may be materially different or counterfeit. The registry still makes no finding of its own (sections 1, 3.2, 12). An unrecognised `status` MUST NOT be treated as authorized, replacing "as not authorized" (section 9).
+  - The verify API's paths carry no version (`POST /verify`, `POST /resolve`): a request without one gets the current specification. A registry MUST also serve them under `/v0/` for existing clients (section 9).
