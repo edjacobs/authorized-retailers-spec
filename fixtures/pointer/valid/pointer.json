@@ -6,5 +6,5 @@
     "domain": "brand.example"
   },
   "verify_token": "tok_4f9KqX2mB7cD1eR8",
-  "list": "https://authorizedretailers.ai/v0/brands/brand.example/list"
+  "list": "https://authorizedretailers.ai/brands/brand.example/list"
 }

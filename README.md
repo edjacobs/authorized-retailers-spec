@@ -47,7 +47,7 @@ https://<brand-domain>/.well-known/authorized-retailers.json
   "form": "pointer",
   "brand": { "name": "Example Brand", "domain": "brand.example" },
   "verify_token": "<token from the registry>",
-  "list": "https://authorizedretailers.ai/v0/brands/brand.example/list"
+  "list": "https://authorizedretailers.ai/brands/brand.example/list"
 }
 ```
 

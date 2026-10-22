@@ -15,7 +15,7 @@ export const MAX_POINTER_REDIRECTS = 3;
 /** Section 5.1: a pointer's list URL must be on this origin. */
 export const REGISTRY_ORIGIN = "https://authorizedretailers.ai";
 export const REGISTRY_JWKS_URL = `${REGISTRY_ORIGIN}/.well-known/jwks.json`;
-export const REGISTRY_REVOCATIONS_URL = `${REGISTRY_ORIGIN}/v0/revocations`;
+export const REGISTRY_REVOCATIONS_URL = `${REGISTRY_ORIGIN}/revocations`;
 /** Section 10.2: mirror base URLs. None yet; listed here and in the spec when they launch. */
 export const MIRRORS: readonly string[] = [];
 

@@ -10,6 +10,7 @@ Spec v0.7. Documents name `authorized-retailers/0.7`; pointers may name 0.2 to 0
 - Schemas: `schemas/0.7/` (new); `verify-request.json` gains the optional `price` object; `common.json`'s `pointerSpecVersion` lists 0.2 to 0.7 (0.6 had left 0.5 out). 0.6 and earlier kept.
 - `SPEC_VERSION` is `authorized-retailers/0.7`; `POINTER_SPEC_VERSIONS` adds 0.6. `VerifyRequest` gains `price?: Price`.
 - `normalizeVerifyRequest` no longer adds an undefined `channel` key to a request that has none; `validateVerifyRequest` on such a request now returns `{ valid: false }` instead of throwing (reason: the registry answered 500 to any verify body without a channel).
+- The registry's agent API paths carry no version: spec section 9 names `POST /verify` and `POST /resolve`, sections 5.1, 5.2 and 10.3 name `/brands/<domain>/list` and `/revocations`, and a registry MUST keep serving the `/v0/` forms. `REGISTRY_REVOCATIONS_URL` is now `https://authorizedretailers.ai/revocations`; the README, the conformance runner and the valid pointer fixture use the unversioned paths (`pointer-v0.2.json` keeps `/v0/`, which stays valid). The pointer schema is unchanged (any `https://authorizedretailers.ai/` URL).
 - Held: drafted 2026-10-21, not tagged or published.
 
 ## 0.6.1 (2026-10-20)

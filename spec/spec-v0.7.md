@@ -201,14 +201,14 @@ A brand MAY serve a pointer at `https://<brand-domain>/.well-known/authorized-re
   "form": "pointer",
   "brand": { "name": "Example Brand", "domain": "brand.example" },
   "verify_token": "<token from the registry>",
-  "list": "https://authorizedretailers.ai/v0/brands/brand.example/list"
+  "list": "https://authorizedretailers.ai/brands/brand.example/list"
 }
 ```
 
 - `spec` MAY be `authorized-retailers/0.2`, `/0.3`, `/0.4`, `/0.5`, `/0.6` or `/0.7`. The pointer format has not changed since v0.2, so a pointer published then stays current.
 - `form` is `pointer`. It is the only form. The field stays so that later versions can add forms. Readers MUST treat a file with any other `form`, including the v0.1 `full` and `private` forms, as no file.
 - `brand.domain` MUST be the domain the pointer was fetched from. A pointer vouches only for its own domain.
-- `list` MUST be an `https://authorizedretailers.ai/` URL. A pointer naming any other host is treated as no file.
+- `list` MUST be an `https://authorizedretailers.ai/` URL. A pointer naming any other host is treated as no file. The registry issues the unversioned path shown above; a pointer that names the list under `/v0/` (every pointer issued before 2026-10-22) stays current, since the registry serves both (section 9).
 - `verify_token` is the domain's token from the registry (section 4). It lets the registry tell whether a pointer is current. It is not proof of control.
 
 The pointer carries no authorization data, so it does not change when the brand's list changes, and it is not signed. It needs replacing only when its own fields change: a new verification token, domain or spec version. The registry SHOULD tell a brand when a pointer it finds on the brand's domain is out of date. The list it names is signed, and so is every verify answer.
@@ -743,4 +743,4 @@ The registry's liability position, dispute timelines and data handling are set o
   - Housekeeping: a pointer MAY name any version from 0.2 to 0.7 (section 5.1; the 0.6 schema had left 0.5 out of `pointerSpecVersion`, fixed in 0.7), and the examples show the version of the document (sections 5.1, 5.2, 10.3).
   - Schemas: `schemas/0.7/` adds `price` to `verify-request.json` and the pointer version list; nothing else changes shape. Documents name `authorized-retailers/0.7`.
   - Wording: a declared seller is one the brand has found selling without authorization, and an agent SHOULD NOT send a shopper to it, since the goods may be materially different or counterfeit. The registry still makes no finding of its own (sections 1, 3.2, 12). An unrecognised `status` MUST NOT be treated as authorized, replacing "as not authorized" (section 9).
-  - The verify API's paths carry no version (`POST /verify`, `POST /resolve`): a request without one gets the current specification. A registry MUST also serve them under `/v0/` for existing clients (sections 5.2, 9, 10.3). The README and the conformance runner use the unversioned paths; a pointer's `list` keeps the `/v0/` form the registry checks it against (section 5.1).
+  - The verify API's paths carry no version (`POST /verify`, `POST /resolve`): a request without one gets the current specification. A registry MUST also serve them under `/v0/` for existing clients (sections 5.2, 9, 10.3). The README and the conformance runner use the unversioned paths; the pointer example names the list at the unversioned path, and a pointer naming it under `/v0/` stays current (section 5.1).
