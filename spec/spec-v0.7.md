@@ -21,7 +21,7 @@ It does not assert:
 
 - **Authenticity.** An authorized retailer can still sell counterfeit goods or have its account compromised. Authorization and authenticity are separate questions.
 - **Pricing.** The format carries no price, MAP or discount terms.
-- **Legal status.** A seller not listed is unlisted, not unlawful. A seller the brand declares unauthorized (section 3.2) is one the brand says it has not authorized: that is the brand's statement, not a finding by the registry that the seller acts unlawfully or sells counterfeit goods. How an agent or platform acts on either result is its own decision.
+- **Legal status.** A seller not listed is unlisted: the brand hasn't authorized it, and nothing more is implied. A seller the brand declares unauthorized (section 3.2) is one the brand has found selling its products without authorization. The registry records and signs that declaration; it does not investigate the seller. An agent SHOULD NOT send a shopper to a declared seller: goods from an unauthorized seller may be materially different from what the brand sells, or counterfeit, and the brand's warranty may not apply.
 
 The key words MUST, SHOULD and MAY are used as defined in RFC 2119.
 
@@ -146,7 +146,7 @@ Matching a verify request against the catalog is described in section 9.2.
 
 ### 3.2 Declared unauthorized sellers
 
-Unlisted means only that the brand hasn't authorized a seller. A brand that knows a seller is not authorized, for example a diverter it has already found, MAY say so with a declaration. Verify answers about that seller are then `unauthorized` instead of `unlisted` (section 9).
+Unlisted means only that the brand hasn't authorized a seller. A brand that has found a seller selling its products without authorization, a diverter say, MAY say so with a declaration. Verify answers about that seller are then `unauthorized` instead of `unlisted` (section 9).
 
 - A declaration names one channel identifier (section 6): a marketplace domain and seller ID, or a web store's domain. It is matched as in section 6.1 and covers every territory on that channel identifier.
 - A declaration MAY carry a product scope, `scope`, with the same shape as an authorization's: `product_lines` (named lines, or `["all"]`), `products` (catalog product IDs), or both (section 3). Without one, or with `product_lines: ["all"]`, it covers every product. A scoped declaration covers a catalog product whose line is in `product_lines` or whose ID is in `products`, and a request's `product_line` when `product_lines` names it; it covers nothing else, so a product outside the scope or not in the catalog, and a request that names no product, are answered as if the declaration didn't exist (section 9.1). Exclusions don't apply: a declaration names what it covers.
@@ -155,7 +155,7 @@ Unlisted means only that the brand hasn't authorized a seller. A brand that know
 - Only the brand makes or withdraws a declaration, under the same rules as an authorization: the registry MUST NOT add, remove or change one on its own, and every change is in the brand's change log (section 3). A withdrawn declaration leaves the seller `unlisted`.
 - A seller can dispute a declaration (section 11).
 
-The registry records and signs the brand's declaration. It does not check whether the declaration is right.
+The registry records and signs the brand's declaration. It does not investigate the seller.
 
 ## 4. Brand identity and domain verification
 
@@ -433,7 +433,7 @@ Response:
 | --- | --- |
 | `authorized` | An authorization covers this seller, channel, territory and product |
 | `unlisted` | The brand is registered and no authorization covers this request |
-| `unauthorized` | The brand has declared this seller not authorized (section 3.2) |
+| `unauthorized` | The brand has declared this seller unauthorized (section 3.2) |
 | `expired` | An authorization with an end date covered this seller, and the end date has passed |
 | `brand_not_registered` | The brand domain is not registered (section 4) |
 | `disputed` | A dispute is open on this authorization, and the brand has flagged it for review, or on a declaration the brand hasn't yet reconfirmed (section 11) |
@@ -454,7 +454,7 @@ Response:
   - `id`, `product_line`, `name`, `mpns` and `style_code`, only for a brand whose list is public.
 - When `product.status` is `recalled`, an agent MUST tell its user and SHOULD NOT complete the purchase, whatever the seller's status. `discontinued` is information for the user.
 
-New statuses can be added, as `unauthorized` was in v0.4. An agent MUST treat a `status` it doesn't recognise as not authorized, and SHOULD treat the seller as unconfirmed, as for an unreachable registry (section 10.2).
+New statuses can be added, as `unauthorized` was in v0.4. An agent MUST NOT treat a `status` it doesn't recognise as authorized, and SHOULD treat the seller as unconfirmed, as for an unreachable registry (section 10.2).
 
 `reason` is optional on `brand_not_registered` (section 4) and `unlisted`, and MUST NOT appear on any other status:
 
@@ -612,7 +612,7 @@ The registry's liability position, dispute timelines and data handling are set o
 - **Account takeover at the registry:** brand accounts MUST use multi-factor authentication. Revocations and new authorizations SHOULD trigger an email to every brand admin.
 - **Registry changes:** the registry cannot change a brand's list on its own, and every change is in a log the brand can see (section 3).
 - **Compromised retailer accounts:** an authorized retailer's marketplace account can be taken over. Observation signals (section 7) help, but authorization does not guarantee the retailer's current conduct.
-- **Declarations:** a brand could declare a seller it did in fact authorize, or one it has no relationship with. The answer only reports the brand's statement (section 1), the seller can dispute it (section 11), and declarations are never published as a list (section 3.2), so a declaration can't be read as a public blocklist.
+- **Declarations:** a brand could declare a seller it did in fact authorize, or one it has no relationship with. The answer reports the brand's declaration, not a finding by the registry (section 1), the seller can dispute it (section 11), and declarations are never published as a list (section 3.2), so a declaration can't be read as a public blocklist.
 - **Dispute abuse:** anyone can dispute a declaration, which makes the answer `disputed` for up to 30 days. The brand can end it at once by reconfirming, and the registry can limit repeat disputes (section 11).
 - **Mailbox addresses:** a seller whose listed address is a PO box or a commercial mailbox can be hard to trace. The registry MAY warn a brand before it authorizes such a seller. The warning is for the brand only and MUST NOT change verify answers.
 - **Product takeover:** a lookalike brand could upload another brand's barcodes to capture product lookups. Only registered brands take part in finding a brand, and a product claimed by two brands is never authorized (section 9.5). The registry SHOULD warn a brand when it adds a product another brand already claims.
@@ -728,3 +728,4 @@ The registry's liability position, dispute timelines and data handling are set o
   - An authorization dispute the brand doesn't answer within 14 days closes with the brand's current decision standing, as a declaration dispute does after 30 days (section 11).
   - Housekeeping: a pointer MAY name any version from 0.2 to 0.7 (section 5.1; the 0.6 schema had left 0.5 out of `pointerSpecVersion`, fixed in 0.7), and the examples show the version of the document (sections 5.1, 5.2, 10.3).
   - Schemas: `schemas/0.7/` adds `price` to `verify-request.json` and the pointer version list; nothing else changes shape. Documents name `authorized-retailers/0.7`.
+  - Wording: a declared seller is one the brand has found selling without authorization, and an agent SHOULD NOT send a shopper to it, since the goods may be materially different or counterfeit. The registry still makes no finding of its own (sections 1, 3.2, 12). An unrecognised `status` MUST NOT be treated as authorized, replacing "as not authorized" (section 9).
