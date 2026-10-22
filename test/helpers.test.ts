@@ -151,3 +151,12 @@ describe("normalizeChannel", () => {
     expect(normalizeChannel(null)).toBeNull();
   });
 });
+
+describe("normalizeVerifyRequest with no channel", () => {
+  it("leaves the key out, so validation refuses the request instead of throwing", () => {
+    const out = normalizeVerifyRequest({ brand_domain: "Brand.example" }) as Record<string, unknown>;
+    expect("channel" in out).toBe(false);
+    expect(validateVerifyRequest(out).valid).toBe(false);
+    expect(validateVerifyRequest(normalizeVerifyRequest({})).valid).toBe(false);
+  });
+});

@@ -106,7 +106,8 @@ export function normalizeVerifyRequest(input: unknown): unknown {
   if (typeof out.product_line === "string") out.product_line = out.product_line.trim();
   if (typeof out.as_of === "string") out.as_of = out.as_of.trim();
   if (out.product !== undefined) out.product = normalizeProductRef(out.product);
-  out.channel = normalizeChannel(out.channel);
+  // A missing channel stays missing: an undefined key would make the validator throw instead of refusing the request.
+  if (out.channel !== undefined) out.channel = normalizeChannel(out.channel);
   // Section 9: type is optional in a request. A marketplace domain implies its type; any other domain is a web store.
   if (isRecord(out.channel) && out.channel.type === undefined && typeof out.channel.domain === "string") {
     out.channel = { type: marketplaceTypeForDomain(out.channel.domain) ?? "web", ...out.channel };
