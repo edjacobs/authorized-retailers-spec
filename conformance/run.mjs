@@ -74,7 +74,7 @@ async function runRegistry(spec, base) {
 
   for (const c of cases) {
     const body = { channel: c.channel, product: c.product, ...(c.territory ? { territory: c.territory } : {}) };
-    const res = await fetch(`${base}/v0/verify`, {
+    const res = await fetch(`${base}/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "User-Agent": "authorized-retailers-conformance/0.7 (+https://authorizedretailers.ai/spec)" },
       body: JSON.stringify(body),
@@ -96,7 +96,7 @@ async function runRegistry(spec, base) {
     report(problems.length === 0, `§9 ${c.ask}`, problems.join("; "));
   }
 
-  const feed = await (await fetch(`${base}/v0/revocations`)).json();
+  const feed = await (await fetch(`${base}/revocations`)).json();
   const feedCheck = await spec.checkRevocationFeed(feed, jwks);
   report(feedCheck.valid, "§10.3 the revocation feed is signed and fresh", `invalid: ${feedCheck.reason}`);
   return failed;

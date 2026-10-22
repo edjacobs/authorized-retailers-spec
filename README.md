@@ -83,7 +83,7 @@ if (check.counts && list.public) {
 }
 ```
 
-A brand with only a DNS record has no pointer. Its list is at the same registry URL: `https://authorizedretailers.ai/v0/brands/<domain>/list`.
+A brand with only a DNS record has no pointer. Its list is at the same registry URL: `https://authorizedretailers.ai/brands/<domain>/list` (also served under `/v0/`).
 
 The package works in Node 20+, Cloudflare Workers, Deno and browsers. It uses only Web Crypto, makes no network calls and sends no telemetry.
 
@@ -94,7 +94,7 @@ Ask the registry whether a seller is authorized, then verify the answer against 
 ```js
 import { verifyDocument } from "@authorizedretailers/spec";
 
-const answer = await fetch("https://authorizedretailers.ai/v0/verify", {
+const answer = await fetch("https://authorizedretailers.ai/verify", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
@@ -112,7 +112,7 @@ const verified = await verifyDocument(answer, jwks);
 // answer.brand and answer.resolved_by say which brand the answer is about and how it was found.
 ```
 
-Without a `brand_domain`, the registry finds the brand from the product through registered brands' catalogs (spec section 9.5). If no registered brand has the product the answer is `product_not_found`. If more than one claims it, the answer is `brand_ambiguous` with the `candidates`, never `authorized`. If you give a `brand_domain` and the product belongs to other brands, the answer is `brand_mismatch`. An ASIN alone finds a brand only on an Amazon channel, and a Walmart item ID or WPID alone only on walmart.com. Check `answer.product.status`: if it is `recalled`, tell your user and don't complete the purchase, whatever the seller's status. To find the brand without asking about a seller, `POST /v0/resolve` with `{ "product": { "gtin": "012345678905" } }`.
+Without a `brand_domain`, the registry finds the brand from the product through registered brands' catalogs (spec section 9.5). If no registered brand has the product the answer is `product_not_found`. If more than one claims it, the answer is `brand_ambiguous` with the `candidates`, never `authorized`. If you give a `brand_domain` and the product belongs to other brands, the answer is `brand_mismatch`. An ASIN alone finds a brand only on an Amazon channel, and a Walmart item ID or WPID alone only on walmart.com. Check `answer.product.status`: if it is `recalled`, tell your user and don't complete the purchase, whatever the seller's status. To find the brand without asking about a seller, `POST /resolve` with `{ "product": { "gtin": "012345678905" } }`.
 
 `unauthorized` means the brand has declared the seller not authorized, unlike `unlisted`, which only means the brand hasn't authorized it. A seller disputing a declaration is `disputed` until the brand reconfirms or withdraws it, or 30 days pass. Treat any status you don't recognise as not authorized (spec sections 3.2, 9, 11).
 

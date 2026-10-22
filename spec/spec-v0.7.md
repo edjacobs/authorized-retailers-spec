@@ -219,7 +219,7 @@ Readers MAY follow up to 3 HTTPS redirects when fetching the pointer (for exampl
 
 ### 5.2 The signed list
 
-The registry publishes each brand's list at `https://authorizedretailers.ai/v0/brands/<domain>/list`. Brands never build or sign their own list: they make authorization decisions on the registry, and the registry builds and signs the list.
+The registry publishes each brand's list at `https://authorizedretailers.ai/brands/<domain>/list` (and, for existing readers, under `/v0/`, section 9). Brands never build or sign their own list: they make authorization decisions on the registry, and the registry builds and signs the list.
 
 ```json
 {
@@ -581,7 +581,7 @@ A registry outage never makes a seller unauthorized and never blocks a purchase 
 
 Every authorization carries a `revocation_id`: a random value that reveals nothing about the brand or seller. It appears in the list and on `authorized` answers only. When an authorization stops covering something it covered before (it is revoked, a channel is removed, its territories or products shrink, or its end date moves earlier), the registry publishes its `revocation_id` in the revocation feed and gives the authorization a new one.
 
-The feed is a signed, append-only record of the last 24 hours, published every minute at `https://authorizedretailers.ai/v0/revocations` and on every mirror:
+The feed is a signed, append-only record of the last 24 hours, published every minute at `https://authorizedretailers.ai/revocations` (also under `/v0/`, section 9) and on every mirror:
 
 ```json
 {
@@ -743,4 +743,4 @@ The registry's liability position, dispute timelines and data handling are set o
   - Housekeeping: a pointer MAY name any version from 0.2 to 0.7 (section 5.1; the 0.6 schema had left 0.5 out of `pointerSpecVersion`, fixed in 0.7), and the examples show the version of the document (sections 5.1, 5.2, 10.3).
   - Schemas: `schemas/0.7/` adds `price` to `verify-request.json` and the pointer version list; nothing else changes shape. Documents name `authorized-retailers/0.7`.
   - Wording: a declared seller is one the brand has found selling without authorization, and an agent SHOULD NOT send a shopper to it, since the goods may be materially different or counterfeit. The registry still makes no finding of its own (sections 1, 3.2, 12). An unrecognised `status` MUST NOT be treated as authorized, replacing "as not authorized" (section 9).
-  - The verify API's paths carry no version (`POST /verify`, `POST /resolve`): a request without one gets the current specification. A registry MUST also serve them under `/v0/` for existing clients (section 9).
+  - The verify API's paths carry no version (`POST /verify`, `POST /resolve`): a request without one gets the current specification. A registry MUST also serve them under `/v0/` for existing clients (sections 5.2, 9, 10.3). The README and the conformance runner use the unversioned paths; a pointer's `list` keeps the `/v0/` form the registry checks it against (section 5.1).
