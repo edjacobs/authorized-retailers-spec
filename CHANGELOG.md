@@ -1,8 +1,8 @@
 # Changelog
 
-This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.6.md).
+This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.7.md).
 
-## 0.7.0 (unreleased, draft)
+## 0.7.0 (2026-10-22)
 
 Spec v0.7. Documents name `authorized-retailers/0.7`; pointers may name 0.2 to 0.7. One request field is new; lists, feeds and answers keep their shape.
 
@@ -12,7 +12,7 @@ Spec v0.7. Documents name `authorized-retailers/0.7`; pointers may name 0.2 to 0
 - `normalizeVerifyRequest` no longer adds an undefined `channel` key to a request that has none; `validateVerifyRequest` on such a request now returns `{ valid: false }` instead of throwing (reason: the registry answered 500 to any verify body without a channel).
 - The registry's agent API paths carry no version: spec section 9 names `POST /verify` and `POST /resolve`, sections 5.1, 5.2 and 10.3 name `/brands/<domain>/list` and `/revocations`, and a registry MUST keep serving the `/v0/` forms. `REGISTRY_REVOCATIONS_URL` is now `https://authorizedretailers.ai/revocations`; the README, the conformance runner and the valid pointer fixture use the unversioned paths (`pointer-v0.2.json` keeps `/v0/`, which stays valid). The pointer schema is unchanged (any `https://authorizedretailers.ai/` URL).
 - Spec section 9.8 (new): an agent MUST NOT complete a purchase from a seller the brand has declared `unauthorized` on its own; only after the person has confirmed that purchase, told what the declaration means, or under a standing instruction such as for enforcement test purchases. For `unlisted` it SHOULD prefer an authorized seller and say when it picks another. Agent conduct only: answers, schemas and the conformance decision are unchanged.
-- Held: drafted 2026-10-21, not tagged or published.
+- The specification, package and trademarks now name Authorized Retailers LLC, the company that operates the registry (spec header, GOVERNANCE.md, TRADEMARKS.md, README.md, package.json `author`).
 
 ## 0.6.1 (2026-10-20)
 

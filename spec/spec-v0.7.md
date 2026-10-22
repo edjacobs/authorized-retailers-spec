@@ -1,7 +1,7 @@
-# Authorized Retailers Specification v0.7 (draft)
+# Authorized Retailers Specification v0.7
 
-Draft v0.7 · unreleased, started 21 October 2026  
-Editor: authorizedretailers.ai
+Draft v0.7 · 22 October 2026  
+Editor: Authorized Retailers LLC (authorizedretailers.ai)
 
 Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). JSON Schemas and reference code: Apache-2.0.
 
@@ -11,7 +11,7 @@ This spec defines how a brand records which retailers it has authorized to sell 
 
 The registry works like a notary. It checks that a brand controls its domain and is independently linked to it (section 4), records the brand's own decisions and signs them. The signature says who published a list, not who is authorized. Only the brand decides that (section 3).
 
-Status: draft v0.7 (unreleased), for discussion with brands, retailers and agent developers. Breaking changes are expected before v1.0. Changes are listed in section 14.
+Status: draft v0.7, for discussion with brands, retailers and agent developers. Breaking changes are expected before v1.0. Changes are listed in section 14.
 
 The spec asserts one thing: whether a brand has authorized a given seller, on a given channel, in a given territory, for a given product, as of a given date.
 
@@ -744,7 +744,7 @@ The registry's liability position, dispute timelines and data handling are set o
 - **2026-10-20 (0.6.1)**
   - Agents SHOULD cache the key set no longer than its `Cache-Control` allows (5 minutes at the registry), so an emergency rotation reaches them, and SHOULD say when an answer's signature was not checked (section 8).
   - `valid_until` is presented as when an answer needs re-checking, never as when an authorization ends; the authorization's own end is `expires` (section 10.1).
-- **Unreleased (v0.7 draft)**
+- **2026-10-22 (v0.7)**
   - Why registry review: anyone can look up a trademark filing and submit it, so the independent link proved little, and the registry reviews every brand by hand anyway. Domain verification stays; the registry MUST review each brand before its list counts, MAY decline or end a registration, and SHOULD publish how it reviews. `domain_unlinked` keeps its value and now means the registry has not approved the brand yet (sections 4, 7, 9.5, 12). Residual risk: a lookalike that review misses can claim an unregistered brand's barcodes; once the real brand registers, section 9.5 answers `brand_ambiguous` and never `authorized`.
   - Verify requests MAY carry a `price` (`amount`, `currency`), the price the agent sees for the seller and product. It never changes the answer and never reveals a brand's minimum advertised price; the registry MAY keep it with the query log and show the brand, in aggregate, how often agents named a seller and product below its MAP, and which agents did (sections 9, 12). Reason: brands now give the registry a MAP per product, and the registry can otherwise compare only the prices its own seller scans saw. For the 0.7 release: `price` is added to `verify-request.json` (the 0.6 schema refuses unknown fields).
   - A declaration MAY carry a product `scope` (`product_lines`, `products`, or both), with the same shape as an authorization's. A scoped declaration answers `unauthorized` to a request with no product (seller first) and to a catalog product or `product_line` inside its scope; a product outside it is answered as if there were no declaration, with the signal `unauthorized_for_other_products`. Without a scope a declaration covers every product, as before. A declaration and an active authorization still never share a channel identifier (sections 3.2, 9.1).

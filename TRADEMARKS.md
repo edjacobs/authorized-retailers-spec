@@ -1,6 +1,6 @@
 # Trademarks
 
-"authorizedretailers.ai", "Authorized Retailers" used as the name of this standard, and the Authorized Retailers logos are trademarks of Ed Jacobs.
+"authorizedretailers.ai", "Authorized Retailers" used as the name of this standard, and the Authorized Retailers logos are trademarks of Authorized Retailers LLC, which operates the registry at authorizedretailers.ai.
 
 The licenses in this repository cover the specification text, schemas, code and fixtures. They do not grant any right to use these trademarks.
 
@@ -11,7 +11,7 @@ The licenses in this repository cover the specification text, schemas, code and 
 
 ## What you may not do
 
-- Imply that Ed Jacobs endorses, certifies, audits or partners with you or your product.
+- Imply that Authorized Retailers LLC endorses, certifies, audits or partners with you or your product.
 - Offer or advertise a certification, badge or seal under these names.
 - Use these names, or confusingly similar ones, for a registry, index or verification service.
 - Use the logos without written permission.
