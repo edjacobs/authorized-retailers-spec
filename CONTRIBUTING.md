@@ -2,9 +2,9 @@
 
 Thanks for your interest in the standard. Brands, retailers, marketplaces and agent builders all have cases this draft may not handle yet, and hearing about them is the most useful help.
 
-## Send feedback
+## Send a proposal or feedback
 
-Use the feedback form at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec#feedback). Useful feedback says:
+Email [spec@authorizedretailers.ai](mailto:spec@authorizedretailers.ai) or use the feedback form at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec#feedback). Proposals for changes are as welcome as reports of cases the spec gets wrong. Useful messages say:
 
 - who you are (brand, retailer, marketplace or agent builder)
 - the real situation the spec gets wrong or leaves out
@@ -12,9 +12,9 @@ Use the feedback form at [authorizedretailers.ai/spec](https://authorizedretaile
 
 Security issues go to the address in [SECURITY.md](SECURITY.md), not the feedback form.
 
-## Pull requests
+## Pull requests and issues
 
-This repository doesn't accept pull requests. The maintainer makes every change (see [GOVERNANCE.md](GOVERNANCE.md)). Every change is listed in the changelog, with a note where feedback shaped it.
+This repository has no issues and doesn't accept pull requests. Contributions come by email or the feedback form, and the maintainer discusses them with you and makes every change here in public (see [GOVERNANCE.md](GOVERNANCE.md)). Every change is listed in the changelog, with a note where a contribution shaped it.
 
 ## Development
 

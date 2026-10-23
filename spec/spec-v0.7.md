@@ -60,7 +60,7 @@ flowchart LR
 
 Sellers can request authorization. Only the brand's approval creates one. Anything the brand has not approved verifies as unlisted.
 
-The registry MUST NOT add, remove or change an authorization except on the brand's instruction, or when the brand approves a seller's request. The registry MUST keep a change log for each brand, recording what changed, who changed it and when, and MUST show that log to the brand.
+The registry MUST NOT add, remove or change an authorization except on the brand's instruction, or when the brand approves a seller's request, or, as its terms of use reserve, to remove an entry it reasonably believes is unlawful or abusive. The registry MUST keep a change log for each brand, recording what changed, who changed it and when (and, for a removal the registry makes, why), and MUST show that log to the brand.
 
 A request to a brand that is not yet registered MAY be held by the registry and delivered once the brand registers. A held request has no effect on verify answers.
 
@@ -152,7 +152,7 @@ Unlisted means only that the brand hasn't authorized a seller. A brand that has 
 - A declaration MAY carry a product scope, `scope`, with the same shape as an authorization's: `product_lines` (named lines, or `["all"]`), `products` (catalog product IDs), or both (section 3). Without one, or with `product_lines: ["all"]`, it covers every product. A scoped declaration covers a catalog product whose line is in `product_lines` or whose ID is in `products`, a request's `product_line` when `product_lines` names it, and, seller first, any request that names no product or product line. A product outside the scope, or not in the catalog, is answered as if the declaration didn't exist, with the signal `unauthorized_for_other_products` (section 9.1). Exclusions don't apply: a declaration names what it covers.
 - A declaration and an active authorization MUST NOT cover the same channel identifier, whatever their scopes. The registry MUST refuse a declaration for a channel identifier that an active authorization names, and MUST refuse an authorization for a declared one until the declaration is withdrawn.
 - Declarations are not published. A declaration MUST NOT appear in a signed list, a list endpoint or the revocation feed, and the registry MUST NOT reveal one except in a verify answer about that channel identifier. This holds whether or not the brand's list is public.
-- Only the brand makes or withdraws a declaration, under the same rules as an authorization: the registry MUST NOT add, remove or change one on its own, and every change is in the brand's change log (section 3). A withdrawn declaration leaves the seller `unlisted`.
+- Only the brand makes or withdraws a declaration, under the same rules as an authorization: the registry MUST NOT add, remove or change one on its own, except to remove one it reasonably believes is unlawful or abusive, as its terms of use reserve, and every change is in the brand's change log (section 3). A withdrawn declaration leaves the seller `unlisted`.
 - A seller can dispute a declaration (section 11).
 
 The registry records and signs the brand's declaration. It does not investigate the seller.
@@ -612,10 +612,10 @@ An agent holding a stale answer or list MUST check it against a revocation feed 
 **Disputes.** A retailer can see its own status for any brand and can open a dispute if it believes a listing is wrong, for example a revocation it says was issued in error or an identifier mapped to the wrong entity.
 
 1. The retailer submits the dispute with evidence.
-2. The brand is notified and has 14 days to confirm, correct or reject.
+2. The brand is notified and has 30 days to confirm, correct or reject.
 3. While a dispute is open, verify answers return `disputed` only if the brand has flagged the authorization for review. Otherwise the brand's current decision stands.
 4. The registry does not rule on commercial relationships. The brand's decision is final for authorization status. Identifier errors are corrected by the registry.
-5. If the brand does not answer within 14 days, the dispute closes and the brand's current decision stands. The person who opened the dispute is told how it closed.
+5. If the brand does not answer within 30 days, the dispute closes and the brand's current decision stands. The person who opened the dispute is told how it closed.
 
 **Disputing a declaration.** A seller declared unauthorized (section 3.2) can dispute the declaration. Marketplace sellers can't prove control of a seller ID (section 6.3), so the registry MUST NOT require that proof: the dispute gives a contact email address and evidence. For a web store, the registry MAY require an address at the store's domain, as it does to confirm retailer web stores (section 6).
 
@@ -625,7 +625,7 @@ An agent holding a stale answer or list MUST check it against a revocation feed 
 4. A declaration has at most one open dispute. The registry MAY limit how often disputes on the same declaration can be opened.
 5. The person who opened the dispute is told how it closed.
 
-The registry's liability position, dispute timelines and data handling are set out in its terms of use, not in this spec.
+The registry's liability position and data handling are set out in its terms of use, not in this spec. The dispute timelines above are part of the standard, and the terms of use repeat them.
 
 **Unclaimed listings.** The registry MAY index authorized-retailer or dealer-locator pages that a brand already publishes, as `unclaimed` entries. These MUST be labeled as unverified, MUST NOT verify as `authorized`, and MUST link to the source page. A brand claims its listing by registering (section 4), after which the entries become editable and signable.
 
@@ -633,7 +633,7 @@ The registry's liability position, dispute timelines and data handling are set o
 
 - **Brand impersonation:** mitigated by domain verification plus the registry's review of each brand (section 4). This is the highest-impact attack, because a false brand could authorize diverters.
 - **Account takeover at the registry:** brand accounts MUST use multi-factor authentication. Revocations and new authorizations SHOULD trigger an email to every brand admin.
-- **Registry changes:** the registry cannot change a brand's list on its own, and every change is in a log the brand can see (section 3).
+- **Registry changes:** the registry changes a brand's list only on the brand's instruction, except to remove an entry it reasonably believes is unlawful or abusive, and every change, with the reason for any such removal, is in a log the brand can see (section 3).
 - **Compromised retailer accounts:** an authorized retailer's marketplace account can be taken over. Observation signals (section 7) help, but authorization does not guarantee the retailer's current conduct.
 - **Declarations:** a brand could declare a seller it did in fact authorize, or one it has no relationship with. The answer reports the brand's declaration, not a finding by the registry (section 1), the seller can dispute it (section 11), and declarations are never published as a list (section 3.2), so a declaration can't be read as a public blocklist.
 - **Dispute abuse:** anyone can dispute a declaration, which makes the answer `disputed` for up to 30 days. The brand can end it at once by reconfirming, and the registry can limit repeat disputes (section 11).
@@ -755,3 +755,8 @@ The registry's liability position, dispute timelines and data handling are set o
   - Wording: a declared seller is one the brand has found selling without authorization, and an agent SHOULD NOT send a shopper to it, since the goods may be materially different or counterfeit. The registry still makes no finding of its own (sections 1, 3.2, 12). An unrecognised `status` MUST NOT be treated as authorized, replacing "as not authorized" (section 9).
   - The verify API's paths carry no version (`POST /verify`, `POST /resolve`): a request without one gets the current specification. A registry MUST also serve them under `/v0/` for existing clients (sections 5.2, 9, 10.3). The README and the conformance runner use the unversioned paths; the pointer example names the list at the unversioned path, and a pointer naming it under `/v0/` stays current (section 5.1).
   - New section 9.8, what an agent does with an answer that isn't `authorized`: it MUST NOT complete a purchase from a seller the brand has declared `unauthorized` on its own, only after the person has confirmed that purchase knowing what the declaration means (or has given a standing instruction, such as for enforcement test purchases); for `unlisted` it SHOULD prefer an authorized seller and say when it picks another; anything else is unconfirmed and said so. Reason: a shopper whose authorized channels are sold out, or a brand's own test buy, can still go ahead, but knowingly and never by the agent alone. Answers, schemas and the conformance decision are unchanged.
+- **2026-10-23 (0.7.1)**
+  - Text only: no schema or version-string change. Documents still name `authorized-retailers/0.7`.
+  - An authorization dispute the brand doesn't answer now closes after 30 days, not 14, the same period as a declaration dispute. A retailer disputing a listing and a seller disputing a declaration get one clock to reason about, and the brand has the same time to review evidence in both (section 11).
+  - Section 11 no longer says dispute timelines are set out in the registry's terms of use: the spec states them, and the terms repeat them.
+  - The registry reserves the right, in its terms of use, to remove an authorization or declaration it reasonably believes is unlawful or abusive. The removal is recorded in the brand's change log with its reason; every other change still needs the brand's instruction or approval (sections 3, 3.2, 12).

@@ -5,7 +5,7 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 | § | Rule | Tested here |
 | --- | --- | --- |
 | 3 | Every authorization MUST come from the brand | Registry obligation |
-| 3 | The registry MUST NOT add, remove or change an authorization except on the brand's instruction or approval | Registry obligation |
+| 3 | The registry MUST NOT add, remove or change an authorization except on the brand's instruction or approval, or to remove an entry it reasonably believes is unlawful or abusive | Registry obligation |
 | 3 | The registry MUST keep a change log for each brand and MUST show it to the brand | Registry obligation |
 | 3 | Each authorization MUST carry channels and a product scope (product lines, products or both) | `test/must.test.ts`, fixtures `list-missing-scope`, `list-scope-no-products` |
 | 3.1 | Each product MUST have a `gtin` or at least one ASIN, Walmart item ID or WPID | `test/must.test.ts`, fixtures `list-product-no-identifier`, `list-product-walmart-only` |
@@ -32,7 +32,7 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 | 6.1 | Registry-proposed identifier links MUST be confirmed by the brand | Registry obligation |
 | 3.2 | A declaration and an active authorization MUST NOT cover the same channel identifier | Registry obligation; schema rejects an `unauthorized` answer with an `authorization_id` (`test/must.test.ts`, fixture `unauthorized-with-authorization`) |
 | 3.2 | A declaration MUST NOT appear in a list, a list endpoint or the revocation feed, or anywhere but a verify answer about that channel identifier | Schema side (lists and feed have no declaration fields; only `unauthorized` and a disputed declaration carry `declaration_id`): `test/must.test.ts`. Otherwise a registry obligation |
-| 3.2 | The registry MUST NOT add, remove or change a declaration on its own | Registry obligation |
+| 3.2 | The registry MUST NOT add, remove or change a declaration on its own, except to remove one it reasonably believes is unlawful or abusive | Registry obligation |
 | 9 | Agents MUST treat a `status` they don't recognise as not authorized | Agent obligation |
 | 11 | Disputing a declaration MUST NOT require proof of control of the seller ID | Registry obligation |
 | 11 | The brand MUST reconfirm or withdraw a disputed declaration; after 30 days with neither, the answer goes back to `unauthorized` | Registry obligation; schema requires `declaration_id` and `declared` on a disputed declaration (`test/must.test.ts`) |

@@ -146,7 +146,7 @@ authorizedretailers.ai is the only registry. Anyone may build on the standard an
 
 ## Feedback
 
-Send feedback on the spec at [authorizedretailers.ai/spec](https://authorizedretailers.ai/spec#feedback). This repository doesn't accept pull requests. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome as proposals: email [spec@authorizedretailers.ai](mailto:spec@authorizedretailers.ai) or use the [feedback form](https://authorizedretailers.ai/spec#feedback). This repository has no issues and doesn't accept pull requests. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Use of the registry is subject to the terms at authorizedretailers.ai/terms.
 

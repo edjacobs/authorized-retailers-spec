@@ -2,6 +2,15 @@
 
 This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.7.md).
 
+## 0.7.1 (2026-10-23)
+
+Text only: no schema or version-string change, so nothing the registry serves changes shape. Documents still name `authorized-retailers/0.7`.
+
+- Spec section 11: an authorization dispute the brand doesn't answer closes after 30 days, not 14, matching a declaration dispute. The section also stops saying dispute timelines live in the registry's terms of use; the spec states them and the terms repeat them.
+- Spec sections 3, 3.2 and 12: the registry may remove an authorization or declaration it reasonably believes is unlawful or abusive, as its terms of use reserve. The removal and its reason go in the brand's change log; every other change still needs the brand's instruction or approval. Reason: the terms of use already reserved this, and the spec said the registry could never change a list on its own.
+- GOVERNANCE.md, CONTRIBUTING.md and README.md: contributions are welcome as proposals by email to spec@authorizedretailers.ai or through the feedback form; the repository has no issues and takes no pull requests. No change to the specification text.
+- Reason for the 30-day change: the two disputes work the same way (the brand is notified, silence leaves the brand's decision standing), so one period is easier to explain and gives the brand the same time to review evidence in both.
+
 ## 0.7.0 (2026-10-22)
 
 Spec v0.7. Documents name `authorized-retailers/0.7`; pointers may name 0.2 to 0.7. One request field is new; lists, feeds and answers keep their shape.
