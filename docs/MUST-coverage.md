@@ -55,6 +55,11 @@ Every MUST in [spec/spec-v0.3.md](../spec/spec-v0.3.md). Rules this package enfo
 | 9.5 | More than one brand claiming a product MUST NOT answer `authorized` | `test/must.test.ts` (`resolveClaims`, verify-response schema), `resolve` fixtures `shared-gtin`, `gtin-and-asin-disagree`, `asin-and-walmart-item-id-disagree` |
 | 9.5 | A product outside `brand_domain`'s catalog and claimed by other brands MUST answer `brand_mismatch` | Registry obligation; schema requires `candidates` (`test/must.test.ts`) |
 | 9.5 | Finding the brand MUST NOT reveal retailers, or catalog data of a list that isn't public | `test/must.test.ts` (resolve-response schema); rest is a registry obligation |
+| 9.6 | An agent MUST NOT send an API key in a URL, query string or request body | Agent obligation |
+| 9.6 | A registry MUST NOT accept an API key in a URL, query string or request body | Registry obligation |
+| 9.6 | A registry MUST NOT give one operator a different status, signal or product detail from another's | Registry obligation |
+| 9.6 | A registry MUST store only a hash of an API key | Registry obligation |
+| 12 | The registry MUST NOT tell a brand which caller asked about it, whether known by address, key or name | Registry obligation |
 | 10.1 | Agents MUST NOT rely on a cached list or answer past its `valid_until`, except as 10.2 allows | `test/jws.test.ts` (`answer_expired`, `list_expired`) |
 | 10.2 | Agents MUST NOT describe a seller as authorized without a current or allowed stale answer | Agent obligation. `verifyDocument` refuses stale documents unless `allowStale` is set and a feed is given |
 | 10.2 | Agents MUST mark a stale result as stale | `verifyDocument` returns `stale: true`; showing it is an agent obligation |

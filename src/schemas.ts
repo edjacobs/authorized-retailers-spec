@@ -2,11 +2,11 @@
 
 export const common = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.7/common.json",
-  "title": "Authorized Retailers v0.7 shared definitions",
+  "$id": "https://authorizedretailers.ai/schemas/0.8/common.json",
+  "title": "Authorized Retailers v0.8 shared definitions",
   "$defs": {
     "specVersion": {
-      "const": "authorized-retailers/0.7"
+      "const": "authorized-retailers/0.8"
     },
     "timestamp": {
       "description": "RFC 3339 timestamp in UTC with a Z suffix.",
@@ -931,7 +931,8 @@ export const common = {
         "authorized-retailers/0.4",
         "authorized-retailers/0.5",
         "authorized-retailers/0.6",
-        "authorized-retailers/0.7"
+        "authorized-retailers/0.7",
+        "authorized-retailers/0.8"
       ]
     },
     "region": {
@@ -972,7 +973,7 @@ export const common = {
 
 export const list = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.7/list.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.8/list.json",
   "title": "Signed list (section 5.2)",
   "type": "object",
   "required": [
@@ -1060,7 +1061,7 @@ export const list = {
 
 export const pointer = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.7/pointer.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.8/pointer.json",
   "title": "authorized-retailers.json pointer (section 5.1)",
   "type": "object",
   "required": [
@@ -1094,7 +1095,7 @@ export const pointer = {
 
 export const resolveRequest = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.7/resolve-request.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.8/resolve-request.json",
   "title": "POST /v0/resolve request (section 9.5)",
   "description": "Canonical form. Call normalizeResolveRequest on raw input first.",
   "type": "object",
@@ -1115,7 +1116,7 @@ export const resolveRequest = {
 
 export const resolveResponse = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.7/resolve-response.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.8/resolve-response.json",
   "title": "POST /v0/resolve response (section 9.5)",
   "type": "object",
   "required": [
@@ -1229,7 +1230,7 @@ export const resolveResponse = {
 
 export const revocationFeed = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.7/revocation-feed.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.8/revocation-feed.json",
   "title": "Revocation feed (section 10.3)",
   "type": "object",
   "required": [
@@ -1285,7 +1286,7 @@ export const revocationFeed = {
 
 export const verifyRequest = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.7/verify-request.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.8/verify-request.json",
   "title": "POST /v0/verify request (section 9)",
   "description": "Canonical form. Call normalizeVerifyRequest on raw input first. At least one of brand_domain or product is required.",
   "type": "object",
@@ -1357,7 +1358,7 @@ export const verifyRequest = {
 
 export const verifyResponse = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://authorizedretailers.ai/schemas/0.7/verify-response.json",
+  "$id": "https://authorizedretailers.ai/schemas/0.8/verify-response.json",
   "title": "POST /v0/verify response (section 9)",
   "type": "object",
   "required": [

@@ -15,6 +15,7 @@ node conformance/run.mjs --list                  # the vectors and the spec sect
 node conformance/run.mjs --reference             # the reference decision against the vectors
 node conformance/run.mjs --registry              # authorizedretailers.ai, the demo brand
 node conformance/run.mjs --registry https://mirror.example   # any registry
+node conformance/run.mjs --registry --key <api key>   # a registry that requires a key (or set AR_API_KEY)
 node conformance/run.mjs --agent "python my_agent.py"        # your agent
 ```
 

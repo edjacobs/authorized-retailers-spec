@@ -3,6 +3,7 @@
 //
 //   node conformance/run.mjs --agent "<command>"     test an agent's decisions against the vectors
 //   node conformance/run.mjs --registry [base-url]   check a registry's answers for the demo brand
+//                                       [--key <api key>]  for a registry that requires one (or set AR_API_KEY)
 //   node conformance/run.mjs --reference             check the vectors against the reference decision
 //   node conformance/run.mjs --list                  list the vectors
 //
@@ -61,7 +62,7 @@ function externalAgent(command) {
 }
 
 /** The registry's side: the demo brand's answers (conformance/demo-cases.json) must be well formed, signed and fresh. */
-async function runRegistry(spec, base) {
+async function runRegistry(spec, base, key) {
   base = base.replace(/\/+$/, "");
   const cases = JSON.parse(readFileSync(here("./demo-cases.json"), "utf8"));
   const jwks = await (await fetch(`${base}/.well-known/jwks.json`)).json();
@@ -76,12 +77,13 @@ async function runRegistry(spec, base) {
     const body = { channel: c.channel, product: c.product, ...(c.territory ? { territory: c.territory } : {}) };
     const res = await fetch(`${base}/verify`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "User-Agent": "authorized-retailers-conformance/0.7 (+https://authorizedretailers.ai/spec)" },
+      headers: { "Content-Type": "application/json", "User-Agent": "authorized-retailers-conformance/0.8 (+https://authorizedretailers.ai/spec)", ...(key ? { Authorization: `Bearer ${key}` } : {}) },
       body: JSON.stringify(body),
     });
     const a = await res.json();
     const problems = [];
-    if (res.status !== 200) problems.push(`HTTP ${res.status}`);
+    if (res.status === 401) problems.push(`HTTP 401: this registry requires an API key (section 9.6); pass --key <key> or set AR_API_KEY`);
+    else if (res.status !== 200) problems.push(`HTTP ${res.status}`);
     const shape = spec.validateVerifyResponse(a);
     if (!shape.valid) problems.push(`schema: ${shape.errors.map((e) => e.message).slice(0, 2).join("; ")}`);
     const sig = await spec.verifyDocument(a, jwks, { now: Date.now() });
@@ -115,11 +117,12 @@ if (flag("--list") >= 0) {
   failed = await runVectors(spec, externalAgent(command));
 } else if (flag("--registry") >= 0) {
   const next = args[flag("--registry") + 1];
-  failed = await runRegistry(spec, next && !next.startsWith("--") ? next : "https://authorizedretailers.ai");
+  const keyAt = flag("--key");
+  failed = await runRegistry(spec, next && !next.startsWith("--") ? next : "https://authorizedretailers.ai", (keyAt >= 0 ? args[keyAt + 1] : undefined) ?? process.env.AR_API_KEY);
 } else if (flag("--reference") >= 0) {
   failed = await runVectors(spec, (input) => referenceDecide(spec, input));
 } else {
-  console.log('usage: run.mjs --agent "<command>" | --registry [url] | --reference | --list');
+  console.log('usage: run.mjs --agent "<command>" | --registry [url] [--key <api key>] | --reference | --list');
   process.exit(2);
 }
 if (flag("--list") < 0) console.log(failed === 0 ? `\n${green("All checks passed.")}` : `\n${red(`${failed} failed.`)}`);

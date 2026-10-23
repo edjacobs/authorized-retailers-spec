@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
-const SPEC = "authorized-retailers/0.7";
+const SPEC = "authorized-retailers/0.8";
 const JWS = "eyJhbGciOiJFZERTQSIsImtpZCI6ImFyLTIwMjYwOTI4LTZlMzcifQ..c2lnbmF0dXJlLXBsYWNlaG9sZGVy";
 const sig = { kid: "ar-20260928-6e37", jws: JWS };
 
