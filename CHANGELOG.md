@@ -2,9 +2,9 @@
 
 This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.7.md).
 
-## 0.8.0 (unreleased draft)
+## 0.8.0 (2026-10-25)
 
-Spec v0.8 draft. Documents name `authorized-retailers/0.8`; pointers may name 0.2 to 0.8. No shape changes to lists, feeds or answers.
+Spec v0.8. Documents name `authorized-retailers/0.8`; pointers may name 0.2 to 0.8. No shape changes to lists, feeds or answers.
 
 - API keys (spec section 9.6): a registry MAY require a key on verify, resolve and the MCP tools, sent as `Authorization: Bearer`. No key or a bad one is HTTP 401 and unconfirmed; a key never changes an answer. The key set, public lists and the revocation feed need no key. See the spec's section 14 for the reasons.
 - A 401 or 429 means the registry is reachable, so stale answers aren't used (section 10.2). The query log may hold a key's ID, never its secret (section 12).
