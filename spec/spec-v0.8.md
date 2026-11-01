@@ -781,5 +781,6 @@ The registry's liability position and data handling are set out in its terms of 
   - The query log MAY hold the ID of the key a request used, never its secret, and a brand still never learns which caller asked, whether by address, key or name (section 12). New risk entry for leaked keys.
   - Schemas: `schemas/0.8/` has the same shapes as 0.7. Documents name `authorized-retailers/0.8`, and a pointer MAY name any version from 0.2 to 0.8 (section 5.1). The conformance runner takes `--key`.
   - Open questions are now for v0.9 (section 13).
-- **2026-10-31 (text)**
+- **2026-10-31 (0.8.1)**
+  - Text only: no schema or version-string change. Documents still name `authorized-retailers/0.8`.
   - A registry MAY ask a seller requesting authorization for evidence of where it buys the brand's products, such as a supplier invoice, and show it to the brand with the request. The evidence is for the brand's decision only: never published, never a factor in verify answers, and deleted within a set time after the decision (sections 3, 12). Reason: authorizedretailers.ai now requires an invoice on every listing request, so a brand can see whether its products reach the seller through its authorized channels rather than retail arbitrage. No schema or version-string change.
