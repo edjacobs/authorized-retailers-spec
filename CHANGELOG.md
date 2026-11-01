@@ -2,6 +2,12 @@
 
 This file covers the package. Changes to the specification text are also listed in section 14 of [the spec](spec/spec-v0.7.md).
 
+## Unreleased
+
+Text only: no schema or version-string change. Documents still name `authorized-retailers/0.8`.
+
+- Spec sections 3 and 12: a registry MAY ask a seller requesting authorization for evidence of where it buys the brand's products, such as a supplier invoice, and show it to the brand with the request; it is for the brand's decision only, never published, never changes an answer, and is deleted within a set time after the decision. Reason: authorizedretailers.ai now requires an invoice on every listing request.
+
 ## 0.8.0 (2026-10-25)
 
 Spec v0.8. Documents name `authorized-retailers/0.8`; pointers may name 0.2 to 0.8. No shape changes to lists, feeds or answers.

@@ -64,6 +64,8 @@ The registry MUST NOT add, remove or change an authorization except on the brand
 
 A request to a brand that is not yet registered MAY be held by the registry and delivered once the brand registers. A held request has no effect on verify answers.
 
+A registry MAY ask a seller that requests authorization for evidence of where it buys the brand's products, such as an invoice from a distributor or from the brand, and MAY show that evidence to the brand with the request. The evidence is for the brand's decision only: it MUST NOT be published, MUST NOT change verify answers, and the registry SHOULD delete it within a set time after the brand decides.
+
 Each authorization MUST carry:
 
 - **Channels:** at least one channel identifier (section 6).
@@ -655,6 +657,7 @@ The registry's liability position and data handling are set out in its terms of 
 - **API keys:** a leaked key lets someone use an operator's rate limits and appear as that operator in the registry's logs. It can't forge an answer, because the registry signs every answer. Keys are shown once, stored only as a hash, carry a recognisable prefix so they can be found by secret scanning, and can be revoked at once; an operator whose key leaks revokes it and makes another (section 9.6).
 - **Revocation feed:** entries are random `revocation_id` values, not hashes of brand and seller, so nobody can test guesses against the feed.
 - **Personal data:** channel identifiers and business names are business data. The registry MUST NOT publish personal addresses of sole-trader retailers.
+- **Request evidence:** an invoice a seller attaches to a request (section 3) names the seller's supplier and its prices. The registry MUST show it only to the brand asked and to the registry's own operators, MUST NOT publish it or any part of it, and SHOULD state in its privacy policy how long it keeps it.
 - **Replay:** agents SHOULD check the `checked` timestamp on a signed answer and MUST reject answers past their `valid_until`, except as section 10.2 allows.
 
 ## 13. Open questions for v0.9
@@ -778,3 +781,5 @@ The registry's liability position and data handling are set out in its terms of 
   - The query log MAY hold the ID of the key a request used, never its secret, and a brand still never learns which caller asked, whether by address, key or name (section 12). New risk entry for leaked keys.
   - Schemas: `schemas/0.8/` has the same shapes as 0.7. Documents name `authorized-retailers/0.8`, and a pointer MAY name any version from 0.2 to 0.8 (section 5.1). The conformance runner takes `--key`.
   - Open questions are now for v0.9 (section 13).
+- **2026-10-31 (text)**
+  - A registry MAY ask a seller requesting authorization for evidence of where it buys the brand's products, such as a supplier invoice, and show it to the brand with the request. The evidence is for the brand's decision only: never published, never a factor in verify answers, and deleted within a set time after the decision (sections 3, 12). Reason: authorizedretailers.ai now requires an invoice on every listing request, so a brand can see whether its products reach the seller through its authorized channels rather than retail arbitrage. No schema or version-string change.
